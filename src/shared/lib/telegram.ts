@@ -1,8 +1,19 @@
 export const tg = window.Telegram?.WebApp;
 
-export function initTelegram() {
+export function initTelegramFullscreenHack() {
   if (!tg) return;
 
+  function tryExpand() {
+    try {
+      tg.requestFullscreen?.();
+      tg.expand();
+      tg.disableVerticalSwipes?.();
+    } catch {}
+  }
+
   tg.ready();
-  tg.expand();
+
+  tryExpand();
+  setTimeout(tryExpand, 300);
+  setTimeout(tryExpand, 1200);
 }

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { initTelegram } from '../shared/lib/telegram';
 import { saveTelegramUser } from '../shared/lib/supabase';
 
 import { GlobalStyles } from '../shared/config/globalStyles';
@@ -13,7 +12,7 @@ function App() {
   const [screen, setScreen] = useState<Screen>('splash');
 
   useEffect(() => {
-    initTelegram();
+    // ❗ fullscreen тут НЕ нужен
     saveTelegramUser();
   }, []);
 
