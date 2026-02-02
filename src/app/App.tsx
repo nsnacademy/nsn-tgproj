@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
+import { saveTelegramUser } from '../shared/lib/supabase';
 
 import { GlobalStyles } from '../shared/config/globalStyles';
-import {
-  initTelegramFullscreenHack,
-  applyTelegramLayoutVars,
-} from '../shared/lib/telegram';
 
 import { Splash } from '../screens/Splash';
 import { Home } from '../screens/Home';
@@ -15,8 +12,8 @@ function App() {
   const [screen, setScreen] = useState<Screen>('splash');
 
   useEffect(() => {
-    applyTelegramLayoutVars();
-    initTelegramFullscreenHack();
+    // ❗ fullscreen тут НЕ нужен
+    saveTelegramUser();
   }, []);
 
   return (
