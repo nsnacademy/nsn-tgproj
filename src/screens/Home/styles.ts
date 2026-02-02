@@ -1,10 +1,15 @@
 import styled from 'styled-components';
 
 export const HomeContainer = styled.div`
+  width: 100%;
+  height: 100%;
+
   display: flex;
   flex-direction: column;
+
+  /* 🔹 основной внутренний отступ */
   padding: 16px;
-  height: 100vh;
+
   box-sizing: border-box;
 `;
 
@@ -39,10 +44,13 @@ export const Tab = styled.div<{ $active?: boolean }>`
 
 export const Content = styled.div`
   flex: 1;
+
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 96px;
+
+  /* 🔹 вместо 96px — адаптивный отступ */
+  padding-top: 24px;
 `;
 
 export const EmptyText = styled.div`
