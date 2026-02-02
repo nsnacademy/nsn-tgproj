@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
-import { initTelegram, tg } from '../src/shared/lib/telegram';
+import { initTelegram, tg } from '../shared/lib/telegram';
+import { saveTelegramUser } from '../shared/lib/supabase';
 
 function App() {
   useEffect(() => {
     initTelegram();
+    saveTelegramUser();
   }, []);
 
   return (
