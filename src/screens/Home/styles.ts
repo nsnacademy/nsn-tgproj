@@ -1,11 +1,13 @@
 import styled from 'styled-components';
 
 export const HomeContainer = styled.div`
-  flex: 1;
-
   display: flex;
   flex-direction: column;
+
+  /* 🔹 основной внутренний отступ */
   padding: 16px;
+  height: 100vh;
+  box-sizing: border-box;
 `;
 
 export const Header = styled.div`
@@ -43,8 +45,7 @@ export const Content = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-
-  min-height: 0;
+  padding-top: 96px;
 `;
 
 export const EmptyText = styled.div`

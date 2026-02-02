@@ -1,12 +1,24 @@
 export {};
 
 declare global {
+  interface TelegramWebAppUser {
+    id: number;
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+  }
+
   interface TelegramWebApp {
     ready(): void;
-
     expand(): void;
-    requestFullscreen?: () => void;
+    close(): void;
+
     disableVerticalSwipes?: () => void;
+    requestFullscreen?: () => void;
+
+    initDataUnsafe?: {
+      user?: TelegramWebAppUser;
+    };
 
     themeParams?: {
       bg_color?: string;
@@ -22,15 +34,6 @@ declare global {
       bottom?: number;
       left?: number;
       right?: number;
-    };
-
-    initDataUnsafe?: {
-      user?: {
-        id: number;
-        username?: string;
-        first_name?: string;
-        last_name?: string;
-      };
     };
   }
 
