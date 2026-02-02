@@ -1,18 +1,27 @@
-import { useEffect } from 'react';
-import { initTelegram, tg } from '../shared/lib/telegram';
+import { useEffect, useState } from 'react';
+import { initTelegram } from '../shared/lib/telegram';
 import { saveTelegramUser } from '../shared/lib/supabase';
 
+import { Splash } from '../screens/Splash';
+import { Home } from '../screens/Home';
+
+type Screen = 'splash' | 'home';
+
 function App() {
+  const [screen, setScreen] = useState<Screen>('splash');
+
   useEffect(() => {
     initTelegram();
     saveTelegramUser();
   }, []);
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>nsnproj</h1>
-      <p>User: {tg?.initDataUnsafe?.user?.username ?? 'guest'}</p>
-    </div>
+    <>
+      {screen === 'splash' && (
+        <Splash onFinish={() => setScreen('home')} />
+      )}
+      {screen === 'home' && <Home />}
+    </>
   );
 }
 
