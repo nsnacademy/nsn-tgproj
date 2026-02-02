@@ -1,8 +1,9 @@
 export function initTelegramFullscreenHack() {
-  const tg = window.Telegram?.WebApp;
-  if (!tg) return;
+  const maybeWebApp = window.Telegram?.WebApp;
+  if (!maybeWebApp) return;
 
-  const webApp = tg as TelegramWebApp;
+  // ✅ ЯВНО говорим TS: дальше это TelegramWebApp
+  const webApp = maybeWebApp;
 
   function tryExpand() {
     try {
