@@ -4,16 +4,11 @@ declare global {
   interface TelegramWebApp {
     ready(): void;
 
-    // fullscreen / viewport
     expand(): void;
     requestFullscreen?: () => void;
-    exitFullscreen?: () => void;
-
-    // gestures
     disableVerticalSwipes?: () => void;
 
-    // theme
-    themeParams: {
+    themeParams?: {
       bg_color?: string;
       text_color?: string;
       hint_color?: string;
@@ -22,7 +17,13 @@ declare global {
       button_text_color?: string;
     };
 
-    // init data
+    safeAreaInsets?: {
+      top?: number;
+      bottom?: number;
+      left?: number;
+      right?: number;
+    };
+
     initDataUnsafe?: {
       user?: {
         id: number;

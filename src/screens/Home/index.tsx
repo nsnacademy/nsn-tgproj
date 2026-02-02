@@ -12,24 +12,19 @@ import {
 export function Home() {
   return (
     <HomeContainer>
-      {/* Header */}
       <Header>
         <StatusLabel>Состояние</StatusLabel>
         <StatusTitle>Нет активных вызовов</StatusTitle>
       </Header>
 
-      {/* Tabs */}
       <Tabs>
         <Tab $active>Активные вызовы</Tab>
         <Tab>Завершённые вызовы</Tab>
       </Tabs>
 
-      {/* Content */}
       <Content>
         <EmptyText>
-          Создайте новый вызов или
-          <br />
-          присоединитесь к существующему
+          Создайте новый вызов или присоединитесь к существующему
         </EmptyText>
       </Content>
     </HomeContainer>
