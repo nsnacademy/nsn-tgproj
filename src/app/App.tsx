@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { initTelegram } from '../shared/lib/telegram';
 import { saveTelegramUser } from '../shared/lib/supabase';
 
+import { GlobalStyles } from '../shared/config/globalStyles';
+
 import { Splash } from '../screens/Splash';
 import { Home } from '../screens/Home';
 
@@ -17,9 +19,12 @@ function App() {
 
   return (
     <>
+      <GlobalStyles />
+
       {screen === 'splash' && (
         <Splash onFinish={() => setScreen('home')} />
       )}
+
       {screen === 'home' && <Home />}
     </>
   );

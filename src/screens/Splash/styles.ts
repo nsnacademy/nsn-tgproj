@@ -1,7 +1,8 @@
 import styled from 'styled-components';
 
 export const SplashContainer = styled.div`
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -10,5 +11,5 @@ export const SplashContainer = styled.div`
 
 export const Title = styled.h1`
   font-size: 32px;
-  margin-bottom: 8px;
+  margin: 0 0 8px;
 `;
