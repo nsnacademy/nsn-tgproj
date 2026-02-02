@@ -1,16 +1,11 @@
 import styled from 'styled-components';
 
 export const HomeContainer = styled.div`
-  width: 100%;
-  height: 100%;
+  flex: 1;
 
   display: flex;
   flex-direction: column;
-
-  /* 🔹 основной внутренний отступ */
   padding: 16px;
-
-  box-sizing: border-box;
 `;
 
 export const Header = styled.div`
@@ -46,14 +41,14 @@ export const Content = styled.div`
   flex: 1;
 
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
 
-  /* 🔹 вместо 96px — адаптивный отступ */
-  padding-top: 24px;
+  min-height: 0;
 `;
 
 export const EmptyText = styled.div`
+  max-width: 260px;
   font-size: 16px;
   color: #8e8e93;
   text-align: center;
