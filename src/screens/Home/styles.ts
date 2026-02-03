@@ -11,7 +11,7 @@ export const SafeArea = styled.div`
 /* ОСНОВНОЙ КОНТЕНТ */
 export const HomeContainer = styled.div`
   min-height: 100vh;
-  padding: 55px 16px 140px; /* ⬅️ место под floating nav */
+  padding: 70px 16px 140px; /* ⬅️ место под floating nav */
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -22,7 +22,7 @@ export const HomeContainer = styled.div`
 
 /* HEADER */
 export const Header = styled.div`
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 `;
 
 export const StatusLabel = styled.div`
@@ -70,7 +70,7 @@ export const EmptyText = styled.div`
 export const FloatingNav = styled.div`
   position: fixed;
   left: 50%;
-  bottom: calc(5px + env(safe-area-inset-bottom));
+  bottom: calc(15px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
 
   width: calc(100% - 3px);
