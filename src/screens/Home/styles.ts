@@ -73,7 +73,7 @@ export const FloatingNav = styled.div`
   bottom: calc(15px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
 
-  width: calc(100% - 3px);
+  width: calc(100% - 20px);
   max-width: 420px;
   height: 72px;
 
