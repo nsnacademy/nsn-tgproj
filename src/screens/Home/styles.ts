@@ -11,7 +11,7 @@ export const SafeArea = styled.div`
 /* ОСНОВНОЙ КОНТЕНТ */
 export const HomeContainer = styled.div`
   min-height: 100vh;
-  padding: 70px 16px 140px; /* ⬅️ место под floating nav */
+  padding: 70px 27px 140px; /* ⬅️ место под floating nav */
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -42,6 +42,7 @@ export const Tabs = styled.div`
   display: flex;
   gap: clamp(24px, 6vw, 32px);
   margin-bottom: 32px;
+  justify-content: center;
 `;
 
 export const Tab = styled.div<{ $active?: boolean }>`
