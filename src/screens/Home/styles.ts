@@ -22,7 +22,7 @@ export const HomeContainer = styled.div`
 
 /* HEADER */
 export const Header = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: 40px;
 `;
 
 export const StatusLabel = styled.div`
