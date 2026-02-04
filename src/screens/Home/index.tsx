@@ -6,54 +6,56 @@ import {
   StatusTitle,
   Tabs,
   Tab,
-  Content,
+  CenterWrapper,
   EmptyText,
-  FloatingNav,
+  BottomNav,
   NavItem,
-  NavIcon,
 } from './styles';
 
 export function Home() {
   return (
     <SafeArea>
       <HomeContainer>
+        {/* HEADER */}
         <Header>
           <StatusLabel>Состояние</StatusLabel>
           <StatusTitle>Нет активных вызовов</StatusTitle>
         </Header>
 
+        {/* TABS */}
         <Tabs>
           <Tab $active>Активные вызовы</Tab>
-          <Tab>Завершённые вызовы</Tab>
+          <Tab>Завершенные вызовы</Tab>
         </Tabs>
 
-        <Content>
+        {/* CENTER TEXT */}
+        <CenterWrapper>
           <EmptyText>
             Создайте новый вызов или
             <br />
             присоединитесь к существующему
           </EmptyText>
-        </Content>
+        </CenterWrapper>
       </HomeContainer>
 
-      {/* FLOATING BOTTOM NAV */}
-      <FloatingNav>
+      {/* BOTTOM NAV */}
+      <BottomNav>
         <NavItem $active>
-          <NavIcon>🏠</NavIcon>
+          <img src="/src/assets/icons/home.svg" />
         </NavItem>
 
         <NavItem>
-          <NavIcon>⬛⬛</NavIcon>
+          <img src="/src/assets/icons/search.svg" />
         </NavItem>
 
         <NavItem>
-          <NavIcon>＋</NavIcon>
+          <img src="/src/assets/icons/plus.svg" />
         </NavItem>
 
         <NavItem>
-          <NavIcon>👤</NavIcon>
+          <img src="/src/assets/icons/profile.svg" />
         </NavItem>
-      </FloatingNav>
+      </BottomNav>
     </SafeArea>
   );
 }

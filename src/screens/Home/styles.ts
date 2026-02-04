@@ -1,108 +1,103 @@
 import styled from 'styled-components';
 
-/* SAFE AREA */
+/* === PAGE === */
 export const SafeArea = styled.div`
   min-height: 100vh;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  background: #fff;
-`;
-
-/* ОСНОВНОЙ КОНТЕНТ */
-export const HomeContainer = styled.div`
-  min-height: 100vh;
-  padding: 70px 27px 140px; /* ⬅️ место под floating nav */
+  background: #000;
+  color: #fff;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
-
-  max-width: 720px;
-  margin: 0 auto;
 `;
 
-/* HEADER */
+/* === CONTENT === */
+export const HomeContainer = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 44px 20px 140px;
+`;
+
+/* === HEADER === */
 export const Header = styled.div`
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 `;
 
 export const StatusLabel = styled.div`
   font-size: 14px;
-  color: #8e8e93;
-  margin-bottom: 8px;
+  opacity: 0.6;
 `;
 
 export const StatusTitle = styled.div`
-  font-size: 18px;
-  font-weight: 500;
-  color: #000;
+  font-size: 22px;
+  font-weight: 600;
 `;
 
-/* TABS */
+/* === TABS === */
 export const Tabs = styled.div`
   display: flex;
-  gap: clamp(24px, 6vw, 32px);
-  margin-bottom: 32px;
-  justify-content: center;
+  gap: 18px;
 `;
 
 export const Tab = styled.div<{ $active?: boolean }>`
-  font-size: 16px;
-  font-weight: ${({ $active }) => ($active ? 600 : 400)};
-  color: ${({ $active }) => ($active ? '#000' : '#8e8e93')};
+  font-size: 14px;
+  padding-bottom: 6px;
+  opacity: ${({ $active }) => ($active ? 1 : 0.4)};
+  border-bottom: ${({ $active }) =>
+    $active ? '2px solid #fff' : '2px solid transparent'};
 `;
 
-/* CONTENT */
-export const Content = styled.div`
+/* === CENTER === */
+export const CenterWrapper = styled.div`
   flex: 1;
   display: flex;
-  justify-content: center;
   align-items: center;
-`;
-
-export const EmptyText = styled.div`
-  font-size: 15px;
-  color: #8e8e93;
+  justify-content: center;
   text-align: center;
-  line-height: 1.4;
-  max-width: 280px;
 `;
 
-/* FLOATING NAV (КАК НА СКРИНЕ) */
-export const FloatingNav = styled.div`
+/* === EMPTY TEXT === */
+export const EmptyText = styled.div`
+  font-size: 16px;
+  line-height: 1.45;
+  opacity: 0.85;
+`;
+
+/* === BOTTOM NAV === */
+export const BottomNav = styled.div`
   position: fixed;
-  left: 50%;
-  bottom: calc(15px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
+  left: 16px;
+  right: 16px;
+  bottom: 18px;
 
-  width: calc(100% - 20px);
-  max-width: 420px;
-  height: 72px;
-
-  background: #fbfbfb;
-  border-radius: 36px;
+  height: 64px;
+  background: #ffffff;
+  border-radius: 32px;
 
   display: flex;
+  align-items: center;
   justify-content: space-around;
-  align-items: center;
-
-  
 `;
 
-/* NAV ITEMS */
+/* === NAV ITEM === */
 export const NavItem = styled.div<{ $active?: boolean }>`
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
 
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 
-  border-radius: 22px;
-  color: ${({ $active }) => ($active ? '#000' : '#8e8e93')};
-`;
+  cursor: pointer;
 
-/* ICON */
-export const NavIcon = styled.div`
-  font-size: 22px;
-  line-height: 1;
+  img {
+    width: 22px;
+    height: 22px;
+    opacity: ${({ $active }) => ($active ? 1 : 0.45)};
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  &:active img {
+    opacity: 0.25;
+    transform: scale(0.9);
+  }
 `;
