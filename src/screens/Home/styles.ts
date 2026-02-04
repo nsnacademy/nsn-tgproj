@@ -14,7 +14,7 @@ export const HomeContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 90px 20px 140px;
+  padding: 95px 20px 140px;
 `;
 
 /* === HEADER === */
