@@ -14,7 +14,7 @@ export const HomeContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 44px 20px 140px;
+  padding: 24px 16px 140px;
 `;
 
 /* === HEADER === */
@@ -92,10 +92,13 @@ export const NavItem = styled.div<{ $active?: boolean }>`
   img {
     width: 22px;
     height: 22px;
+
+    /* чёрные иконки на белой плашке */
     opacity: ${({ $active }) => ($active ? 1 : 0.45)};
     transition: opacity 0.15s ease, transform 0.15s ease;
   }
 
+  /* tap animation */
   &:active img {
     opacity: 0.25;
     transform: scale(0.9);

@@ -12,6 +12,12 @@ import {
   NavItem,
 } from './styles';
 
+/* ✅ ПРАВИЛЬНЫЙ ИМПОРТ SVG (работает в dev + prod) */
+import homeIcon from '../../assets/icons/home.svg';
+import searchIcon from '../../assets/icons/search.svg';
+import plusIcon from '../../assets/icons/plus.svg';
+import profileIcon from '../../assets/icons/profile.svg';
+
 export function Home() {
   return (
     <SafeArea>
@@ -41,19 +47,19 @@ export function Home() {
       {/* BOTTOM NAV */}
       <BottomNav>
         <NavItem $active>
-          <img src="/src/assets/icons/home.svg" />
+          <img src={homeIcon} alt="home" />
         </NavItem>
 
         <NavItem>
-          <img src="/src/assets/icons/search.svg" />
+          <img src={searchIcon} alt="search" />
         </NavItem>
 
         <NavItem>
-          <img src="/src/assets/icons/plus.svg" />
+          <img src={plusIcon} alt="create" />
         </NavItem>
 
         <NavItem>
-          <img src="/src/assets/icons/profile.svg" />
+          <img src={profileIcon} alt="profile" />
         </NavItem>
       </BottomNav>
     </SafeArea>
