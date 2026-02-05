@@ -96,18 +96,20 @@ export const NavItem = styled.div<{ $active?: boolean }>`
   transition: color 0.2s ease;
 
   svg {
-    width: 35px;
-    height: 35px;
+    width: 28px;
+    height: 28px;
 
-    transform: scale(${({ $active }) => ($active ? 1.08 : 1)});
+    /* ⬇️ ВАЖНО: масштаб, а не размер */
+    transform: scale(${({ $active }) => ($active ? 1.25 : 1)});
+    transform-origin: center;
 
     transition:
-      transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
       opacity 0.15s ease;
   }
 
   &:active svg {
-    transform: scale(0.92);
+    transform: scale(0.9);
     opacity: 0.7;
   }
 `;
