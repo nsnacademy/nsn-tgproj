@@ -107,12 +107,12 @@ export function CreateFlow({ onNavigate }: Props) {
       с платформой в соответствии с правилами сервиса.
     </Explanation>
 
-    <Explanation style={{ marginTop: 6, opacity: 0.55 }}>
-      • вознаграждение платформы — <b>10%</b> от общего дохода<br />
-      • учитываются подтверждённые участники<br />
-      • расчёт производится автоматически в течение <b>7 дней</b><br />
-      • при несоблюдении условий данные участия могут быть исключены из расчёта
-    </Explanation>
+   <Explanation style={{ marginTop: 6, opacity: 0.55 }}>
+  • вознаграждение платформы — <b>10%</b> от общего дохода<br />
+  • учитываются подтверждённые участники<br />
+  • расчёт производится в течение <b>7 дней</b><br />
+  • при несоблюдении условий данные вызова могут быть аннулированы
+</Explanation>
 
     <Consent onClick={() => setAccepted(!accepted)}>
       <input type="checkbox" checked={accepted} readOnly />
