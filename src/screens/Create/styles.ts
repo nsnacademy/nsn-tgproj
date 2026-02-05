@@ -13,7 +13,7 @@ export const TopBar = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 16px;
+  padding: 0 20px;
 `;
 
 /* === SEARCH FIELD === */
