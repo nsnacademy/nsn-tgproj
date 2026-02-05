@@ -16,12 +16,17 @@ import {
 
 /* SVG (dev + prod) */
 import homeIcon from '../../assets/icons/home.svg';
-import searchIcon from '../../assets/icons/search.svg';
+import searchIcon from '../../assets/icons/create.svg';
 import plusIcon from '../../assets/icons/plus.svg';
 import profileIcon from '../../assets/icons/profile.svg';
 
-export function Home() {
-  /* ✅ СОСТОЯНИЕ ТАБА */
+/* 👇 ПРОПСЫ ДЛЯ НАВИГАЦИИ */
+type HomeProps = {
+  onNavigate: (screen: 'home' | 'create') => void;
+};
+
+export function Home({ onNavigate }: HomeProps) {
+  /* состояние табов */
   const [tab, setTab] = useState<'active' | 'completed'>('active');
 
   return (
@@ -54,7 +59,7 @@ export function Home() {
           </Tab>
         </Tabs>
 
-        {/* CENTER TEXT */}
+        {/* CENTER CONTENT */}
         <CenterWrapper>
           {tab === 'active' ? (
             <EmptyText>
@@ -74,16 +79,18 @@ export function Home() {
 
       {/* BOTTOM NAV */}
       <BottomNav>
+        {/* HOME — АКТИВЕН */}
         <NavItem $active>
           <img src={homeIcon} alt="home" />
         </NavItem>
 
-        <NavItem>
-          <img src={searchIcon} alt="search" />
+        {/* CREATE — ВТОРАЯ КНОПКА */}
+        <NavItem onClick={() => onNavigate('create')}>
+          <img src={plusIcon} alt="create" />
         </NavItem>
 
         <NavItem>
-          <img src={plusIcon} alt="create" />
+          <img src={searchIcon} alt="search" />
         </NavItem>
 
         <NavItem>

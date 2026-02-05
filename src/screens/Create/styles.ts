@@ -4,62 +4,66 @@ import styled from 'styled-components';
 export const SafeArea = styled.div`
   min-height: 100vh;
   background: #000;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
+  padding-top: 60px;
 `;
 
-/* === CONTENT === */
-export const HomeContainer = styled.div`
+/* === TOP BAR === */
+export const TopBar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+`;
+
+/* === SEARCH FIELD === */
+export const SearchField = styled.div`
   flex: 1;
+  height: 44px;
+  background: #ffffff;
+  border-radius: 22px;
+
   display: flex;
-  flex-direction: column;
-  padding: 95px 20px 140px;
+  align-items: center;
+  gap: 10px;
+
+  padding: 0 16px;
 `;
 
-/* === HEADER === */
-export const Header = styled.div`
-  margin-bottom: 24px;
+/* === SEARCH ICON (LEFT) === */
+export const SearchIcon = styled.img`
+  width: 18px;
+  height: 18px;
+  opacity: 0.5;
 `;
 
-export const StatusLabel = styled.div`
-  font-size: 14px;
-  opacity: 0.6;
+/* === SEARCH TEXT === */
+export const SearchText = styled.div`
+  font-size: 16px;
+  color: #000;
+  opacity: 0.5;
 `;
 
-export const StatusTitle = styled.div`
-  font-size: 22px;
-  font-weight: 600;
-`;
+/* === RIGHT ROUND BUTTON === */
+export const ActionButton = styled.div`
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
 
-/* === TABS === */
-export const Tabs = styled.div`
-  display: flex;
-  gap: 18px;
-`;
-
-export const Tab = styled.div<{ $active?: boolean }>`
-  font-size: 14px;
-  padding-bottom: 6px;
-  opacity: ${({ $active }) => ($active ? 1 : 0.4)};
-  border-bottom: ${({ $active }) =>
-    $active ? '2px solid #fff' : '2px solid transparent'};
-`;
-
-/* === CENTER === */
-export const CenterWrapper = styled.div`
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-`;
 
-/* === EMPTY TEXT === */
-export const EmptyText = styled.div`
-  font-size: 16px;
-  line-height: 1.45;
-  opacity: 0.85;
+  cursor: pointer;
+
+  img {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
 `;
 
 /* === BOTTOM NAV === */
@@ -101,7 +105,6 @@ export const NavItem = styled.div<{ $active?: boolean }>`
 }
 
 
-  /* tap animation */
   &:active img {
     opacity: 0.25;
     transform: scale(0.9);

@@ -5,14 +5,14 @@ import { GlobalStyles } from '../shared/config/globalStyles';
 
 import { Splash } from '../screens/Splash';
 import { Home } from '../screens/Home';
+import { Create } from '../screens/Create';
 
-type Screen = 'splash' | 'home';
+type Screen = 'splash' | 'home' | 'create';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('splash');
 
   useEffect(() => {
-    // ❗ fullscreen тут НЕ нужен
     saveTelegramUser();
   }, []);
 
@@ -24,7 +24,13 @@ function App() {
         <Splash onFinish={() => setScreen('home')} />
       )}
 
-      {screen === 'home' && <Home />}
+      {screen === 'home' && (
+        <Home onNavigate={setScreen} />
+      )}
+
+      {screen === 'create' && (
+        <Create onNavigate={setScreen} />
+      )}
     </>
   );
 }
