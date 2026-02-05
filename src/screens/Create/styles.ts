@@ -100,7 +100,7 @@ export const NavItem = styled.div<{ $active?: boolean }>`
     height: 28px;
 
     /* ⬇️ ВАЖНО: масштаб, а не размер */
-    transform: scale(${({ $active }) => ($active ? 1.25 : 1)});
+    transform: scale(${({ $active }) => ($active ? 1.30 : 1)});
     transform-origin: center;
 
     transition:
