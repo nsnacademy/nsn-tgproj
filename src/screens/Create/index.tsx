@@ -11,8 +11,9 @@ import {
   NavItem,
 } from './styles';
 
+/* 👇 ОБНОВЛЁННЫЙ ТИП НАВИГАЦИИ */
 type CreateProps = {
-  onNavigate: (screen: 'home' | 'create') => void;
+  onNavigate: (screen: 'home' | 'create' | 'create-flow') => void;
 };
 
 export function Create({ onNavigate }: CreateProps) {
@@ -20,25 +21,25 @@ export function Create({ onNavigate }: CreateProps) {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
-  /* === DEBOUNCE === */
+  /* === DEBOUNCE ПОИСКА === */
   useEffect(() => {
     const id = setTimeout(() => {
-      setDebouncedQuery(query);
+      setDebouncedQuery(query.trim());
     }, 400);
 
     return () => clearTimeout(id);
   }, [query]);
 
-  /* 👉 тут позже подключишь API */
+  /* 👉 позже сюда подключается API */
   useEffect(() => {
-    if (debouncedQuery) {
+    if (debouncedQuery.length > 0) {
       console.log('SEARCH:', debouncedQuery);
     }
   }, [debouncedQuery]);
 
   return (
     <SafeArea>
-      {/* TOP BAR */}
+      {/* === TOP BAR === */}
       <TopBar>
         <SearchField $active={keyboardOpen || query.length > 0}>
           {/* SEARCH ICON */}
@@ -64,9 +65,12 @@ export function Create({ onNavigate }: CreateProps) {
             onBlur={() => setKeyboardOpen(false)}
           />
 
-          {/* CLEAR ✕ */}
-          {query && (
-            <ClearButton onClick={() => setQuery('')}>
+          {/* CLEAR BUTTON */}
+          {query.length > 0 && (
+            <ClearButton
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setQuery('')}
+            >
               <svg
                 width="14"
                 height="14"
@@ -82,8 +86,8 @@ export function Create({ onNavigate }: CreateProps) {
           )}
         </SearchField>
 
-        {/* ACTION BUTTON */}
-        <ActionButton>
+        {/* === PLUS / CREATE FLOW === */}
+        <ActionButton onClick={() => onNavigate('create-flow')}>
           <svg
             width="22"
             height="22"
@@ -98,13 +102,19 @@ export function Create({ onNavigate }: CreateProps) {
         </ActionButton>
       </TopBar>
 
-      {/* BOTTOM NAV (СКРЫВАЕМ ПРИ КЛАВИАТУРЕ) */}
+      {/* === BOTTOM NAV === */}
       <BottomNav $hidden={keyboardOpen}>
         {/* HOME */}
         <NavItem onClick={() => onNavigate('home')}>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M3 10.5L12 3l9 7.5" />
             <path d="M5 9.5V21h14V9.5" />
           </svg>
@@ -112,9 +122,15 @@ export function Create({ onNavigate }: CreateProps) {
 
         {/* CREATE — ACTIVE */}
         <NavItem $active>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <rect x="3" y="3" width="7" height="7" rx="1.5" />
             <rect x="14" y="3" width="7" height="7" rx="1.5" />
             <rect x="3" y="14" width="7" height="7" rx="1.5" />
@@ -124,9 +140,14 @@ export function Create({ onNavigate }: CreateProps) {
 
         {/* SIGNAL */}
         <NavItem>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round">
+          <svg
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
             <line x1="6" y1="18" x2="6" y2="14" />
             <line x1="12" y1="18" x2="12" y2="10" />
             <line x1="18" y1="18" x2="18" y2="6" />
@@ -135,9 +156,15 @@ export function Create({ onNavigate }: CreateProps) {
 
         {/* PROFILE */}
         <NavItem>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <circle cx="12" cy="7" r="4" />
             <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
           </svg>
