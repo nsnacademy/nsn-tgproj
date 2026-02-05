@@ -13,7 +13,7 @@ export const TopBar = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 16px;
+  padding: 0 20px;
 `;
 
 /* === SEARCH FIELD === */
@@ -112,7 +112,7 @@ export const ActionButton = styled.div`
 `;
 
 /* === BOTTOM NAV === */
-export const BottomNav = styled.div`
+export const BottomNav = styled.div<{ $hidden?: boolean }>`
   position: fixed;
   left: 16px;
   right: 16px;
@@ -125,7 +125,18 @@ export const BottomNav = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-around;
+
+  transition:
+    transform 0.25s ease,
+    opacity 0.2s ease;
+
+  transform: ${({ $hidden }) =>
+    $hidden ? 'translateY(120%)' : 'translateY(0)'};
+
+  opacity: ${({ $hidden }) => ($hidden ? 0 : 1)};
+  pointer-events: ${({ $hidden }) => ($hidden ? 'none' : 'auto')};
 `;
+
 
 /* === NAV ITEM === */
 export const NavItem = styled.div<{ $active?: boolean }>`
