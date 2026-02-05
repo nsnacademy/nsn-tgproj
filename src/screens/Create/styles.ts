@@ -5,7 +5,7 @@ export const SafeArea = styled.div`
   min-height: 100vh;
   background: #000;
   color: #fff;
-  padding-top: 95px;
+  padding-top: 100px;
 `;
 
 /* === TOP BAR === */
@@ -96,8 +96,8 @@ export const NavItem = styled.div<{ $active?: boolean }>`
   transition: color 0.2s ease;
 
   svg {
-    width: 28px;
-    height: 28px;
+    width: 35px;
+    height: 35px;
 
     transform: scale(${({ $active }) => ($active ? 1.08 : 1)});
 
