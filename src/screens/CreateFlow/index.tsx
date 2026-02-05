@@ -9,6 +9,7 @@ import {
   Option,
   Radio,
   Label,
+  SlidingInfo,
   FloatingInfo,
   Explanation,
   Consent,
@@ -34,7 +35,7 @@ export function CreateFlow({ onNavigate }: Props) {
         <Title>Нужно ли платить за вступление?</Title>
 
         <Options>
-          {/* FREE */}
+          {/* ===== FREE ===== */}
           <OptionWrap>
             <Option
               $active={entryType === 'free'}
@@ -50,15 +51,15 @@ export function CreateFlow({ onNavigate }: Props) {
               </Label>
             </Option>
 
-            <FloatingInfo $open={entryType === 'free'}>
+            <SlidingInfo $open={entryType === 'free'}>
               <Explanation>
-                Участие в вызове бесплатное. Все участники обязаны
-                выполнять условия, заданные создателем.
+                Участие в вызове бесплатное. Все участники обязаны выполнять
+                условия, заданные создателем.
               </Explanation>
-            </FloatingInfo>
+            </SlidingInfo>
           </OptionWrap>
 
-          {/* PAID */}
+          {/* ===== PAID ===== */}
           <OptionWrap>
             <Option
               $active={entryType === 'paid'}

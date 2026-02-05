@@ -32,7 +32,7 @@ export const Options = styled.div`
   gap: 16px;
 `;
 
-/* === WRAP === */
+/* === OPTION WRAP === */
 export const OptionWrap = styled.div`
   position: relative;
 `;
@@ -88,7 +88,23 @@ export const Label = styled.div`
   }
 `;
 
-/* === FLOATING INFO === */
+/* === SLIDING INFO (FREE) === */
+export const SlidingInfo = styled.div<{ $open?: boolean }>`
+  overflow: hidden;
+
+  max-height: ${({ $open }) => ($open ? '120px' : '0')};
+  opacity: ${({ $open }) => ($open ? 1 : 0)};
+  transform: translateY(${({ $open }) => ($open ? '0' : '-4px')});
+
+  transition:
+    max-height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.25s ease,
+    transform 0.25s ease;
+
+  padding: ${({ $open }) => ($open ? '12px 16px 0' : '0 16px')};
+`;
+
+/* === FLOATING INFO (PAID) === */
 export const FloatingInfo = styled.div<{ $open?: boolean }>`
   position: absolute;
   left: 0;
@@ -112,7 +128,7 @@ export const FloatingInfo = styled.div<{ $open?: boolean }>`
     transform 0.25s ease;
 `;
 
-/* === EXPLANATION === */
+/* === TEXT === */
 export const Explanation = styled.p`
   font-size: 13px;
   line-height: 1.45;
@@ -146,6 +162,7 @@ export const BackButton = styled.button`
   flex: 1;
   height: 48px;
   border-radius: 14px;
+
   background: transparent;
   color: #fff;
   border: 1px solid #333;
@@ -155,9 +172,11 @@ export const NextButton = styled.button<{ disabled?: boolean }>`
   flex: 1;
   height: 48px;
   border-radius: 14px;
+
   background: #fff;
   color: #000;
   border: none;
+
   font-weight: 500;
   opacity: ${({ disabled }) => (disabled ? 0.4 : 1)};
 `;
