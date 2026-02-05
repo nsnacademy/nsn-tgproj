@@ -9,11 +9,11 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   html, body, #root {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-  }
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 
   /* 🧠 Telegram / iOS safe areas */
   body {
