@@ -1,8 +1,11 @@
+import { useEffect, useState } from 'react';
+
 import {
   SafeArea,
   TopBar,
   SearchField,
-  SearchText,
+  SearchInput,
+  ClearButton,
   ActionButton,
   BottomNav,
   NavItem,
@@ -13,11 +16,30 @@ type CreateProps = {
 };
 
 export function Create({ onNavigate }: CreateProps) {
+  const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  /* === DEBOUNCE === */
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 400);
+
+    return () => clearTimeout(id);
+  }, [query]);
+
+  /* 👉 тут потом будешь дергать API */
+  useEffect(() => {
+    if (debouncedQuery !== '') {
+      console.log('SEARCH:', debouncedQuery);
+    }
+  }, [debouncedQuery]);
+
   return (
     <SafeArea>
       {/* TOP BAR */}
       <TopBar>
-        <SearchField>
+        <SearchField $active={query.length > 0}>
           {/* SEARCH ICON */}
           <svg
             width="18"
@@ -27,13 +49,34 @@ export function Create({ onNavigate }: CreateProps) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ opacity: 0.5 }}
           >
             <circle cx="8" cy="8" r="6" />
             <line x1="13" y1="13" x2="17" y2="17" />
           </svg>
 
-          <SearchText>Поиск вызовов</SearchText>
+          {/* INPUT */}
+          <SearchInput
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск вызовов"
+          />
+
+          {/* CLEAR ✕ */}
+          {query && (
+            <ClearButton onClick={() => setQuery('')}>
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              >
+                <line x1="3" y1="3" x2="11" y2="11" />
+                <line x1="11" y1="3" x2="3" y2="11" />
+              </svg>
+            </ClearButton>
+          )}
         </SearchField>
 
         {/* ACTION BUTTON */}
@@ -54,7 +97,6 @@ export function Create({ onNavigate }: CreateProps) {
 
       {/* BOTTOM NAV */}
       <BottomNav>
-        {/* HOME */}
         <NavItem onClick={() => onNavigate('home')}>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
@@ -64,7 +106,6 @@ export function Create({ onNavigate }: CreateProps) {
           </svg>
         </NavItem>
 
-        {/* CREATE — ACTIVE */}
         <NavItem $active>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
@@ -76,7 +117,6 @@ export function Create({ onNavigate }: CreateProps) {
           </svg>
         </NavItem>
 
-        {/* SIGNAL */}
         <NavItem>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
@@ -87,7 +127,6 @@ export function Create({ onNavigate }: CreateProps) {
           </svg>
         </NavItem>
 
-        {/* PROFILE */}
         <NavItem>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"

@@ -17,31 +17,80 @@ export const TopBar = styled.div`
 `;
 
 /* === SEARCH FIELD === */
-export const SearchField = styled.div`
+export const SearchField = styled.div<{ $active?: boolean }>`
   flex: 1;
-  height: 30px;
+  height: 36px;
   background: #fff;
-  border-radius: 22px;
+  border-radius: 18px;
 
   display: flex;
   align-items: center;
   gap: 10px;
 
-  padding: 0 16px;
+  padding: 0 12px;
 
   color: #000;
+
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+
+  box-shadow: ${({ $active }) =>
+    $active ? '0 4px 14px rgba(0,0,0,0.25)' : 'none'};
+
+  transform: ${({ $active }) =>
+    $active ? 'scale(1.03)' : 'scale(1)'};
+
+  svg:first-child {
+    opacity: 0.5;
+  }
 `;
 
-/* === SEARCH TEXT === */
-export const SearchText = styled.div`
-  font-size: 16px;
-  opacity: 0.5;
+/* === INPUT === */
+export const SearchInput = styled.input`
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+
+  font-size: 15px;
+  color: #000;
+
+  &::placeholder {
+    color: rgba(0,0,0,0.5);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  &:focus::placeholder {
+    opacity: 0;
+    transform: translateX(4px);
+  }
+`;
+
+/* === CLEAR BUTTON === */
+export const ClearButton = styled.div`
+  width: 20px;
+  height: 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  color: rgba(0,0,0,0.5);
+
+  transition: opacity 0.15s ease, transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.85);
+    opacity: 0.6;
+  }
 `;
 
 /* === ACTION BUTTON === */
 export const ActionButton = styled.div`
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: #fff;
 
@@ -53,12 +102,12 @@ export const ActionButton = styled.div`
   cursor: pointer;
 
   svg {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
 
   &:active {
-    transform: scale(0.92);
+    transform: scale(0.9);
   }
 `;
 
@@ -91,7 +140,7 @@ export const NavItem = styled.div<{ $active?: boolean }>`
   user-select: none;
 
   color: ${({ $active }) =>
-    $active ? '#ffffff' : 'rgba(255,255,255,0.65)'};
+    $active ? '#fff' : 'rgba(255,255,255,0.65)'};
 
   transition: color 0.2s ease;
 
@@ -99,8 +148,7 @@ export const NavItem = styled.div<{ $active?: boolean }>`
     width: 28px;
     height: 28px;
 
-    /* ⬇️ ВАЖНО: масштаб, а не размер */
-    transform: scale(${({ $active }) => ($active ? 1.30 : 1)});
+    transform: scale(${({ $active }) => ($active ? 1.3 : 1)});
     transform-origin: center;
 
     transition:
