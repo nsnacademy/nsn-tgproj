@@ -14,7 +14,7 @@ export const HomeContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 95px 20px 140px;
+  padding: 100px 20px 140px;
 `;
 
 /* === HEADER === */
@@ -98,8 +98,8 @@ export const NavItem = styled.div<{ $active?: boolean }>`
 
   /* INLINE SVG */
   svg {
-    width: 28px;
-    height: 28px;
+    width: 35px;
+    height: 35px;
 
     /* 👇 ACTIVE SCALE — ЧУТЬ БОЛЬШЕ */
     transform: scale(${({ $active }) => ($active ? 1.08 : 1)});
