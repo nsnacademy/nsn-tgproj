@@ -18,11 +18,30 @@ type CreateProps = {
 export function Create({ onNavigate }: CreateProps) {
   const [query, setQuery] = useState('');
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  /* === DEBOUNCE === */
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 400);
+
+    return () => clearTimeout(id);
+  }, [query]);
+
+  /* 👉 тут позже подключишь API */
+  useEffect(() => {
+    if (debouncedQuery) {
+      console.log('SEARCH:', debouncedQuery);
+    }
+  }, [debouncedQuery]);
 
   return (
     <SafeArea>
+      {/* TOP BAR */}
       <TopBar>
         <SearchField $active={keyboardOpen || query.length > 0}>
+          {/* SEARCH ICON */}
           <svg
             width="18"
             height="18"
@@ -36,6 +55,7 @@ export function Create({ onNavigate }: CreateProps) {
             <line x1="13" y1="13" x2="17" y2="17" />
           </svg>
 
+          {/* INPUT */}
           <SearchInput
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -44,6 +64,7 @@ export function Create({ onNavigate }: CreateProps) {
             onBlur={() => setKeyboardOpen(false)}
           />
 
+          {/* CLEAR ✕ */}
           {query && (
             <ClearButton onClick={() => setQuery('')}>
               <svg
@@ -61,6 +82,7 @@ export function Create({ onNavigate }: CreateProps) {
           )}
         </SearchField>
 
+        {/* ACTION BUTTON */}
         <ActionButton>
           <svg
             width="22"
@@ -76,8 +98,9 @@ export function Create({ onNavigate }: CreateProps) {
         </ActionButton>
       </TopBar>
 
-      {/* ⬇️ NAV СКРЫВАЕМ */}
+      {/* BOTTOM NAV (СКРЫВАЕМ ПРИ КЛАВИАТУРЕ) */}
       <BottomNav $hidden={keyboardOpen}>
+        {/* HOME */}
         <NavItem onClick={() => onNavigate('home')}>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
@@ -87,6 +110,7 @@ export function Create({ onNavigate }: CreateProps) {
           </svg>
         </NavItem>
 
+        {/* CREATE — ACTIVE */}
         <NavItem $active>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
@@ -98,6 +122,7 @@ export function Create({ onNavigate }: CreateProps) {
           </svg>
         </NavItem>
 
+        {/* SIGNAL */}
         <NavItem>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
@@ -108,6 +133,7 @@ export function Create({ onNavigate }: CreateProps) {
           </svg>
         </NavItem>
 
+        {/* PROFILE */}
         <NavItem>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"

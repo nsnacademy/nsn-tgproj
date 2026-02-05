@@ -13,7 +13,7 @@ export const TopBar = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 20px;
+  padding: 0 16px;
 `;
 
 /* === SEARCH FIELD === */
@@ -28,7 +28,6 @@ export const SearchField = styled.div<{ $active?: boolean }>`
   gap: 10px;
 
   padding: 0 12px;
-
   color: #000;
 
   transition:
@@ -136,7 +135,6 @@ export const BottomNav = styled.div<{ $hidden?: boolean }>`
   opacity: ${({ $hidden }) => ($hidden ? 0 : 1)};
   pointer-events: ${({ $hidden }) => ($hidden ? 'none' : 'auto')};
 `;
-
 
 /* === NAV ITEM === */
 export const NavItem = styled.div<{ $active?: boolean }>`
