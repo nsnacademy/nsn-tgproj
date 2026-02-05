@@ -19,7 +19,14 @@ import {
 } from './styles';
 
 type Props = {
-  onNavigate: (screen: 'home' | 'create' | 'create-flow') => void;
+  onNavigate: (
+    screen:
+      | 'home'
+      | 'create'
+      | 'create-flow'
+      | 'create-flow-free'
+      | 'create-flow-paid'
+  ) => void;
 };
 
 export function CreateFlow({ onNavigate }: Props) {
@@ -28,6 +35,18 @@ export function CreateFlow({ onNavigate }: Props) {
 
   const canContinue =
     entryType === 'free' || (entryType === 'paid' && accepted);
+
+  const handleNext = () => {
+    if (!canContinue) return;
+
+    if (entryType === 'free') {
+      onNavigate('create-flow-free');
+    }
+
+    if (entryType === 'paid') {
+      onNavigate('create-flow-paid');
+    }
+  };
 
   return (
     <SafeArea>
@@ -60,33 +79,52 @@ export function CreateFlow({ onNavigate }: Props) {
           </OptionWrap>
 
           {/* ===== PAID ===== */}
-          <OptionWrap>
-            <Option
-              $active={entryType === 'paid'}
-              onClick={() => setEntryType('paid')}
-            >
-              <Radio $checked={entryType === 'paid'} />
-              <Label>
-                Платное вступление
-                <span>Оплата напрямую создателю</span>
-              </Label>
-            </Option>
+         <OptionWrap>
+  <Option
+    $active={entryType === 'paid'}
+    onClick={() => setEntryType('paid')}
+  >
+    <Radio $checked={entryType === 'paid'} />
+    <Label>
+      Платное вступление
+      <span>Оплата напрямую создателю</span>
+    </Label>
+  </Option>
 
-            <FloatingInfo $open={entryType === 'paid'}>
-              <Explanation>
-                Платформа не принимает оплату и не участвует в расчётах.
-                Создатель самостоятельно принимает и возвращает средства.
-              </Explanation>
+  <FloatingInfo $open={entryType === 'paid'}>
+    <Explanation>
+      Участники оплачивают участие напрямую создателю вызова.
+      Платформа не участвует в переводе средств.
+    </Explanation>
 
-              <Consent onClick={() => setAccepted(!accepted)}>
-                <input type="checkbox" checked={accepted} readOnly />
-                <span>
-                  Я принимаю ответственность за приём оплаты и выполнение
-                  обязательств перед участниками
-                </span>
-              </Consent>
-            </FloatingInfo>
-          </OptionWrap>
+    <Explanation style={{ marginTop: 6 }}>
+      Платформа организует вызов и фиксирует участие участников.
+      Расчёт вознаграждения производится на основе данных платформы.
+    </Explanation>
+
+    <Explanation style={{ marginTop: 6 }}>
+      Создатель вызова самостоятельно производит расчёт
+      с платформой в соответствии с правилами сервиса.
+    </Explanation>
+
+    <Explanation style={{ marginTop: 6, opacity: 0.55 }}>
+      • вознаграждение платформы — <b>10%</b> от общего дохода<br />
+      • учитываются подтверждённые участники<br />
+      • расчёт производится автоматически в течение <b>7 дней</b><br />
+      • при несоблюдении условий данные участия могут быть исключены из расчёта
+    </Explanation>
+
+    <Consent onClick={() => setAccepted(!accepted)}>
+      <input type="checkbox" checked={accepted} readOnly />
+      <span>
+        Я принимаю условия и подтверждаю, что произвожу расчёт
+        вознаграждения платформы (<b>10%</b>) самостоятельно
+        на основе данных платформы.
+      </span>
+    </Consent>
+  </FloatingInfo>
+</OptionWrap>
+
         </Options>
       </Center>
 
@@ -95,7 +133,7 @@ export function CreateFlow({ onNavigate }: Props) {
           Назад
         </BackButton>
 
-        <NextButton disabled={!canContinue}>
+        <NextButton disabled={!canContinue} onClick={handleNext}>
           Далее
         </NextButton>
       </Footer>

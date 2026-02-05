@@ -13,6 +13,11 @@ export const SafeArea = styled.div`
 /* === CENTER === */
 export const Center = styled.div`
   flex: 1;
+
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -20,9 +25,9 @@ export const Center = styled.div`
 
 /* === TITLE === */
 export const Title = styled.h1`
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 `;
 
 /* === OPTIONS === */
@@ -43,14 +48,22 @@ export const Option = styled.div<{ $active?: boolean }>`
   align-items: center;
   gap: 14px;
 
-  padding: 14px 16px;
-  border-radius: 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
 
-  background: ${({ $active }) => ($active ? '#111' : '#0b0b0b')};
+  background: ${({ $active }) => ($active ? '#121212' : '#0b0b0b')};
   border: 1px solid ${({ $active }) => ($active ? '#333' : '#222')};
 
   cursor: pointer;
-  transition: background 0.25s ease, border 0.25s ease;
+
+  transition:
+    background 0.3s ease,
+    border 0.3s ease,
+    transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
 `;
 
 /* === RADIO === */
@@ -79,10 +92,10 @@ export const Radio = styled.div<{ $checked?: boolean }>`
 export const Label = styled.div`
   display: flex;
   flex-direction: column;
-  font-size: 15px;
+  font-size: 16px;
 
   span {
-    font-size: 13px;
+    font-size: 14px;
     opacity: 0.6;
     margin-top: 2px;
   }
@@ -94,45 +107,39 @@ export const SlidingInfo = styled.div<{ $open?: boolean }>`
 
   max-height: ${({ $open }) => ($open ? '120px' : '0')};
   opacity: ${({ $open }) => ($open ? 1 : 0)};
-  transform: translateY(${({ $open }) => ($open ? '0' : '-4px')});
-
-  transition:
-    max-height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 0.25s ease,
-    transform 0.25s ease;
+  transform: translateY(${({ $open }) => ($open ? '0' : '-6px')});
 
   padding: ${({ $open }) => ($open ? '12px 16px 0' : '0 16px')};
+
+  transition:
+    max-height 0.35s ease,
+    opacity 0.25s ease,
+    transform 0.25s ease;
 `;
 
 /* === FLOATING INFO (PAID) === */
 export const FloatingInfo = styled.div<{ $open?: boolean }>`
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-
-  margin-top: 8px;
+  margin-top: 12px;
   padding: 14px 16px;
 
   background: #111;
   border: 1px solid #333;
   border-radius: 14px;
 
-  pointer-events: ${({ $open }) => ($open ? 'auto' : 'none')};
-
   opacity: ${({ $open }) => ($open ? 1 : 0)};
   transform: translateY(${({ $open }) => ($open ? '0' : '-6px')});
+  pointer-events: ${({ $open }) => ($open ? 'auto' : 'none')};
 
   transition:
     opacity 0.25s ease,
     transform 0.25s ease;
 `;
 
-/* === TEXT === */
-export const Explanation = styled.p`
+/* === EXPLANATION === */
+export const Explanation = styled.div`
   font-size: 13px;
   line-height: 1.45;
-  opacity: 0.7;
+  opacity: 0.6;
 `;
 
 /* === CONSENT === */
@@ -145,10 +152,11 @@ export const Consent = styled.div`
   font-size: 13px;
   line-height: 1.4;
   opacity: 0.9;
+
   cursor: pointer;
 
   input {
-    margin-top: 2px;
+    margin-top: 3px;
   }
 `;
 
@@ -156,27 +164,37 @@ export const Consent = styled.div`
 export const Footer = styled.div`
   display: flex;
   gap: 12px;
+
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
 `;
 
+/* === BUTTONS === */
 export const BackButton = styled.button`
   flex: 1;
-  height: 48px;
-  border-radius: 14px;
+  height: 52px;
+  border-radius: 16px;
 
   background: transparent;
   color: #fff;
   border: 1px solid #333;
+
+  font-size: 15px;
 `;
 
 export const NextButton = styled.button<{ disabled?: boolean }>`
   flex: 1;
-  height: 48px;
-  border-radius: 14px;
+  height: 52px;
+  border-radius: 16px;
 
   background: #fff;
   color: #000;
   border: none;
 
-  font-weight: 500;
-  opacity: ${({ disabled }) => (disabled ? 0.4 : 1)};
+  font-size: 15px;
+  font-weight: 600;
+
+  opacity: ${({ disabled }) => (disabled ? 0.45 : 1)};
+  pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
 `;
