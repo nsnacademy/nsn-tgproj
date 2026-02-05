@@ -117,9 +117,7 @@ export function CreateFlow({ onNavigate }: Props) {
     <Consent onClick={() => setAccepted(!accepted)}>
       <input type="checkbox" checked={accepted} readOnly />
       <span>
-        Я принимаю условия и подтверждаю, что произвожу расчёт
-        вознаграждения платформы (<b>10%</b>) самостоятельно
-        на основе данных платформы.
+        Я принимаю условия и рассчет вознаграждения платформе
       </span>
     </Consent>
   </FloatingInfo>
