@@ -69,9 +69,9 @@ export const BottomNav = styled.div`
   right: 16px;
   bottom: 18px;
 
-  height: 64px;
-  background: #000000ff;
-  border-radius: 32px;
+  height: 68px;
+  background: #000;
+  border-radius: 34px;
 
   display: flex;
   align-items: center;
@@ -80,30 +80,38 @@ export const BottomNav = styled.div`
 
 /* === NAV ITEM === */
 export const NavItem = styled.div<{ $active?: boolean }>`
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
   cursor: pointer;
+  user-select: none;
 
-  img {
-  width: 22px;
-  height: 22px;
+  /* цвет для SVG */
+  color: ${({ $active }) =>
+    $active ? '#ffffff' : 'rgba(255,255,255,0.65)'};
 
-  /* делаем SVG белыми */
-  filter: invert(1);
+  transition: color 0.2s ease;
 
-  opacity: ${({ $active }) => ($active ? 1 : 0.45)};
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
+  /* INLINE SVG */
+  svg {
+    width: 28px;
+    height: 28px;
 
+    /* 👇 ACTIVE SCALE — ЧУТЬ БОЛЬШЕ */
+    transform: scale(${({ $active }) => ($active ? 1.08 : 1)});
 
-  /* tap animation */
-  &:active img {
-    opacity: 0.25;
-    transform: scale(0.9);
+    transition:
+      transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 0.15s ease;
+  }
+
+  /* TAP — мягкий iOS */
+  &:active svg {
+    transform: scale(0.92);
+    opacity: 0.7;
   }
 `;

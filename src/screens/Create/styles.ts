@@ -4,7 +4,8 @@ import styled from 'styled-components';
 export const SafeArea = styled.div`
   min-height: 100vh;
   background: #000;
-  padding-top: 60px;
+  color: #fff;
+  padding-top: 95px;
 `;
 
 /* === TOP BAR === */
@@ -18,8 +19,8 @@ export const TopBar = styled.div`
 /* === SEARCH FIELD === */
 export const SearchField = styled.div`
   flex: 1;
-  height: 44px;
-  background: #ffffff;
+  height: 30px;
+  background: #fff;
   border-radius: 22px;
 
   display: flex;
@@ -27,38 +28,33 @@ export const SearchField = styled.div`
   gap: 10px;
 
   padding: 0 16px;
-`;
 
-/* === SEARCH ICON (LEFT) === */
-export const SearchIcon = styled.img`
-  width: 18px;
-  height: 18px;
-  opacity: 0.5;
+  color: #000;
 `;
 
 /* === SEARCH TEXT === */
 export const SearchText = styled.div`
   font-size: 16px;
-  color: #000;
   opacity: 0.5;
 `;
 
-/* === RIGHT ROUND BUTTON === */
+/* === ACTION BUTTON === */
 export const ActionButton = styled.div`
-  width: 44px;
-  height: 44px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: #ffffff;
+  background: #fff;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
+  color: #000;
   cursor: pointer;
 
-  img {
-    width: 20px;
-    height: 20px;
+  svg {
+    width: 22px;
+    height: 22px;
   }
 
   &:active {
@@ -73,9 +69,9 @@ export const BottomNav = styled.div`
   right: 16px;
   bottom: 18px;
 
-  height: 64px;
-  background: #000000ff;
-  border-radius: 32px;
+  height: 68px;
+  background: #000;
+  border-radius: 34px;
 
   display: flex;
   align-items: center;
@@ -84,29 +80,34 @@ export const BottomNav = styled.div`
 
 /* === NAV ITEM === */
 export const NavItem = styled.div<{ $active?: boolean }>`
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
   cursor: pointer;
+  user-select: none;
 
-  img {
-  width: 22px;
-  height: 22px;
+  color: ${({ $active }) =>
+    $active ? '#ffffff' : 'rgba(255,255,255,0.65)'};
 
-  /* делаем SVG белыми */
-  filter: invert(1);
+  transition: color 0.2s ease;
 
-  opacity: ${({ $active }) => ($active ? 1 : 0.45)};
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
+  svg {
+    width: 28px;
+    height: 28px;
 
+    transform: scale(${({ $active }) => ($active ? 1.08 : 1)});
 
-  &:active img {
-    opacity: 0.25;
-    transform: scale(0.9);
+    transition:
+      transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 0.15s ease;
+  }
+
+  &:active svg {
+    transform: scale(0.92);
+    opacity: 0.7;
   }
 `;
