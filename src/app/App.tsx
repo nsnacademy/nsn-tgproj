@@ -8,26 +8,35 @@ import { Home } from '../screens/Home';
 import { Create } from '../screens/Create';
 import { CreateFlow } from '../screens/CreateFlow';
 import { CreateFlowFree } from '../screens/CreateFlowFree';
+import { ChallengeDetails } from '../screens/ChallengeDetails';
 
-/* === ЕДИНЫЙ ТИП ЭКРАНОВ === */
+/* === ЭКРАНЫ === */
 type Screen =
   | 'splash'
   | 'home'
   | 'create'
   | 'create-flow'
   | 'create-flow-free'
-  | 'create-flow-paid';
+  | 'create-flow-paid'
+  | 'challenge-details';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('splash');
 
-  /* === INIT TELEGRAM USER === */
+  // 🔑 ВАЖНО: выбранный вызов
+  const [selectedChallengeId, setSelectedChallengeId] =
+    useState<string | null>(null);
+
   useEffect(() => {
     saveTelegramUser();
   }, []);
 
   /* === ЕДИНАЯ НАВИГАЦИЯ === */
-  const navigate = (next: Screen) => {
+  const navigate = (next: Screen, challengeId?: string) => {
+    if (challengeId) {
+      setSelectedChallengeId(challengeId);
+    }
+
     setScreen(next);
   };
 
@@ -55,7 +64,13 @@ function App() {
         <CreateFlowFree onNavigate={navigate} />
       )}
 
-      {/* 🔒 ПЛАТНЫЙ ШАГ ПОКА ЗАГЛУШКА */}
+      {screen === 'challenge-details' && selectedChallengeId && (
+        <ChallengeDetails
+          challengeId={selectedChallengeId}
+          onBack={() => navigate('create')}
+        />
+      )}
+
       {screen === 'create-flow-paid' && (
         <div
           style={{

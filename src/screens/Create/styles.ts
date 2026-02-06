@@ -172,46 +172,62 @@ export const NavItem = styled.div<{ $active?: boolean }>`
 `;
 
 
+/* === LIST === */
 export const List = styled.div`
-  padding: 16px 20px 120px;
+  padding: 0 20px;
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
 `;
 
+/* === CARD === */
 export const Card = styled.div`
-  padding: 16px;
-  border-radius: 16px;
   background: #0b0b0b;
+  border-radius: 18px;
+  padding: 14px 16px;
   border: 1px solid #222;
-  cursor: pointer;
-
-  &:active {
-    transform: scale(0.98);
-  }
 `;
 
+/* === HEADER === */
+export const CardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+`;
+
+/* === TITLE === */
 export const CardTitle = styled.div`
   font-size: 16px;
   font-weight: 600;
 `;
 
+/* === META === */
 export const CardMeta = styled.div`
-  margin-top: 6px;
   font-size: 13px;
   opacity: 0.6;
-  display: flex;
-  gap: 12px;
+  margin-top: 2px;
 `;
 
-export const CardFooter = styled.div`
-  margin-top: 10px;
-  display: flex;
-  justify-content: space-between;
+/* === ROW === */
+export const CardRow = styled.div`
+  font-size: 14px;
+  margin-top: 6px;
+  opacity: 0.85;
+`;
+
+/* === STATUS === */
+export const Status = styled.div`
   font-size: 13px;
-  opacity: 0.75;
+  opacity: 0.6;
 `;
 
-export const Status = styled.span`
-  font-weight: 600;
+/* === MORE === */
+export const MoreButton = styled.button`
+  margin-top: 10px;
+  background: none;
+  border: none;
+  color: #6aa9ff;
+  cursor: pointer;
+  padding: 0;
 `;
