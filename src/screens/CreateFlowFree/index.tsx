@@ -147,6 +147,8 @@ export function CreateFlowFree({ onNavigate }: Props) {
       description,
       rules: rules || null,
 
+      chat_link: chatLink || null,
+
       start_mode: startMode,
       start_date: startMode === 'date' ? startDate : null,
       duration_days: Number(durationDays),
