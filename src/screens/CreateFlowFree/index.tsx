@@ -174,7 +174,20 @@ export function CreateFlowFree({ onNavigate }: Props) {
   console.log('Challenge created:', challenge.id);
 
   // 4️⃣ дальше можно:
-  // - добавить creator в participants
+// 4️⃣ auto-join creator as participant
+const { error: participantError } = await supabase
+  .from('participants')
+  .insert({
+    user_id: user.id,
+    challenge_id: challenge.id,
+  });
+
+if (participantError) {
+  console.error(participantError);
+  alert('Вызов создан, но не удалось добавить участника');
+  return;
+}
+
   // - или перейти на home
   onNavigate('home');
 }
