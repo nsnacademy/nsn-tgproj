@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
-
 import {
   SafeArea,
   Header,
@@ -41,14 +40,16 @@ export function CreateFlowFree({ onNavigate }: Props) {
   /* === VIEW === */
   const [isPreview, setIsPreview] = useState(false);
 
+  /* 🔒 ДОБАВЛЕНО: защита от повторной публикации */
+  const [submitting, setSubmitting] = useState(false);
+
   /* === BASIC === */
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [rules, setRules] = useState('');
 
   /* === CHAT === */
-const [chatLink, setChatLink] = useState('');
-
+  const [chatLink, setChatLink] = useState('');
 
   /* === TIMING === */
   const [startMode, setStartMode] = useState<'now' | 'date'>('now');
@@ -113,89 +114,88 @@ const [chatLink, setChatLink] = useState('');
     durationDays.trim().length > 0 &&
     reportValid;
 
+  /* ========================================================= */
 
-    async function publishChallenge() {
-  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  if (!tgUser) {
-    alert('Telegram user not found');
-    return;
+  async function publishChallenge() {
+    if (submitting) return; // ⛔ защита от повторного клика
+    setSubmitting(true);
+
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (!tgUser) {
+      alert('Telegram user not found');
+      setSubmitting(false);
+      return;
+    }
+
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('telegram_id', tgUser.id)
+      .single();
+
+    if (userError || !user) {
+      console.error(userError);
+      alert('User not found in database');
+      setSubmitting(false);
+      return;
+    }
+
+    const payload = {
+      creator_id: user.id,
+
+      title,
+      description,
+      rules: rules || null,
+
+      start_mode: startMode,
+      start_date: startMode === 'date' ? startDate : null,
+      duration_days: Number(durationDays),
+
+      report_mode: reportMode,
+      metric_name: reportMode === 'result' ? metricName : null,
+
+      has_goal: hasGoal,
+      goal_value: hasGoal ? Number(goalValue) : null,
+
+      has_proof: hasProof,
+      proof_types: hasProof ? proofs : null,
+
+      has_limit: hasLimit,
+      limit_per_day: hasLimit ? Number(limitPerDay) : null,
+
+      has_rating: hasRating,
+    };
+
+    const { data: challenge, error } = await supabase
+      .from('challenges')
+      .insert(payload)
+      .select('id')
+      .single();
+
+    if (error || !challenge) {
+      console.error(error);
+      alert('Ошибка при создании вызова');
+      setSubmitting(false);
+      return;
+    }
+
+    const { error: participantError } = await supabase
+      .from('participants')
+      .insert({
+        user_id: user.id,
+        challenge_id: challenge.id,
+      });
+
+    if (participantError) {
+      console.error(participantError);
+      alert('Вызов создан, но не удалось добавить участника');
+      setSubmitting(false);
+      return;
+    }
+
+    setSubmitting(false);
+    onNavigate('home');
   }
-
-  // 1️⃣ получаем user.id
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('id')
-    .eq('telegram_id', tgUser.id)
-    .single();
-
-  if (userError || !user) {
-    console.error(userError);
-    alert('User not found in database');
-    return;
-  }
-
-  // 2️⃣ собираем payload для challenges
-  const payload = {
-    creator_id: user.id,
-
-    title,
-    description,
-    rules: rules || null,
-
-    start_mode: startMode,
-    start_date: startMode === 'date' ? startDate : null,
-    duration_days: Number(durationDays),
-
-    report_mode: reportMode,
-
-    metric_name: reportMode === 'result' ? metricName : null,
-
-    has_goal: hasGoal,
-    goal_value: hasGoal ? Number(goalValue) : null,
-
-    has_proof: hasProof,
-    proof_types: hasProof ? proofs : null,
-
-    has_limit: hasLimit,
-    limit_per_day: hasLimit ? Number(limitPerDay) : null,
-
-    has_rating: hasRating,
-  };
-
-  // 3️⃣ insert
-  const { data: challenge, error } = await supabase
-    .from('challenges')
-    .insert(payload)
-    .select('id')
-    .single();
-
-  if (error) {
-    console.error(error);
-    alert('Ошибка при создании вызова');
-    return;
-  }
-
-  console.log('Challenge created:', challenge.id);
-
-  // 4️⃣ дальше можно:
-// 4️⃣ auto-join creator as participant
-const { error: participantError } = await supabase
-  .from('participants')
-  .insert({
-    user_id: user.id,
-    challenge_id: challenge.id,
-  });
-
-if (participantError) {
-  console.error(participantError);
-  alert('Вызов создан, но не удалось добавить участника');
-  return;
-}
-
-  // - или перейти на home
-  onNavigate('home');
-}
-
 
   /* ==================== PREVIEW ==================== */
 
@@ -209,19 +209,10 @@ if (participantError) {
         <Form>
           <SectionTitle>Основная информация</SectionTitle>
           <SummaryBox>
-            <SummaryRow>
-              <span>Название</span>
-              <b>{title}</b>
-            </SummaryRow>
-            <SummaryRow>
-              <span>Описание</span>
-              <b>{description}</b>
-            </SummaryRow>
+            <SummaryRow><span>Название</span><b>{title}</b></SummaryRow>
+            <SummaryRow><span>Описание</span><b>{description}</b></SummaryRow>
             {rules && (
-              <SummaryRow>
-                <span>Условия</span>
-                <b>{rules}</b>
-              </SummaryRow>
+              <SummaryRow><span>Условия</span><b>{rules}</b></SummaryRow>
             )}
           </SummaryBox>
 
@@ -229,11 +220,7 @@ if (participantError) {
           <SummaryBox>
             <SummaryRow>
               <span>Старт</span>
-              <b>
-                {startMode === 'now'
-                  ? 'Сразу после публикации'
-                  : startDate}
-              </b>
+              <b>{startMode === 'now' ? 'Сразу' : startDate}</b>
             </SummaryRow>
             <SummaryRow>
               <span>Длительность</span>
@@ -245,90 +232,34 @@ if (participantError) {
           <SummaryBox>
             <SummaryRow>
               <span>Формат</span>
-              <b>
-                {reportMode === 'simple'
-                  ? 'Отметка выполнения'
-                  : 'Результат'}
-              </b>
+              <b>{reportMode === 'simple' ? 'Отметка' : 'Результат'}</b>
             </SummaryRow>
-
-            {reportMode === 'result' && (
-              <>
-                <SummaryRow>
-                  <span>Считаем в</span>
-                  <b>{metricName}</b>
-                </SummaryRow>
-
-                {hasGoal && (
-                  <SummaryRow>
-                    <span>Цель</span>
-                    <b>
-                      {goalValue} {metricName}
-                    </b>
-                  </SummaryRow>
-                )}
-
-                {hasProof && (
-                  <SummaryRow>
-                    <span>Подтверждение</span>
-                    <b>{proofs.join(', ')}</b>
-                  </SummaryRow>
-                )}
-              </>
-            )}
           </SummaryBox>
-
-          {hasLimit && (
-            <>
-              <SectionTitle>Ограничения</SectionTitle>
-              <SummaryBox>
-                <SummaryRow>
-                  <span>Отчётов в день</span>
-                  <b>{limitPerDay}</b>
-                </SummaryRow>
-              </SummaryBox>
-            </>
-          )}
-
-          {hasRating && (
-            <>
-              <SectionTitle>Рейтинг и награды</SectionTitle>
-              <SummaryBox>
-                {rewards.map((r) => (
-                  <SummaryRow key={r.place}>
-                    <span>{r.place} место</span>
-                    <b>{r.value || '—'}</b>
-                  </SummaryRow>
-                ))}
-              </SummaryBox>
-            </>
-          )}
         </Form>
 
         {chatLink && (
-  <SummaryBox>
-    <SummaryRow>
-      <span>Чат вызова</span>
-      <b>{chatLink}</b>
-    </SummaryRow>
-  </SummaryBox>
-)}
-
+          <SummaryBox>
+            <SummaryRow>
+              <span>Чат вызова</span>
+              <b>{chatLink}</b>
+            </SummaryRow>
+          </SummaryBox>
+        )}
 
         <Footer>
           <BackButton onClick={() => setIsPreview(false)}>
             Назад
           </BackButton>
-          <NextButton onClick={publishChallenge}>
-  Опубликовать
-</NextButton>
-
+          <NextButton onClick={publishChallenge} disabled={submitting}>
+            {submitting ? 'Публикация…' : 'Опубликовать'}
+          </NextButton>
         </Footer>
       </SafeArea>
     );
   }
 
   /* ==================== FORM ==================== */
+  
 
   return (
     <SafeArea>
@@ -537,20 +468,6 @@ if (participantError) {
         )}
       </Form>
 
-        <Field>
-  <Label>Чат вызова (опционально)</Label>
-  <Input
-    value={chatLink}
-    onChange={(e) => setChatLink(e.target.value)}
-    placeholder="https://t.me/название_чата"
-  />
-  <Hint>
-    Вставьте ссылку на Telegram-чат для участников вызова.
-    Кнопка чата появится только у тех, кто принял вызов.
-  </Hint>
-</Field>
-
-
       <Footer>
         <BackButton onClick={() => onNavigate('create-flow')}>
           Назад
@@ -565,3 +482,22 @@ if (participantError) {
     </SafeArea>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
