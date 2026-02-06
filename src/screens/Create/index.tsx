@@ -22,8 +22,16 @@ import {
 } from './styles';
 
 type CreateProps = {
-  onNavigate: (screen: 'home' | 'create' | 'challenge-details', id?: string) => void;
+  onNavigate: (
+    screen:
+      | 'home'
+      | 'create'
+      | 'create-flow'
+      | 'challenge-details',
+    id?: string
+  ) => void;
 };
+
 
 type ChallengeFromDB = {
   id: string;
@@ -122,9 +130,10 @@ export function Create({ onNavigate }: CreateProps) {
           )}
         </SearchField>
 
-        <ActionButton>
-          +
-        </ActionButton>
+        <ActionButton onClick={() => onNavigate('create-flow')}>
+  +
+</ActionButton>
+
       </TopBar>
 
       {/* === LIST === */}
