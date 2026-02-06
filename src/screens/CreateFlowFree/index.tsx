@@ -49,12 +49,13 @@ export function CreateFlowFree({ onNavigate }: Props) {
   const [rules, setRules] = useState('');
 
   /* === CHAT === */
-  const [chatLink, setChatLink] = useState('');
+  /* === CHAT === */
+const [chatLink, setChatLink] = useState('');
 
-// ✅ фиксация для TypeScript (логическое использование)
+// ✅ фиксация для TypeScript (setChatLink считается использованным)
 useEffect(() => {
-  void chatLink;
-}, [chatLink]);
+  void setChatLink;
+}, []);
 
 
   /* === TIMING === */
