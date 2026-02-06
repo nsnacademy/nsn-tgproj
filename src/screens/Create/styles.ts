@@ -170,3 +170,5 @@ export const NavItem = styled.div<{ $active?: boolean }>`
     opacity: 0.7;
   }
 `;
+
+

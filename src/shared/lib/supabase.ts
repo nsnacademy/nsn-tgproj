@@ -15,7 +15,7 @@ export async function saveTelegramUser() {
     .from('users')
     .upsert(
       {
-        telegram_id: String(user.id),
+        telegram_id: user.id, // <-- ЧИСЛО
         username: user.username ?? null,
       },
       { onConflict: 'telegram_id' }
