@@ -46,6 +46,10 @@ export function CreateFlowFree({ onNavigate }: Props) {
   const [description, setDescription] = useState('');
   const [rules, setRules] = useState('');
 
+  /* === CHAT === */
+const [chatLink, setChatLink] = useState('');
+
+
   /* === TIMING === */
   const [startMode, setStartMode] = useState<'now' | 'date'>('now');
   const [startDate, setStartDate] = useState('');
@@ -301,6 +305,16 @@ if (participantError) {
           )}
         </Form>
 
+        {chatLink && (
+  <SummaryBox>
+    <SummaryRow>
+      <span>Чат вызова</span>
+      <b>{chatLink}</b>
+    </SummaryRow>
+  </SummaryBox>
+)}
+
+
         <Footer>
           <BackButton onClick={() => setIsPreview(false)}>
             Назад
@@ -380,6 +394,8 @@ if (participantError) {
             <Hint>До этой даты можно вступать</Hint>
           </>
         )}
+
+
 
         <Field>
           <Label>Длительность (дней) *</Label>
@@ -520,6 +536,20 @@ if (participantError) {
           </AddButton>
         )}
       </Form>
+
+        <Field>
+  <Label>Чат вызова (опционально)</Label>
+  <Input
+    value={chatLink}
+    onChange={(e) => setChatLink(e.target.value)}
+    placeholder="https://t.me/название_чата"
+  />
+  <Hint>
+    Вставьте ссылку на Telegram-чат для участников вызова.
+    Кнопка чата появится только у тех, кто принял вызов.
+  </Hint>
+</Field>
+
 
       <Footer>
         <BackButton onClick={() => onNavigate('create-flow')}>

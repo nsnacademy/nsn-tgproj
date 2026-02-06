@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { supabase } from '../../shared/lib/supabase';
 
 import {
   SafeArea,
@@ -9,6 +10,14 @@ import {
   ActionButton,
   BottomNav,
   NavItem,
+
+  /* 👇 НОВОЕ */
+  List,
+  Card,
+  CardTitle,
+  CardMeta,
+  CardFooter,
+  Status,
 } from './styles';
 
 /* 👇 ОБНОВЛЁННЫЙ ТИП НАВИГАЦИИ */
@@ -16,10 +25,20 @@ type CreateProps = {
   onNavigate: (screen: 'home' | 'create' | 'create-flow') => void;
 };
 
+type Challenge = {
+  id: string;
+  title: string;
+  report_mode: 'simple' | 'result';
+  duration_days: number;
+  start_date: string | null;
+  username: string;
+};
+
 export function Create({ onNavigate }: CreateProps) {
   const [query, setQuery] = useState('');
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
 
   /* === DEBOUNCE ПОИСКА === */
   useEffect(() => {
@@ -30,12 +49,43 @@ export function Create({ onNavigate }: CreateProps) {
     return () => clearTimeout(id);
   }, [query]);
 
-  /* 👉 позже сюда подключается API */
+  /* === LOAD CHALLENGES === */
   useEffect(() => {
-    if (debouncedQuery.length > 0) {
-      console.log('SEARCH:', debouncedQuery);
+    async function loadChallenges() {
+      const { data, error } = await supabase
+        .from('challenges')
+        .select(`
+          id,
+          title,
+          report_mode,
+          duration_days,
+          start_date,
+          users (
+            username
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setChallenges(
+          data.map((c: any) => ({
+            id: c.id,
+            title: c.title,
+            report_mode: c.report_mode,
+            duration_days: c.duration_days,
+            start_date: c.start_date,
+            username: c.users?.username ?? 'unknown',
+          }))
+        );
+      }
     }
-  }, [debouncedQuery]);
+
+    loadChallenges();
+  }, []);
+
+  const filtered = challenges.filter((c) =>
+    c.title.toLowerCase().includes(debouncedQuery.toLowerCase())
+  );
 
   return (
     <SafeArea>
@@ -56,7 +106,6 @@ export function Create({ onNavigate }: CreateProps) {
             <line x1="13" y1="13" x2="17" y2="17" />
           </svg>
 
-          {/* INPUT */}
           <SearchInput
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -65,7 +114,6 @@ export function Create({ onNavigate }: CreateProps) {
             onBlur={() => setKeyboardOpen(false)}
           />
 
-          {/* CLEAR BUTTON */}
           {query.length > 0 && (
             <ClearButton
               onMouseDown={(e) => e.preventDefault()}
@@ -86,7 +134,6 @@ export function Create({ onNavigate }: CreateProps) {
           )}
         </SearchField>
 
-        {/* === PLUS / CREATE FLOW === */}
         <ActionButton onClick={() => onNavigate('create-flow')}>
           <svg
             width="22"
@@ -102,74 +149,58 @@ export function Create({ onNavigate }: CreateProps) {
         </ActionButton>
       </TopBar>
 
+      {/* === CHALLENGES LIST === */}
+      <List>
+        {filtered.map((c) => {
+          const status = getStatus(c.start_date, c.duration_days);
+
+          return (
+            <Card key={c.id} onClick={() => console.log('OPEN', c.id)}>
+              <CardTitle>{c.title}</CardTitle>
+
+              <CardMeta>
+                <span>@{c.username}</span>
+                <span>
+                  {c.report_mode === 'simple'
+                    ? 'Отметка'
+                    : 'Результат'}
+                </span>
+              </CardMeta>
+
+              <CardFooter>
+                <span>{c.duration_days} дней</span>
+                <Status>{status}</Status>
+              </CardFooter>
+            </Card>
+          );
+        })}
+      </List>
+
       {/* === BOTTOM NAV === */}
       <BottomNav $hidden={keyboardOpen}>
-        {/* HOME */}
         <NavItem onClick={() => onNavigate('home')}>
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 10.5L12 3l9 7.5" />
-            <path d="M5 9.5V21h14V9.5" />
-          </svg>
+          {/* home icon */}
         </NavItem>
 
-        {/* CREATE — ACTIVE */}
         <NavItem $active>
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-          </svg>
+          {/* create icon */}
         </NavItem>
 
-        {/* SIGNAL */}
-        <NavItem>
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <line x1="6" y1="18" x2="6" y2="14" />
-            <line x1="12" y1="18" x2="12" y2="10" />
-            <line x1="18" y1="18" x2="18" y2="6" />
-          </svg>
-        </NavItem>
-
-        {/* PROFILE */}
-        <NavItem>
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="7" r="4" />
-            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-          </svg>
-        </NavItem>
+        <NavItem>{/* signal */}</NavItem>
+        <NavItem>{/* profile */}</NavItem>
       </BottomNav>
     </SafeArea>
   );
+}
+
+/* === STATUS LOGIC === */
+function getStatus(startDate: string | null, duration: number) {
+  const now = new Date();
+  const start = startDate ? new Date(startDate) : now;
+  const end = new Date(start);
+  end.setDate(end.getDate() + duration);
+
+  if (now < start) return 'Скоро';
+  if (now > end) return 'Завершён';
+  return 'Идёт';
 }

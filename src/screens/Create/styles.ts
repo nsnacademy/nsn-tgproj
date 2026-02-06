@@ -172,3 +172,46 @@ export const NavItem = styled.div<{ $active?: boolean }>`
 `;
 
 
+export const List = styled.div`
+  padding: 16px 20px 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+`;
+
+export const Card = styled.div`
+  padding: 16px;
+  border-radius: 16px;
+  background: #0b0b0b;
+  border: 1px solid #222;
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.98);
+  }
+`;
+
+export const CardTitle = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+`;
+
+export const CardMeta = styled.div`
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.6;
+  display: flex;
+  gap: 12px;
+`;
+
+export const CardFooter = styled.div`
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  opacity: 0.75;
+`;
+
+export const Status = styled.span`
+  font-weight: 600;
+`;
