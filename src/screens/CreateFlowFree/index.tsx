@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { supabase } from '../../shared/lib/supabase';
+
 
 import {
   SafeArea,
@@ -106,6 +108,77 @@ export function CreateFlowFree({ onNavigate }: Props) {
     description.trim().length > 5 &&
     durationDays.trim().length > 0 &&
     reportValid;
+
+
+    async function publishChallenge() {
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if (!tgUser) {
+    alert('Telegram user not found');
+    return;
+  }
+
+  // 1️⃣ получаем user.id
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('telegram_id', tgUser.id)
+    .single();
+
+  if (userError || !user) {
+    console.error(userError);
+    alert('User not found in database');
+    return;
+  }
+
+  // 2️⃣ собираем payload для challenges
+  const payload = {
+    creator_id: user.id,
+
+    title,
+    description,
+    rules: rules || null,
+
+    start_mode: startMode,
+    start_date: startMode === 'date' ? startDate : null,
+    duration_days: Number(durationDays),
+
+    report_mode: reportMode,
+
+    metric_name: reportMode === 'result' ? metricName : null,
+
+    has_goal: hasGoal,
+    goal_value: hasGoal ? Number(goalValue) : null,
+
+    has_proof: hasProof,
+    proof_types: hasProof ? proofs : null,
+
+    has_limit: hasLimit,
+    limit_per_day: hasLimit ? Number(limitPerDay) : null,
+
+    has_rating: hasRating,
+  };
+
+  // 3️⃣ insert
+  const { data: challenge, error } = await supabase
+    .from('challenges')
+    .insert(payload)
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error(error);
+    alert('Ошибка при создании вызова');
+    return;
+  }
+
+  console.log('Challenge created:', challenge.id);
+
+  // 4️⃣ дальше можно:
+  // - добавить creator в participants
+  // - или перейти на home
+  onNavigate('home');
+}
+
 
   /* ==================== PREVIEW ==================== */
 
@@ -219,9 +292,10 @@ export function CreateFlowFree({ onNavigate }: Props) {
           <BackButton onClick={() => setIsPreview(false)}>
             Назад
           </BackButton>
-          <NextButton onClick={() => console.log('PUBLISH')}>
-            Опубликовать
-          </NextButton>
+          <NextButton onClick={publishChallenge}>
+  Опубликовать
+</NextButton>
+
         </Footer>
       </SafeArea>
     );
