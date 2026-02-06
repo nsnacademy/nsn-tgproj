@@ -24,7 +24,7 @@ export const Title = styled.h1`
 export const SectionTitle = styled.div`
   font-size: 14px;
   opacity: 0.6;
-  margin-top: 8px;
+  margin-top: 12px;
 `;
 
 export const Hint = styled.div`
@@ -37,8 +37,6 @@ export const Hint = styled.div`
 export const Form = styled.div`
   flex: 1;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -89,21 +87,27 @@ export const CheckboxRow = styled.div`
   cursor: pointer;
 `;
 
-export const RadioRow = styled.div<{ active?: boolean }>`
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: ${({ active }) => (active ? '#fff' : '#0b0b0b')};
-  color: ${({ active }) => (active ? '#000' : '#fff')};
-  border: 1px solid ${({ active }) => (active ? '#fff' : '#222')};
+export const OptionCard = styled.div<{ active?: boolean }>`
+  padding: 14px;
+  border-radius: 14px;
+  background: ${({ active }) => (active ? '#111' : '#0b0b0b')};
+  border: 1px solid ${({ active }) => (active ? '#444' : '#222')};
   cursor: pointer;
-  transition: all 0.2s ease;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  small {
+    font-size: 12px;
+    opacity: 0.6;
+  }
 `;
 
 /* === INLINE === */
 export const InlineGroup = styled.div`
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
 `;
 
 /* === REWARDS === */
@@ -124,6 +128,27 @@ export const AddButton = styled.button`
   color: #fff;
   opacity: 0.6;
   cursor: pointer;
+`;
+
+/* === SUMMARY === */
+export const SummaryBox = styled.div`
+  background: #0b0b0b;
+  border: 1px solid #222;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const SummaryRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+
+  span {
+    opacity: 0.6;
+  }
 `;
 
 /* === FOOTER === */
@@ -149,5 +174,6 @@ export const NextButton = styled.button<{ disabled?: boolean }>`
   background: #fff;
   color: #000;
   opacity: ${({ disabled }) => (disabled ? 0.4 : 1)};
-  pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
+  pointer-events: ${({ disabled }) =>
+    disabled ? 'none' : 'auto'};
 `;
