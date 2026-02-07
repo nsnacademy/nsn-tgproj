@@ -36,11 +36,14 @@ export const StatusTitle = styled.div`
 export const Tabs = styled.div`
   display: flex;
   gap: 18px;
+  margin-bottom: 20px;
 `;
 
 export const Tab = styled.div<{ $active?: boolean }>`
   font-size: 14px;
   padding-bottom: 6px;
+  cursor: pointer;
+
   opacity: ${({ $active }) => ($active ? 1 : 0.4)};
   border-bottom: ${({ $active }) =>
     $active ? '2px solid #fff' : '2px solid transparent'};
@@ -50,16 +53,60 @@ export const Tab = styled.div<{ $active?: boolean }>`
 export const CenterWrapper = styled.div`
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  flex-direction: column;
+  gap: 14px;
 `;
 
 /* === EMPTY TEXT === */
 export const EmptyText = styled.div`
+  margin-top: 40px;
   font-size: 16px;
   line-height: 1.45;
   opacity: 0.85;
+  text-align: center;
+`;
+
+/* =============================== */
+/* === ДОБАВЛЕНО ДЛЯ КАРТОЧЕК === */
+/* =============================== */
+
+export const Card = styled.div`
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.06),
+    rgba(255,255,255,0.02)
+  );
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const Row = styled.div`
+  font-size: 14px;
+  line-height: 1.4;
+
+  b {
+    font-weight: 600;
+  }
+
+  button {
+    margin-top: 8px;
+    align-self: flex-start;
+
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: none;
+    background: #fff;
+    color: #000;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:active {
+      opacity: 0.8;
+    }
+  }
 `;
 
 /* === BOTTOM NAV === */
@@ -99,8 +146,7 @@ export const NavItem = styled.div<{ $active?: boolean }>`
     width: 28px;
     height: 28px;
 
-    /* ⬇️ ВАЖНО: масштаб, а не размер */
-    transform: scale(${({ $active }) => ($active ? 1.30 : 1)});
+    transform: scale(${({ $active }) => ($active ? 1.3 : 1)});
     transform-origin: center;
 
     transition:
@@ -113,4 +159,3 @@ export const NavItem = styled.div<{ $active?: boolean }>`
     opacity: 0.7;
   }
 `;
-

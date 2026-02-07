@@ -208,6 +208,7 @@ useEffect(() => {
 
   /* ==================== PREVIEW ==================== */
 
+   /* ================= PREVIEW ================= */
   if (isPreview) {
     return (
       <SafeArea>
@@ -220,16 +221,14 @@ useEffect(() => {
           <SummaryBox>
             <SummaryRow><span>Название</span><b>{title}</b></SummaryRow>
             <SummaryRow><span>Описание</span><b>{description}</b></SummaryRow>
-            {rules && (
-              <SummaryRow><span>Условия</span><b>{rules}</b></SummaryRow>
-            )}
+            {rules && <SummaryRow><span>Условия</span><b>{rules}</b></SummaryRow>}
           </SummaryBox>
 
           <SectionTitle>Сроки</SectionTitle>
           <SummaryBox>
             <SummaryRow>
               <span>Старт</span>
-              <b>{startMode === 'now' ? 'Сразу' : startDate}</b>
+              <b>{startMode === 'now' ? 'Сразу после публикации' : startDate}</b>
             </SummaryRow>
             <SummaryRow>
               <span>Длительность</span>
@@ -241,25 +240,52 @@ useEffect(() => {
           <SummaryBox>
             <SummaryRow>
               <span>Формат</span>
-              <b>{reportMode === 'simple' ? 'Отметка' : 'Результат'}</b>
+              <b>
+                {reportMode === 'simple'
+                  ? 'Отметка выполнения'
+                  : `Результат (${metricName})`}
+              </b>
+            </SummaryRow>
+
+            {hasGoal && (
+              <SummaryRow>
+                <span>Цель</span>
+                <b>{goalValue} {metricName}</b>
+              </SummaryRow>
+            )}
+
+            {hasLimit && (
+              <SummaryRow>
+                <span>Лимит</span>
+                <b>{limitPerDay} в день</b>
+              </SummaryRow>
+            )}
+
+            {hasProof && (
+              <SummaryRow>
+                <span>Подтверждение</span>
+                <b>{proofs.join(', ')}</b>
+              </SummaryRow>
+            )}
+
+            <SummaryRow>
+              <span>Рейтинг</span>
+              <b>{hasRating ? 'Включён' : 'Нет'}</b>
+            </SummaryRow>
+          </SummaryBox>
+
+          <SectionTitle>Чат</SectionTitle>
+          <SummaryBox>
+            <SummaryRow>
+              <span>Чат вызова</span>
+              <b>{chatLink || 'Будет доступен после вступления'}</b>
             </SummaryRow>
           </SummaryBox>
         </Form>
 
-        {chatLink && (
-          <SummaryBox>
-            <SummaryRow>
-              <span>Чат вызова</span>
-              <b>{chatLink}</b>
-            </SummaryRow>
-          </SummaryBox>
-        )}
-
         <Footer>
-          <BackButton onClick={() => setIsPreview(false)}>
-            Назад
-          </BackButton>
-          <NextButton onClick={publishChallenge} disabled={submitting}>
+          <BackButton onClick={() => setIsPreview(false)}>Назад</BackButton>
+          <NextButton disabled={submitting} onClick={publishChallenge}>
             {submitting ? 'Публикация…' : 'Опубликовать'}
           </NextButton>
         </Footer>
@@ -286,25 +312,49 @@ useEffect(() => {
         </Field>
 
         <Field>
-          <Label>Описание *</Label>
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-          />
-          <Hint>
-            Что нужно делать и как считается результат
-          </Hint>
-        </Field>
+  <Label>Описание *</Label>
+  <Textarea
+    value={description}
+    onChange={(e) => setDescription(e.target.value)}
+    rows={3}
+    placeholder={`Что нужно делать участнику?
+
+Например:
+Выполнять задание каждый день и отправлять отчёт.`}
+  />
+</Field>
+
+
 
         <Field>
-          <Label>Условия (опционально)</Label>
-          <Textarea
-            value={rules}
-            onChange={(e) => setRules(e.target.value)}
-            rows={3}
-          />
-        </Field>
+  <Label>Условия (опционально)</Label>
+  <Textarea
+    value={rules}
+    onChange={(e) => setRules(e.target.value)}
+    rows={3}
+    placeholder={`Например:
+— отчёт до 23:59
+— 1 отчёт в день
+— пропуск = невыполнено`}
+  />
+</Field>
+
+
+
+        <Field>
+  <Label>Чат вызова (опционально)</Label>
+  <Input
+    value={chatLink}
+    onChange={(e) => setChatLink(e.target.value)}
+    placeholder="https://t.me/название_чата"
+  />
+  <Hint>
+    Ссылка на Telegram-чат вызова.
+    <br />
+    Чат будет доступен <b>только участникам</b> после вступления.
+  </Hint>
+</Field>
+
 
         <SectionTitle>Сроки вызова</SectionTitle>
 

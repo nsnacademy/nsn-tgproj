@@ -51,6 +51,9 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
   const [loading, setLoading] = useState(true);
   const [accepted, setAccepted] = useState(false);
 
+  const [joining, setJoining] = useState(false);
+
+
   useEffect(() => {
     async function load() {
       const { data, error } = await supabase
@@ -106,6 +109,7 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
         has_rating: data.has_rating,
 
         username: data.users?.[0]?.username ?? 'unknown',
+        
       });
 
       setLoading(false);
@@ -117,6 +121,49 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
   if (loading || !challenge) {
     return <SafeArea />;
   }
+
+  async function joinChallenge() {
+  if (!accepted || joining) return;
+  setJoining(true);
+
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if (!tgUser) {
+    alert('Нет пользователя Telegram');
+    setJoining(false);
+    return;
+  }
+
+  // 1. получаем user.id
+  const { data: user } = await supabase
+    .from('users')
+    .select('id')
+    .eq('telegram_id', tgUser.id)
+    .single();
+
+  if (!user) {
+    alert('Пользователь не найден');
+    setJoining(false);
+    return;
+  }
+
+  // 2. создаём participant
+  const { error } = await supabase
+    .from('participants')
+    .insert({
+      user_id: user.id,
+      challenge_id: challengeId,
+    });
+
+  if (error) {
+    alert(error.message);
+    setJoining(false);
+    return;
+  }
+
+  // 3. возвращаемся на Home
+  onBack();
+}
+
 
   /* ===== ВСПОМОГАТЕЛЬНАЯ ЛОГИКА ===== */
 
@@ -230,9 +277,13 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
       {/* FOOTER */}
       <Footer>
         <BackButton onClick={onBack}>Назад</BackButton>
-        <JoinButton disabled={!accepted}>
-          Присоединиться
-        </JoinButton>
+        <JoinButton
+  disabled={!accepted || joining}
+  onClick={joinChallenge}
+>
+  {joining ? 'Подключение…' : 'Присоединиться'}
+</JoinButton>
+
       </Footer>
     </SafeArea>
   );

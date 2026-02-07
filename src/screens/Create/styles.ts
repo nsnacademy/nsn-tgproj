@@ -5,8 +5,14 @@ export const SafeArea = styled.div`
   min-height: 100vh;
   background: #000;
   color: #fff;
+
   padding-top: 100px;
+  padding-bottom: 110px; /* ⬅ место под BottomNav */
+
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 `;
+
 
 /* === TOP BAR === */
 export const TopBar = styled.div`
