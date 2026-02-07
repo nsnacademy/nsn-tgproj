@@ -9,17 +9,36 @@ export const SafeArea = styled.div`
   flex-direction: column;
 `;
 
+/* === HEADER SPACER === */
+export const HeaderSpacer = styled.div`
+  height: env(safe-area-inset-top, 0px);
+  background: #000;
+`;
+
+/* === BOTTOM NAV SPACER === */
+export const BottomNavSpacer = styled.div`
+  height: 100px;
+`;
+
 /* === CONTENT === */
 export const HomeContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 100px 20px 140px;
+  padding: 0 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 `;
 
 /* === HEADER === */
 export const Header = styled.div`
+  margin-top: 20px;
   margin-bottom: 24px;
+  position: sticky;
+  top: 0;
+  background: #000;
+  padding-top: 10px;
+  z-index: 10;
 `;
 
 export const StatusLabel = styled.div`
@@ -37,13 +56,17 @@ export const Tabs = styled.div`
   display: flex;
   gap: 18px;
   margin-bottom: 20px;
+  position: sticky;
+  top: 90px;
+  background: #000;
+  padding-bottom: 10px;
+  z-index: 10;
 `;
 
 export const Tab = styled.div<{ $active?: boolean }>`
   font-size: 14px;
   padding-bottom: 6px;
   cursor: pointer;
-
   opacity: ${({ $active }) => ($active ? 1 : 0.4)};
   border-bottom: ${({ $active }) =>
     $active ? '2px solid #fff' : '2px solid transparent'};
@@ -55,6 +78,7 @@ export const CenterWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 14px;
+  padding-bottom: 20px;
 `;
 
 /* === EMPTY TEXT === */
@@ -73,8 +97,8 @@ export const EmptyText = styled.div`
 export const Card = styled.div`
   background: linear-gradient(
     180deg,
-    rgba(255,255,255,0.06),
-    rgba(255,255,255,0.02)
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
   );
   border-radius: 18px;
   padding: 16px 18px;
@@ -94,7 +118,6 @@ export const Row = styled.div`
   button {
     margin-top: 8px;
     align-self: flex-start;
-
     padding: 10px 16px;
     border-radius: 12px;
     border: none;
@@ -149,7 +172,7 @@ export const ProgressWrapper = styled.div`
 export const ProgressBar = styled.div`
   height: 8px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   overflow: hidden;
 `;
 
@@ -170,17 +193,13 @@ export const ProgressText = styled.div`
 export const PrimaryButton = styled.button`
   margin-top: 14px;
   align-self: flex-start;
-
   padding: 10px 16px;
   border-radius: 12px;
   border: none;
-
   background: #ffffff;
   color: #000000;
-
   font-size: 14px;
   font-weight: 500;
-
   cursor: pointer;
 
   &:active {
@@ -188,47 +207,40 @@ export const PrimaryButton = styled.button`
   }
 `;
 
-
 /* === BOTTOM NAV === */
 export const BottomNav = styled.div`
   position: fixed;
   left: 16px;
   right: 16px;
   bottom: 18px;
-
   height: 68px;
   background: #000;
   border-radius: 34px;
-
   display: flex;
   align-items: center;
   justify-content: space-around;
+  z-index: 100;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 `;
 
 /* === NAV ITEM === */
 export const NavItem = styled.div<{ $active?: boolean }>`
   width: 48px;
   height: 48px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   cursor: pointer;
   user-select: none;
-
   color: ${({ $active }) =>
     $active ? '#ffffff' : 'rgba(255,255,255,0.65)'};
-
   transition: color 0.2s ease;
 
   svg {
     width: 28px;
     height: 28px;
-
     transform: scale(${({ $active }) => ($active ? 1.3 : 1)});
     transform-origin: center;
-
     transition:
       transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
       opacity 0.15s ease;
@@ -239,5 +251,3 @@ export const NavItem = styled.div<{ $active?: boolean }>`
     opacity: 0.7;
   }
 `;
-
-
