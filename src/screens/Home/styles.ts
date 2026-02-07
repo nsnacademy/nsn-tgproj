@@ -43,6 +43,7 @@ export const Tab = styled.div<{ $active?: boolean }>`
   font-size: 14px;
   padding-bottom: 6px;
   cursor: pointer;
+
   opacity: ${({ $active }) => ($active ? 1 : 0.4)};
   border-bottom: ${({ $active }) =>
     $active ? '2px solid #fff' : '2px solid transparent'};
@@ -58,13 +59,17 @@ export const CenterWrapper = styled.div`
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 
+  padding-bottom: 20px;
+
+  /* скрываем скроллбар */
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
   }
 `;
 
-/* === EMPTY === */
+
+/* === EMPTY TEXT === */
 export const EmptyText = styled.div`
   margin-top: 40px;
   font-size: 16px;
@@ -73,7 +78,10 @@ export const EmptyText = styled.div`
   text-align: center;
 `;
 
-/* === CARD === */
+/* =============================== */
+/* === ДОБАВЛЕНО ДЛЯ КАРТОЧЕК === */
+/* =============================== */
+
 export const Card = styled.div`
   background: linear-gradient(
     180deg,
@@ -82,16 +90,38 @@ export const Card = styled.div`
   );
   border-radius: 18px;
   padding: 16px 18px;
-
-  height: 180px;
   display: flex;
   flex-direction: column;
-
-  transform-origin: center;
-  transition:
-    transform 0.18s ease-out,
-    opacity 0.18s ease-out;
+  gap: 0px;
 `;
+
+export const Row = styled.div`
+  font-size: 14px;
+  line-height: 1.4;
+
+  b {
+    font-weight: 600;
+  }
+
+  button {
+    margin-top: 8px;
+    align-self: flex-start;
+
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: none;
+    background: #fff;
+    color: #000;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:active {
+      opacity: 0.8;
+    }
+  }
+`;
+
+/* === CARD STRUCTURE === */
 
 export const CardTitleRow = styled.div`
   display: flex;
@@ -109,6 +139,8 @@ export const CardRank = styled.div`
   opacity: 0.6;
 `;
 
+/* === LABELS === */
+
 export const CardLabel = styled.div`
   font-size: 11px;
   opacity: 0.45;
@@ -121,6 +153,7 @@ export const CardValue = styled.div`
 `;
 
 /* === PROGRESS === */
+
 export const ProgressWrapper = styled.div`
   margin-top: 14px;
 `;
@@ -145,8 +178,9 @@ export const ProgressText = styled.div`
 `;
 
 /* === BUTTON === */
+
 export const PrimaryButton = styled.button`
-  margin-top: auto;
+  margin-top: 14px;
   align-self: flex-start;
 
   padding: 10px 16px;
@@ -154,10 +188,11 @@ export const PrimaryButton = styled.button`
   border: none;
 
   background: #ffffff;
-  color: #000;
+  color: #000000;
 
   font-size: 14px;
   font-weight: 500;
+
   cursor: pointer;
 
   &:active {
@@ -165,7 +200,8 @@ export const PrimaryButton = styled.button`
   }
 `;
 
-/* === NAV === */
+
+/* === BOTTOM NAV === */
 export const BottomNav = styled.div`
   position: fixed;
   left: 16px;
@@ -181,6 +217,7 @@ export const BottomNav = styled.div`
   justify-content: space-around;
 `;
 
+/* === NAV ITEM === */
 export const NavItem = styled.div<{ $active?: boolean }>`
   width: 48px;
   height: 48px;
@@ -190,11 +227,29 @@ export const NavItem = styled.div<{ $active?: boolean }>`
   justify-content: center;
 
   cursor: pointer;
+  user-select: none;
+
   color: ${({ $active }) =>
-    $active ? '#fff' : 'rgba(255,255,255,0.65)'};
+    $active ? '#ffffff' : 'rgba(255,255,255,0.65)'};
+
+  transition: color 0.2s ease;
 
   svg {
     width: 28px;
     height: 28px;
+
+    transform: scale(${({ $active }) => ($active ? 1.3 : 1)});
+    transform-origin: center;
+
+    transition:
+      transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 0.15s ease;
+  }
+
+  &:active svg {
+    transform: scale(0.9);
+    opacity: 0.7;
   }
 `;
+
+
