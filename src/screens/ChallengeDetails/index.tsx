@@ -312,12 +312,12 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
         </Row>
       </Card>
 
-      {!alreadyJoined && (
-        <CheckboxRow onClick={() => setAccepted(!accepted)}>
-          <input type="checkbox" checked={accepted} readOnly />
-          <span>Я ознакомился с условиями</span>
-        </CheckboxRow>
-      )}
+      {/* CHECK — ВСЕГДА ВИДЕН */}
+<CheckboxRow onClick={() => setAccepted(!accepted)}>
+  <input type="checkbox" checked={accepted} readOnly />
+  <span>Я ознакомился с условиями</span>
+</CheckboxRow>
+
 
       <Footer>
         <BackButton onClick={onBack}>Назад</BackButton>
