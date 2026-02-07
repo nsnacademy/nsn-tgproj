@@ -77,22 +77,30 @@ export const EmptyText = styled.div`
 export const Card = styled.div`
   background: linear-gradient(
     180deg,
-    rgba(255,255,255,0.08),
+    rgba(255,255,255,0.06),
     rgba(255,255,255,0.02)
   );
-  border-radius: 20px;
-  padding: 18px 20px;
 
+  border-radius: 22px;
+  padding: 18px 20px;
   height: 190px;
+
   display: flex;
   flex-direction: column;
 
+  border: 1px solid rgba(255,255,255,0.06);
+
   transform-origin: center;
+  will-change: transform, opacity;
+
   transition:
-    transform 0.18s ease,
-    opacity 0.18s ease,
-    box-shadow 0.18s ease;
+    transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.22s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease,
+    border-color 0.22s ease;
 `;
+
 
 export const CardTitleRow = styled.div`
   display: flex;

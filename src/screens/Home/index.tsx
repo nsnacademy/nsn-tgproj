@@ -107,45 +107,67 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
      scale + opacity + shadow
      ====================================== */
   useEffect(() => {
-    const list = listRef.current;
-    if (!list) return;
+  const list = listRef.current;
+  if (!list) return;
 
-    const update = () => {
-      const cards = Array.from(
-        list.querySelectorAll<HTMLElement>('[data-card]')
-      );
-      const center = list.scrollTop + list.clientHeight / 2;
+  const update = () => {
+    const cards = Array.from(
+      list.querySelectorAll<HTMLElement>('[data-card]')
+    );
 
-      cards.forEach((card) => {
-        const cardCenter =
-          card.offsetTop + card.offsetHeight / 2;
+    const center = list.scrollTop + list.clientHeight / 2;
 
-        const distance = Math.abs(cardCenter - center);
-        const max = list.clientHeight / 2;
-        const ratio = Math.min(distance / max, 1);
+    cards.forEach((card) => {
+      const cardCenter =
+        card.offsetTop + card.offsetHeight / 2;
 
-        const scale = 1 - ratio * 0.06;
-        const opacity = 1 - ratio * 0.4;
+      const distance = Math.abs(cardCenter - center);
+      const max = list.clientHeight / 2;
+      const ratio = Math.min(distance / max, 1);
 
-        card.style.transform = `scale(${scale})`;
-        card.style.opacity = `${opacity}`;
+      /* ===== ОСНОВНОЙ ЭФФЕКТ ===== */
 
-        if (ratio < 0.12) {
-          card.style.boxShadow =
-            '0 12px 32px rgba(0,0,0,0.45)';
-        } else {
-          card.style.boxShadow = 'none';
-        }
-      });
-    };
+      // масштаб — очень аккуратный
+      const scale = 1 - ratio * 0.045;
 
-    update();
-    list.addEventListener('scroll', update);
+      // прозрачность вторичных
+      const opacity = 1 - ratio * 0.55;
 
-    return () => {
-      list.removeEventListener('scroll', update);
-    };
-  }, [items, tab]);
+      // подъём по Z
+      const lift = (1 - ratio) * 10;
+
+      card.style.transform = `
+        translateY(${-lift}px)
+        scale(${scale})
+      `;
+      card.style.opacity = `${opacity}`;
+
+      // выделение активной
+      if (ratio < 0.12) {
+        card.style.boxShadow =
+          '0 18px 40px rgba(0,0,0,0.55)';
+        card.style.borderColor =
+          'rgba(255,255,255,0.25)';
+        card.style.background =
+          'linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04))';
+      } else {
+        card.style.boxShadow = 'none';
+        card.style.borderColor =
+          'rgba(255,255,255,0.06)';
+        card.style.background =
+          'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))';
+      }
+    });
+  };
+
+  update();
+  list.addEventListener('scroll', update);
+
+  return () => {
+    list.removeEventListener('scroll', update);
+  };
+}, [items, tab]);
+
 
   const active = items.filter((i) => !i.is_finished);
   const completed = items.filter((i) => i.is_finished);
