@@ -80,7 +80,7 @@ export const Card = styled.div`
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0px;
 `;
 
 export const Row = styled.div`
