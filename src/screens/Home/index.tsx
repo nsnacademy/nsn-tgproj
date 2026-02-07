@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../shared/lib/supabase';
 
 import {
   SafeArea,
@@ -12,15 +13,91 @@ import {
   EmptyText,
   BottomNav,
   NavItem,
+  Card,
+  Row,
 } from './styles';
 
-/* 👇 ПРОПСЫ ДЛЯ НАВИГАЦИИ */
 type HomeProps = {
   onNavigate: (screen: 'home' | 'create') => void;
 };
 
+type ChallengeItem = {
+  participant_id: string;
+  challenge_id: string;
+  title: string;
+  is_finished: boolean;
+};
+
 export function Home({ onNavigate }: HomeProps) {
   const [tab, setTab] = useState<'active' | 'completed'>('active');
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<ChallengeItem[]>([]);
+
+  async function load() {
+    setLoading(true);
+
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (!tgUser) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    // 1. USER
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('telegram_id', tgUser.id)
+      .single();
+
+    if (userError || !user) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    // 2. PARTICIPANTS + CHALLENGES
+    const { data, error } = await supabase
+      .from('participants')
+      .select(`
+        id,
+        challenge:challenge_id (
+          id,
+          title,
+          is_finished
+        )
+      `)
+      .eq('user_id', user.id);
+
+    if (error || !data) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    // 3. НОРМАЛИЗАЦИЯ
+    const normalized: ChallengeItem[] = data
+      .filter((p: any) => p.challenge) // ⬅️ КРИТИЧНО
+      .map((p: any) => ({
+        participant_id: p.id,
+        challenge_id: p.challenge.id,
+        title: p.challenge.title,
+        is_finished: p.challenge.is_finished,
+      }));
+
+    setItems(normalized);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+  load();
+}, []);
+
+
+  const active = items.filter((i) => !i.is_finished);
+  const completed = items.filter((i) => i.is_finished);
+
+  const list = tab === 'active' ? active : completed;
 
   return (
     <SafeArea>
@@ -30,8 +107,12 @@ export function Home({ onNavigate }: HomeProps) {
           <StatusLabel>Состояние</StatusLabel>
           <StatusTitle>
             {tab === 'active'
-              ? 'Нет активных вызовов'
-              : 'Нет завершённых вызовов'}
+              ? active.length === 0
+                ? 'Нет активных вызовов'
+                : 'Активные вызовы'
+              : completed.length === 0
+              ? 'Нет завершённых вызовов'
+              : 'Завершённые вызовы'}
           </StatusTitle>
         </Header>
 
@@ -45,31 +126,49 @@ export function Home({ onNavigate }: HomeProps) {
             $active={tab === 'completed'}
             onClick={() => setTab('completed')}
           >
-            Завершенные вызовы
+            Завершённые вызовы
           </Tab>
         </Tabs>
 
-        {/* CENTER */}
+        {/* CONTENT */}
         <CenterWrapper>
-          {tab === 'active' ? (
-            <EmptyText>
-              Создайте новый вызов или
-              <br />
-              присоединитесь к существующему
-            </EmptyText>
+          {loading ? (
+            <EmptyText>Загрузка…</EmptyText>
+          ) : list.length === 0 ? (
+            tab === 'active' ? (
+              <EmptyText>
+                Создайте новый вызов или
+                <br />
+                присоединитесь к существующему
+              </EmptyText>
+            ) : (
+              <EmptyText>
+                У вас пока нет
+                <br />
+                завершённых вызовов
+              </EmptyText>
+            )
           ) : (
-            <EmptyText>
-              У вас пока нет
-              <br />
-              завершённых вызовов
-            </EmptyText>
+            list.map((item) => (
+              <Card key={item.participant_id}>
+                <Row><b>{item.title}</b></Row>
+                <Row>
+                  Статус: {item.is_finished ? 'Завершён' : 'Идёт'}
+                </Row>
+
+                {!item.is_finished && (
+                  <Row>
+                    <button>Отметить выполнение</button>
+                  </Row>
+                )}
+              </Card>
+            ))
           )}
         </CenterWrapper>
       </HomeContainer>
 
       {/* BOTTOM NAV */}
       <BottomNav>
-        {/* HOME */}
         <NavItem $active>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
@@ -79,7 +178,6 @@ export function Home({ onNavigate }: HomeProps) {
           </svg>
         </NavItem>
 
-        {/* CREATE */}
         <NavItem onClick={() => onNavigate('create')}>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
@@ -91,7 +189,6 @@ export function Home({ onNavigate }: HomeProps) {
           </svg>
         </NavItem>
 
-        {/* SIGNAL */}
         <NavItem>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
@@ -102,7 +199,6 @@ export function Home({ onNavigate }: HomeProps) {
           </svg>
         </NavItem>
 
-        {/* PROFILE */}
         <NavItem>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
