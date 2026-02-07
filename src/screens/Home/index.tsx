@@ -19,7 +19,10 @@ import {
 
 type HomeProps = {
   onNavigate: (screen: 'home' | 'create') => void;
+  refreshKey: number;
 };
+
+
 
 type ChallengeItem = {
   participant_id: string;
@@ -28,7 +31,8 @@ type ChallengeItem = {
   is_finished: boolean;
 };
 
-export function Home({ onNavigate }: HomeProps) {
+export function Home({ onNavigate, refreshKey }: HomeProps) {
+
   const [tab, setTab] = useState<'active' | 'completed'>('active');
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
@@ -91,7 +95,8 @@ export function Home({ onNavigate }: HomeProps) {
 
   useEffect(() => {
   load();
-}, []);
+}, [refreshKey]);
+
 
 
   const active = items.filter((i) => !i.is_finished);

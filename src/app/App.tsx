@@ -23,9 +23,12 @@ type Screen =
 function App() {
   const [screen, setScreen] = useState<Screen>('splash');
 
-  // 🔑 ВАЖНО: выбранный вызов
+  // выбранный вызов
   const [selectedChallengeId, setSelectedChallengeId] =
     useState<string | null>(null);
+
+  // 🔁 КЛЮЧ ОБНОВЛЕНИЯ HOME
+  const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
   useEffect(() => {
     saveTelegramUser();
@@ -35,6 +38,11 @@ function App() {
   const navigate = (next: Screen, challengeId?: string) => {
     if (challengeId) {
       setSelectedChallengeId(challengeId);
+    }
+
+    // 👇 ВАЖНО: при каждом возврате на home — обновляем данные
+    if (next === 'home') {
+      setHomeRefreshKey((k) => k + 1);
     }
 
     setScreen(next);
@@ -49,7 +57,10 @@ function App() {
       )}
 
       {screen === 'home' && (
-        <Home onNavigate={navigate} />
+        <Home
+          onNavigate={navigate}
+          refreshKey={homeRefreshKey}
+        />
       )}
 
       {screen === 'create' && (
@@ -65,12 +76,11 @@ function App() {
       )}
 
       {screen === 'challenge-details' && selectedChallengeId && (
-  <ChallengeDetails
-    challengeId={selectedChallengeId}
-    onNavigateHome={() => navigate('home')}
-  />
-)}
-
+        <ChallengeDetails
+          challengeId={selectedChallengeId}
+          onNavigateHome={() => navigate('home')}
+        />
+      )}
 
       {screen === 'create-flow-paid' && (
         <div
