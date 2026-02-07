@@ -49,13 +49,18 @@ type Challenge = {
 export function ChallengeDetails({ challengeId, onBack }: Props) {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(true);
-  const [accepted, setAccepted] = useState(false);
 
+  const [accepted, setAccepted] = useState(false);
   const [joining, setJoining] = useState(false);
 
+  const [alreadyJoined, setAlreadyJoined] = useState(false);
+
+  /* ================= LOAD ================= */
 
   useEffect(() => {
     async function load() {
+      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+
       const { data, error } = await supabase
         .from('challenges')
         .select(`
@@ -109,8 +114,30 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
         has_rating: data.has_rating,
 
         username: data.users?.[0]?.username ?? 'unknown',
-        
       });
+
+      // 👉 ПРОВЕРКА: УЖЕ УЧАСТВУЕТ?
+      if (tgUser) {
+        const { data: user } = await supabase
+          .from('users')
+          .select('id')
+          .eq('telegram_id', tgUser.id)
+          .single();
+
+        if (user) {
+          const { data: participant } = await supabase
+            .from('participants')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('challenge_id', challengeId)
+            .maybeSingle();
+
+          if (participant) {
+            setAlreadyJoined(true);
+            setAccepted(true); // автоматически считаем, что условия приняты
+          }
+        }
+      }
 
       setLoading(false);
     }
@@ -122,50 +149,68 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
     return <SafeArea />;
   }
 
+  /* ================= JOIN ================= */
+
   async function joinChallenge() {
-  if (!accepted || joining) return;
-  setJoining(true);
+    if (!accepted || joining || alreadyJoined) return;
 
-  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  if (!tgUser) {
-    alert('Нет пользователя Telegram');
+    setJoining(true);
+
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (!tgUser) {
+      alert('Нет пользователя Telegram');
+      setJoining(false);
+      return;
+    }
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('telegram_id', tgUser.id)
+      .single();
+
+    if (!user) {
+      alert('Пользователь не найден');
+      setJoining(false);
+      return;
+    }
+
+    // 🔒 ЗАЩИТА: проверка ещё раз перед insert
+    const { data: existing } = await supabase
+      .from('participants')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('challenge_id', challengeId)
+      .maybeSingle();
+
+    if (existing) {
+      setAlreadyJoined(true);
+      setJoining(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('participants')
+      .insert({
+        user_id: user.id,
+        challenge_id: challengeId,
+      });
+
+    if (error) {
+      console.error(error);
+      alert('Ошибка при вступлении');
+      setJoining(false);
+      return;
+    }
+
+    setAlreadyJoined(true);
     setJoining(false);
-    return;
+
+    // ⏭ дальше можно вести на экран участника
+    onBack();
   }
 
-  // 1. получаем user.id
-  const { data: user } = await supabase
-    .from('users')
-    .select('id')
-    .eq('telegram_id', tgUser.id)
-    .single();
-
-  if (!user) {
-    alert('Пользователь не найден');
-    setJoining(false);
-    return;
-  }
-
-  // 2. создаём participant
-  const { error } = await supabase
-    .from('participants')
-    .insert({
-      user_id: user.id,
-      challenge_id: challengeId,
-    });
-
-  if (error) {
-    alert(error.message);
-    setJoining(false);
-    return;
-  }
-
-  // 3. возвращаемся на Home
-  onBack();
-}
-
-
-  /* ===== ВСПОМОГАТЕЛЬНАЯ ЛОГИКА ===== */
+  /* ================= UI LOGIC ================= */
 
   const now = new Date();
 
@@ -202,15 +247,15 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
       ? 'Каждый день нужно отметить выполнение'
       : 'Каждый день вводится число, результат суммируется';
 
+  /* ================= RENDER ================= */
+
   return (
     <SafeArea>
-      {/* HEADER */}
       <Header>
         <Title>{challenge.title}</Title>
         <Username>@{challenge.username}</Username>
       </Header>
 
-      {/* ОПИСАНИЕ */}
       <Card>
         <Row><b>Описание:</b> {challenge.description}</Row>
 
@@ -222,7 +267,6 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
         )}
       </Card>
 
-      {/* ПАРАМЕТРЫ */}
       <Card>
         <Row><b>Статус:</b> {status}</Row>
 
@@ -268,22 +312,26 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
         </Row>
       </Card>
 
-      {/* CHECK */}
-      <CheckboxRow onClick={() => setAccepted(!accepted)}>
-        <input type="checkbox" checked={accepted} readOnly />
-        <span>Я ознакомился с условиями</span>
-      </CheckboxRow>
+      {!alreadyJoined && (
+        <CheckboxRow onClick={() => setAccepted(!accepted)}>
+          <input type="checkbox" checked={accepted} readOnly />
+          <span>Я ознакомился с условиями</span>
+        </CheckboxRow>
+      )}
 
-      {/* FOOTER */}
       <Footer>
         <BackButton onClick={onBack}>Назад</BackButton>
-        <JoinButton
-  disabled={!accepted || joining}
-  onClick={joinChallenge}
->
-  {joining ? 'Подключение…' : 'Присоединиться'}
-</JoinButton>
 
+        <JoinButton
+          disabled={!accepted || joining || alreadyJoined}
+          onClick={joinChallenge}
+        >
+          {alreadyJoined
+            ? 'Вы участвуете'
+            : joining
+            ? 'Подключение…'
+            : 'Присоединиться'}
+        </JoinButton>
       </Footer>
     </SafeArea>
   );
