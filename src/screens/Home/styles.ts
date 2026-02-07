@@ -109,6 +109,86 @@ export const Row = styled.div`
   }
 `;
 
+/* === CARD STRUCTURE === */
+
+export const CardTitleRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+export const CardTitle = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+`;
+
+export const CardRank = styled.div`
+  font-size: 13px;
+  opacity: 0.6;
+`;
+
+/* === LABELS === */
+
+export const CardLabel = styled.div`
+  font-size: 11px;
+  opacity: 0.45;
+  margin-top: 10px;
+`;
+
+export const CardValue = styled.div`
+  font-size: 14px;
+  opacity: 0.85;
+`;
+
+/* === PROGRESS === */
+
+export const ProgressWrapper = styled.div`
+  margin-top: 14px;
+`;
+
+export const ProgressBar = styled.div`
+  height: 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.15);
+  overflow: hidden;
+`;
+
+export const ProgressFill = styled.div`
+  height: 100%;
+  background: #ffffff;
+  border-radius: 10px;
+`;
+
+export const ProgressText = styled.div`
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.65;
+`;
+
+/* === BUTTON === */
+
+export const PrimaryButton = styled.button`
+  margin-top: 14px;
+  align-self: flex-start;
+
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: none;
+
+  background: #ffffff;
+  color: #000000;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  &:active {
+    opacity: 0.8;
+  }
+`;
+
+
 /* === BOTTOM NAV === */
 export const BottomNav = styled.div`
   position: fixed;
@@ -160,43 +240,4 @@ export const NavItem = styled.div<{ $active?: boolean }>`
   }
 `;
 
-export const ProgressBar = styled.div`
-  width: 100%;
-  height: 6px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 6px;
-  overflow: hidden;
-  margin-top: 6px;
-`;
 
-export const ProgressFill = styled.div`
-  height: 100%;
-  background: #fff;
-  border-radius: 6px;
-  transition: width 0.3s ease;
-`;
-
-export const ProgressText = styled.div`
-  font-size: 12px;
-  opacity: 0.75;
-  margin-top: 4px;
-`;
-
-export const ActionButton = styled.button`
-  margin-top: 12px;
-  padding: 12px 18px;
-  border-radius: 14px;
-  border: none;
-
-  background: #fff;
-  color: #000;
-
-  font-size: 14px;
-  font-weight: 500;
-
-  cursor: pointer;
-
-  &:active {
-    opacity: 0.85;
-  }
-`;
