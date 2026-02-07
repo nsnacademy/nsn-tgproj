@@ -17,8 +17,9 @@ import {
 
 type Props = {
   challengeId: string;
-  onBack: () => void;
+  onNavigateHome: () => void;
 };
+
 
 type Challenge = {
   title: string;
@@ -45,7 +46,7 @@ type Challenge = {
   username: string;
 };
 
-export function ChallengeDetails({ challengeId, onBack }: Props) {
+export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -149,22 +150,18 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
   /* ================= JOIN ================= */
 
  
-    async function joinChallenge() {
+   async function joinChallenge() {
   if (!accepted || joining || alreadyJoined) return;
 
   setJoining(true);
 
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  if (!tgUser) {
-    alert('Нет пользователя Telegram');
-    setJoining(false);
-    return;
-  }
+  if (!tgUser) return;
 
-  // 🚀 1. МГНОВЕННЫЙ ПЕРЕХОД НА HOME
-  onBack();
+  // 🚀 МГНОВЕННЫЙ ПЕРЕХОД НА HOME
+  onNavigateHome();
 
-  // 🧠 2. ВСЁ ОСТАЛЬНОЕ — В ФОНЕ
+  // 👇 ВСЁ НИЖЕ — В ФОНЕ
   try {
     const { data: user } = await supabase
       .from('users')
@@ -191,6 +188,7 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
     console.error('Join error', e);
   }
 }
+
 
 
   /* ================= UI LOGIC ================= */
@@ -298,7 +296,7 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
       </CheckboxRow>
 
       <Footer>
-        <BackButton onClick={onBack}>Назад</BackButton>
+        <BackButton onClick={onNavigateHome}>Назад</BackButton>
 
         <JoinButton
           disabled={!accepted || joining || alreadyJoined}
