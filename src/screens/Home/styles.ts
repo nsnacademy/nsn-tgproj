@@ -45,7 +45,7 @@ export const HomeContainer = styled.div`
 
 /* === HEADER === */
 export const Header = styled.div`
-  padding: 10px 20px 0 20px;
+  padding: 110px 20px 0 20px;
 `;
 
 export const StatusLabel = styled.div`
