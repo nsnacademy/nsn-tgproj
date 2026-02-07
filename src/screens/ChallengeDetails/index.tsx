@@ -42,7 +42,6 @@ type Challenge = {
   proof_types: string[] | null;
 
   has_rating: boolean;
-
   username: string;
 };
 
@@ -52,7 +51,6 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
 
   const [accepted, setAccepted] = useState(false);
   const [joining, setJoining] = useState(false);
-
   const [alreadyJoined, setAlreadyJoined] = useState(false);
 
   /* ================= LOAD ================= */
@@ -112,11 +110,10 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
         proof_types: data.proof_types,
 
         has_rating: data.has_rating,
-
         username: data.users?.[0]?.username ?? 'unknown',
       });
 
-      // 👉 ПРОВЕРКА: УЖЕ УЧАСТВУЕТ?
+      // 👉 Проверка: уже участвует?
       if (tgUser) {
         const { data: user } = await supabase
           .from('users')
@@ -134,7 +131,7 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
 
           if (participant) {
             setAlreadyJoined(true);
-            setAccepted(true); // автоматически считаем, что условия приняты
+            setAccepted(true);
           }
         }
       }
@@ -163,51 +160,35 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
       return;
     }
 
-    const { data: user } = await supabase
-      .from('users')
-      .select('id')
-      .eq('telegram_id', tgUser.id)
-      .single();
+    // 🔹 МГНОВЕННЫЙ ПЕРЕХОД (UX)
+    onBack();
 
-    if (!user) {
-      alert('Пользователь не найден');
-      setJoining(false);
-      return;
-    }
+    // 🔹 дальше всё делаем в фоне
+    try {
+      const { data: user } = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', tgUser.id)
+        .single();
 
-    // 🔒 ЗАЩИТА: проверка ещё раз перед insert
-    const { data: existing } = await supabase
-      .from('participants')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('challenge_id', challengeId)
-      .maybeSingle();
+      if (!user) return;
 
-    if (existing) {
-      setAlreadyJoined(true);
-      setJoining(false);
-      return;
-    }
+      const { data: existing } = await supabase
+        .from('participants')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('challenge_id', challengeId)
+        .maybeSingle();
 
-    const { error } = await supabase
-      .from('participants')
-      .insert({
+      if (existing) return;
+
+      await supabase.from('participants').insert({
         user_id: user.id,
         challenge_id: challengeId,
       });
-
-    if (error) {
-      console.error(error);
-      alert('Ошибка при вступлении');
-      setJoining(false);
-      return;
+    } catch (e) {
+      console.error(e);
     }
-
-    setAlreadyJoined(true);
-    setJoining(false);
-
-    // ⏭ дальше можно вести на экран участника
-    onBack();
   }
 
   /* ================= UI LOGIC ================= */
@@ -287,9 +268,7 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
 
         <Divider />
 
-        <Row>
-          <b>Длительность:</b> {challenge.duration_days} дней
-        </Row>
+        <Row><b>Длительность:</b> {challenge.duration_days} дней</Row>
 
         {challenge.has_goal && (
           <Row><b>Цель:</b> {challenge.goal_value}</Row>
@@ -301,23 +280,20 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
 
         {challenge.has_proof && (
           <Row>
-            <b>Подтверждение:</b>{' '}
-            {challenge.proof_types?.join(', ')}
+            <b>Подтверждение:</b> {challenge.proof_types?.join(', ')}
           </Row>
         )}
 
         <Row>
-          <b>Рейтинг:</b>{' '}
-          {challenge.has_rating ? 'Есть' : 'Нет'}
+          <b>Рейтинг:</b> {challenge.has_rating ? 'Есть' : 'Нет'}
         </Row>
       </Card>
 
-      {/* CHECK — ВСЕГДА ВИДЕН */}
-<CheckboxRow onClick={() => setAccepted(!accepted)}>
-  <input type="checkbox" checked={accepted} readOnly />
-  <span>Я ознакомился с условиями</span>
-</CheckboxRow>
-
+      {/* CHECK */}
+      <CheckboxRow onClick={() => setAccepted(!accepted)}>
+        <input type="checkbox" checked={accepted} readOnly />
+        <span>Я ознакомился с условиями</span>
+      </CheckboxRow>
 
       <Footer>
         <BackButton onClick={onBack}>Назад</BackButton>
