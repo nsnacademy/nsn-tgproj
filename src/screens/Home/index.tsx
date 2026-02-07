@@ -93,9 +93,10 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
     setLoading(false);
   }
 
-  useEffect(() => {
+    useEffect(() => {
   load();
 }, [refreshKey]);
+
 
 
 

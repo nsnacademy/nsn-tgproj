@@ -34,18 +34,19 @@ function App() {
     saveTelegramUser();
   }, []);
 
-  /* === ЕДИНАЯ НАВИГАЦИЯ === */
+  /* === НАВИГАЦИЯ === */
   const navigate = (next: Screen, challengeId?: string) => {
     if (challengeId) {
       setSelectedChallengeId(challengeId);
     }
 
-    // 👇 ВАЖНО: при каждом возврате на home — обновляем данные
-    if (next === 'home') {
-      setHomeRefreshKey((k) => k + 1);
-    }
-
     setScreen(next);
+  };
+
+  /* === ЯВНОЕ ОБНОВЛЕНИЕ HOME === */
+  const goHomeAndRefresh = () => {
+    setHomeRefreshKey((k) => k + 1);
+    setScreen('home');
   };
 
   return (
@@ -78,7 +79,7 @@ function App() {
       {screen === 'challenge-details' && selectedChallengeId && (
         <ChallengeDetails
           challengeId={selectedChallengeId}
-          onNavigateHome={() => navigate('home')}
+          onNavigateHome={goHomeAndRefresh}
         />
       )}
 
