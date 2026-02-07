@@ -7,6 +7,17 @@ export const SafeArea = styled.div`
   color: #fff;
   display: flex;
   flex-direction: column;
+  position: relative;
+`;
+
+/* === FIXED HEADER WRAPPER === */
+export const FixedHeaderWrapper = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #000;
 `;
 
 /* === HEADER SPACER === */
@@ -18,6 +29,7 @@ export const HeaderSpacer = styled.div`
 /* === BOTTOM NAV SPACER === */
 export const BottomNavSpacer = styled.div`
   height: 100px;
+  flex-shrink: 0;
 `;
 
 /* === CONTENT === */
@@ -28,17 +40,12 @@ export const HomeContainer = styled.div`
   padding: 0 20px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  margin-top: 140px; /* Высота фиксированного хедера */
 `;
 
 /* === HEADER === */
 export const Header = styled.div`
-  margin-top: 20px;
-  margin-bottom: 24px;
-  position: sticky;
-  top: 0;
-  background: #000;
-  padding-top: 10px;
-  z-index: 10;
+  padding: 10px 20px 0 20px;
 `;
 
 export const StatusLabel = styled.div`
@@ -49,18 +56,16 @@ export const StatusLabel = styled.div`
 export const StatusTitle = styled.div`
   font-size: 22px;
   font-weight: 600;
+  margin-top: 4px;
 `;
 
 /* === TABS === */
 export const Tabs = styled.div`
   display: flex;
   gap: 18px;
-  margin-bottom: 20px;
-  position: sticky;
-  top: 90px;
+  padding: 15px 20px 15px 20px;
   background: #000;
-  padding-bottom: 10px;
-  z-index: 10;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 `;
 
 export const Tab = styled.div<{ $active?: boolean }>`
@@ -219,7 +224,7 @@ export const BottomNav = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-around;
-  z-index: 100;
+  z-index: 1000;
   border: 1px solid rgba(255, 255, 255, 0.1);
 `;
 

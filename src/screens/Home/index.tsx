@@ -24,6 +24,7 @@ import {
   ProgressFill,
   ProgressText,
   PrimaryButton,
+  FixedHeaderWrapper,
   HeaderSpacer,
   BottomNavSpacer,
 } from './styles';
@@ -122,9 +123,9 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
   return (
     <SafeArea>
-      <HeaderSpacer />
-      <HomeContainer>
-        {/* HEADER */}
+      {/* FIXED HEADER */}
+      <FixedHeaderWrapper>
+        <HeaderSpacer />
         <Header>
           <StatusLabel>Состояние</StatusLabel>
           <StatusTitle>
@@ -151,8 +152,10 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
             Завершённые вызовы
           </Tab>
         </Tabs>
+      </FixedHeaderWrapper>
 
-        {/* CONTENT */}
+      {/* SCROLLABLE CONTENT */}
+      <HomeContainer>
         <CenterWrapper>
           {loading ? (
             <EmptyText>Загрузка…</EmptyText>
@@ -210,10 +213,10 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
             ))
           )}
         </CenterWrapper>
+        <BottomNavSpacer />
       </HomeContainer>
-      <BottomNavSpacer />
 
-      {/* BOTTOM NAV */}
+      {/* FIXED BOTTOM NAV */}
       <BottomNav>
         <NavItem $active>
           <svg
