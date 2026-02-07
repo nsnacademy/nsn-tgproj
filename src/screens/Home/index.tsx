@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
 import {
@@ -11,28 +10,38 @@ import {
   Tabs,
   Tab,
   CenterWrapper,
+  List,
   EmptyText,
   BottomNav,
   NavItem,
   Card,
-   CardTitleRow,
+  CardContent,
+  CardTitleRow,
   CardTitle,
   CardRank,
-  CardLabel,
-  CardValue,
+  Details,
+  Detail,
+  DetailLabel,
+  DetailValue,
   ProgressWrapper,
+  ProgressHeader,
+  ProgressLabel,
+  ProgressPercentage,
   ProgressBar,
   ProgressFill,
-  ProgressText,
+  Participants,
+  Avatars,
+  Avatar,
+  ParticipantsCount,
   PrimaryButton,
+  FadeTop,
+  FadeBottom,
 } from './styles';
 
 type HomeProps = {
   onNavigate: (screen: 'home' | 'create') => void;
   refreshKey: number;
 };
-
-
 
 type ChallengeItem = {
   participant_id: string;
@@ -42,10 +51,11 @@ type ChallengeItem = {
 };
 
 export function Home({ onNavigate, refreshKey }: HomeProps) {
-
   const [tab, setTab] = useState<'active' | 'completed'>('active');
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
+  const listRef = useRef<HTMLDivElement>(null);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function load() {
     console.log('[HOME] load() start');
@@ -66,8 +76,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       .eq('telegram_id', tgUser.id)
       .single();
 
-      console.log('[HOME] user from db', user, userError);
-
+    console.log('[HOME] user from db', user, userError);
 
     if (userError || !user) {
       setItems([]);
@@ -87,8 +96,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         )
       `)
       .eq('user_id', user.id);
-      console.log('[HOME] participants raw', data, error);
 
+    console.log('[HOME] participants raw', data, error);
 
     if (error || !data) {
       setItems([]);
@@ -98,7 +107,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
     // 3. НОРМАЛИЗАЦИЯ
     const normalized: ChallengeItem[] = data
-      .filter((p: any) => p.challenge) // ⬅️ КРИТИЧНО
+      .filter((p: any) => p.challenge)
       .map((p: any) => ({
         participant_id: p.id,
         challenge_id: p.challenge.id,
@@ -106,25 +115,124 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         is_finished: p.challenge.is_finished,
       }));
 
-      console.log('[HOME] normalized items', normalized);
+    console.log('[HOME] normalized items', normalized);
 
     setItems(normalized);
     setLoading(false);
   }
 
-    useEffect(() => {
-  console.log('[HOME] useEffect refreshKey', refreshKey);
-  load();
-}, [refreshKey]);
+  useEffect(() => {
+    console.log('[HOME] useEffect refreshKey', refreshKey);
+    load();
+    
+    return () => {
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+    };
+  }, [refreshKey]);
 
+  // Эффект фокуса при скролле
+  useEffect(() => {
+    const updateCardStyles = () => {
+      if (!listRef.current) return;
+      
+      const cards = listRef.current.querySelectorAll('.card');
+      if (cards.length === 0) return;
 
+      const center = listRef.current.scrollTop + listRef.current.clientHeight / 2;
 
+      cards.forEach((card: Element) => {
+        const cardElement = card as HTMLElement;
+        const cardCenter = cardElement.offsetTop + cardElement.offsetHeight / 2;
+        const distance = Math.abs(cardCenter - center);
+        const maxDistance = listRef.current!.clientHeight / 2;
+        
+        const ratio = Math.min(distance / maxDistance, 1);
+        
+        // Scale effect
+        const scale = 1 - ratio * 0.05;
+        cardElement.style.transform = `scale(${scale})`;
+        
+        // Opacity effect
+        const opacity = 1 - ratio * 0.3;
+        cardElement.style.opacity = opacity.toString();
+        
+        // Border effect for focused card
+        if (ratio < 0.1) {
+          cardElement.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+          cardElement.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
+        } else {
+          cardElement.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+          cardElement.style.boxShadow = 'none';
+        }
+      });
+    };
 
+    const handleScroll = () => {
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+      
+      scrollTimerRef.current = setTimeout(() => {
+        requestAnimationFrame(updateCardStyles);
+      }, 10);
+    };
+
+    const listElement = listRef.current;
+    if (listElement) {
+      listElement.addEventListener('scroll', handleScroll);
+      
+      // Initial update
+      setTimeout(() => updateCardStyles(), 100);
+      
+      return () => {
+        listElement.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, [items]);
 
   const active = items.filter((i) => !i.is_finished);
   const completed = items.filter((i) => i.is_finished);
 
   const list = tab === 'active' ? active : completed;
+
+  // Генерация демо-данных для плашек
+  const getChallengeStats = (index: number) => {
+    const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336'];
+    const durations = [14, 21, 30, 7, 14, 21, 30, 14];
+    const currentDays = [7, 14, 22, 3, 5, 18, 11, 9];
+    const participants = [142, 89, 256, 78, 203, 167, 94, 312];
+    const ranks = [5, 3, 1, 8, 2, 4, 7, 1];
+    
+    const i = index % 8;
+    const progress = (currentDays[i] / durations[i]) * 100;
+    
+    return {
+      duration: durations[i],
+      currentDay: currentDays[i],
+      participants: participants[i],
+      rank: ranks[i],
+      progress: Math.round(progress),
+      color: colors[i % colors.length],
+    };
+  };
+
+  // Генерация аватаров
+  const generateAvatars = (count: number) => {
+    const avatars = [];
+    const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2'];
+    
+    for (let i = 0; i < count; i++) {
+      const color = colors[i % colors.length];
+      const letter = String.fromCharCode(65 + i);
+      avatars.push({ color, letter });
+    }
+    
+    return avatars;
+  };
+
+  const avatars = generateAvatars(3);
 
   return (
     <SafeArea>
@@ -159,66 +267,115 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
         {/* CONTENT */}
         <CenterWrapper>
-          {loading ? (
-            <EmptyText>Загрузка…</EmptyText>
-          ) : list.length === 0 ? (
-            tab === 'active' ? (
-              <EmptyText>
-                Создайте новый вызов или
-                <br />
-                присоединитесь к существующему
-              </EmptyText>
+          <FadeTop />
+          
+          <List ref={listRef}>
+            {loading ? (
+              <EmptyText>Загрузка…</EmptyText>
+            ) : list.length === 0 ? (
+              tab === 'active' ? (
+                <EmptyText>
+                  Создайте новый вызов или
+                  <br />
+                  присоединитесь к существующему
+                </EmptyText>
+              ) : (
+                <EmptyText>
+                  У вас пока нет
+                  <br />
+                  завершённых вызовов
+                </EmptyText>
+              )
             ) : (
-              <EmptyText>
-                У вас пока нет
-                <br />
-                завершённых вызовов
-              </EmptyText>
-            )
-          ) : (
-             list.map((item) => (
-  <Card key={item.participant_id}>
-    {/* TITLE + RANK */}
-    <CardTitleRow>
-      <CardTitle>{item.title}</CardTitle>
-      <CardRank>#12</CardRank>
-    </CardTitleRow>
+              list.map((item, index) => {
+                const stats = getChallengeStats(index);
+                return (
+                  <Card key={item.participant_id} className="card">
+                    <CardContent>
+                      {/* TITLE + RANK */}
+                      <CardTitleRow>
+                        <CardTitle>{item.title}</CardTitle>
+                        <CardRank>#{stats.rank}</CardRank>
+                      </CardTitleRow>
 
-    {/* DURATION */}
-    <CardLabel>Длительность</CardLabel>
-    <CardValue>До 31 августа</CardValue>
+                      {/* DETAILS */}
+                      <Details>
+                        <Detail>
+                          <DetailLabel>Длительность</DetailLabel>
+                          <DetailValue>{stats.duration} дней</DetailValue>
+                        </Detail>
+                        <Detail>
+                          <DetailLabel>Прогресс</DetailLabel>
+                          <DetailValue>{stats.currentDay}/{stats.duration} дней</DetailValue>
+                        </Detail>
+                        <Detail>
+                          <DetailLabel>Участники</DetailLabel>
+                          <DetailValue>{stats.participants}</DetailValue>
+                        </Detail>
+                        <Detail>
+                          <DetailLabel>Статус</DetailLabel>
+                          <DetailValue>{item.is_finished ? '✅' : '⏳'}</DetailValue>
+                        </Detail>
+                      </Details>
 
-    {/* PARTICIPANTS */}
-    <CardLabel>Участники</CardLabel>
-    <CardValue>89 человек</CardValue>
+                      {/* PROGRESS */}
+                      <ProgressWrapper>
+                        <ProgressHeader>
+                          <ProgressLabel>Прогресс</ProgressLabel>
+                          <ProgressPercentage>{stats.progress}%</ProgressPercentage>
+                        </ProgressHeader>
+                        <ProgressBar>
+                          <ProgressFill 
+                            style={{ 
+                              width: `${stats.progress}%`,
+                              background: stats.color 
+                            }} 
+                          />
+                        </ProgressBar>
+                        
+                        {/* PARTICIPANTS AVATARS */}
+                        <Participants>
+                          <Avatars>
+                            {avatars.map((avatar, idx) => (
+                              <Avatar 
+                                key={idx} 
+                                style={{ 
+                                  background: avatar.color,
+                                  zIndex: avatars.length - idx
+                                }}
+                              >
+                                {avatar.letter}
+                              </Avatar>
+                            ))}
+                          </Avatars>
+                          <ParticipantsCount>
+                            +{stats.participants - 3} участников
+                          </ParticipantsCount>
+                        </Participants>
+                      </ProgressWrapper>
 
-    {/* PROGRESS */}
-    <ProgressWrapper>
-      <ProgressBar>
-        <ProgressFill style={{ width: '11%' }} />
-      </ProgressBar>
-      <ProgressText>3.2 / 30 км</ProgressText>
-    </ProgressWrapper>
-
-    {/* ACTION */}
-    {!item.is_finished && (
-      <PrimaryButton
-        onClick={() => {
-          // позже: navigate to challenge / report
-          console.log('go to report', item.participant_id);
-        }}
-      >
-        Перейти к отчёту
-      </PrimaryButton>
-    )}
-  </Card>
-))
-
-          )}
+                      {/* ACTION */}
+                      {!item.is_finished && (
+                        <PrimaryButton
+                          onClick={() => {
+                            console.log('go to report', item.participant_id);
+                          }}
+                        >
+                          Перейти к отчёту
+                        </PrimaryButton>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </List>
+          
+          <FadeBottom />
         </CenterWrapper>
       </HomeContainer>
 
-      {/* BOTTOM NAV */}
+      {/* BOTTOM NAV (оставляем как было) */}
       <BottomNav>
         <NavItem $active>
           <svg width="24" height="24" fill="none"
