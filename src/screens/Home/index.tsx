@@ -1,4 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+
+
+
+import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
 import {
@@ -14,7 +17,7 @@ import {
   BottomNav,
   NavItem,
   Card,
-  CardTitleRow,
+   CardTitleRow,
   CardTitle,
   CardRank,
   CardLabel,
@@ -31,6 +34,8 @@ type HomeProps = {
   refreshKey: number;
 };
 
+
+
 type ChallengeItem = {
   participant_id: string;
   challenge_id: string;
@@ -39,35 +44,41 @@ type ChallengeItem = {
 };
 
 export function Home({ onNavigate, refreshKey }: HomeProps) {
+
   const [tab, setTab] = useState<'active' | 'completed'>('active');
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
 
-  const listRef = useRef<HTMLDivElement | null>(null);
-
   async function load() {
+    console.log('[HOME] load() start');
     setLoading(true);
 
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    console.log('[HOME] tgUser', tgUser);
     if (!tgUser) {
       setItems([]);
       setLoading(false);
       return;
     }
 
-    const { data: user } = await supabase
+    // 1. USER
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('telegram_id', tgUser.id)
       .single();
 
-    if (!user) {
+      console.log('[HOME] user from db', user, userError);
+
+
+    if (userError || !user) {
       setItems([]);
       setLoading(false);
       return;
     }
 
-    const { data } = await supabase
+    // 2. PARTICIPANTS + CHALLENGES
+    const { data, error } = await supabase
       .from('participants')
       .select(`
         id,
@@ -78,9 +89,18 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         )
       `)
       .eq('user_id', user.id);
+      console.log('[HOME] participants raw', data, error);
 
-    const normalized: ChallengeItem[] = (data || [])
-      .filter((p: any) => p.challenge)
+
+    if (error || !data) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    // 3. НОРМАЛИЗАЦИЯ
+    const normalized: ChallengeItem[] = data
+      .filter((p: any) => p.challenge) // ⬅️ КРИТИЧНО
       .map((p: any) => ({
         participant_id: p.id,
         challenge_id: p.challenge.id,
@@ -88,64 +108,30 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         is_finished: p.challenge.is_finished,
       }));
 
+      console.log('[HOME] normalized items', normalized);
+
     setItems(normalized);
     setLoading(false);
   }
 
-  useEffect(() => {
-    load();
-  }, [refreshKey]);
+    useEffect(() => {
+  console.log('[HOME] useEffect refreshKey', refreshKey);
+  load();
+}, [refreshKey]);
 
-  /* ===============================
-     СКРОЛЛ + ВЫПУКЛАЯ ЦЕНТРАЛЬНАЯ
-     =============================== */
-  useEffect(() => {
-    const list = listRef.current;
-    if (!list) return;
 
-    const update = () => {
-      const cards = Array.from(list.children) as HTMLElement[];
-      const center = list.scrollTop + list.clientHeight / 2;
 
-      cards.forEach((card) => {
-        const cardCenter =
-          card.offsetTop + card.offsetHeight / 2;
-        const distance = Math.abs(cardCenter - center);
-        const max = list.clientHeight / 2;
-        const ratio = Math.min(distance / max, 1);
 
-        const scale = 1 - ratio * 0.06;
-        const lift = (1 - ratio) * 14;
-        const opacity = 1 - ratio * 0.45;
-
-        card.style.transform = `translateY(${-lift}px) scale(${scale})`;
-        card.style.opacity = `${opacity}`;
-
-        if (ratio < 0.12) {
-          card.style.boxShadow =
-            '0 18px 42px rgba(0,0,0,0.6)';
-          card.style.borderColor =
-            'rgba(255,255,255,0.22)';
-        } else {
-          card.style.boxShadow = 'none';
-          card.style.borderColor =
-            'rgba(255,255,255,0.06)';
-        }
-      });
-    };
-
-    update();
-    list.addEventListener('scroll', update, { passive: true });
-    return () => list.removeEventListener('scroll', update);
-  }, [items, tab]);
 
   const active = items.filter((i) => !i.is_finished);
   const completed = items.filter((i) => i.is_finished);
+
   const list = tab === 'active' ? active : completed;
 
   return (
     <SafeArea>
       <HomeContainer>
+        {/* HEADER */}
         <Header>
           <StatusLabel>Состояние</StatusLabel>
           <StatusTitle>
@@ -159,10 +145,12 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
           </StatusTitle>
         </Header>
 
+        {/* TABS */}
         <Tabs>
           <Tab $active={tab === 'active'} onClick={() => setTab('active')}>
             Активные вызовы
           </Tab>
+
           <Tab
             $active={tab === 'completed'}
             onClick={() => setTab('completed')}
@@ -171,42 +159,69 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
           </Tab>
         </Tabs>
 
-        <CenterWrapper ref={listRef}>
+        {/* CONTENT */}
+        <CenterWrapper>
           {loading ? (
             <EmptyText>Загрузка…</EmptyText>
           ) : list.length === 0 ? (
-            <EmptyText>Нет данных</EmptyText>
+            tab === 'active' ? (
+              <EmptyText>
+                Создайте новый вызов или
+                <br />
+                присоединитесь к существующему
+              </EmptyText>
+            ) : (
+              <EmptyText>
+                У вас пока нет
+                <br />
+                завершённых вызовов
+              </EmptyText>
+            )
           ) : (
-            list.map((item) => (
-              <Card key={item.participant_id}>
-                <CardTitleRow>
-                  <CardTitle>{item.title}</CardTitle>
-                  <CardRank>#12</CardRank>
-                </CardTitleRow>
+             list.map((item) => (
+  <Card key={item.participant_id}>
+    {/* TITLE + RANK */}
+    <CardTitleRow>
+      <CardTitle>{item.title}</CardTitle>
+      <CardRank>#12</CardRank>
+    </CardTitleRow>
 
-                <CardLabel>Длительность</CardLabel>
-                <CardValue>До 31 августа</CardValue>
+    {/* DURATION */}
+    <CardLabel>Длительность</CardLabel>
+    <CardValue>До 31 августа</CardValue>
 
-                <CardLabel>Участники</CardLabel>
-                <CardValue>89 человек</CardValue>
+    {/* PARTICIPANTS */}
+    <CardLabel>Участники</CardLabel>
+    <CardValue>89 человек</CardValue>
 
-                <ProgressWrapper>
-                  <ProgressBar>
-                    <ProgressFill style={{ width: '11%' }} />
-                  </ProgressBar>
-                  <ProgressText>3.2 / 30 км</ProgressText>
-                </ProgressWrapper>
+    {/* PROGRESS */}
+    <ProgressWrapper>
+      <ProgressBar>
+        <ProgressFill style={{ width: '11%' }} />
+      </ProgressBar>
+      <ProgressText>3.2 / 30 км</ProgressText>
+    </ProgressWrapper>
 
-                {!item.is_finished && (
-                  <PrimaryButton>Перейти к отчёту</PrimaryButton>
-                )}
-              </Card>
-            ))
+    {/* ACTION */}
+    {!item.is_finished && (
+      <PrimaryButton
+        onClick={() => {
+          // позже: navigate to challenge / report
+          console.log('go to report', item.participant_id);
+        }}
+      >
+        Перейти к отчёту
+      </PrimaryButton>
+    )}
+  </Card>
+))
+
           )}
         </CenterWrapper>
       </HomeContainer>
 
-     <BottomNav>
+      {/* BOTTOM NAV */}
+      <BottomNav>
         <NavItem $active>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
@@ -249,6 +264,3 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
     </SafeArea>
   );
 }
-
-
-
