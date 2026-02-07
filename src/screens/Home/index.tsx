@@ -19,7 +19,6 @@ import {
   BottomNav,
   NavItem,
   Card,
-  Row,
    CardTitleRow,
   CardTitle,
   CardRank,
