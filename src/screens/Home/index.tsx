@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+
+import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
 import {
@@ -10,41 +11,28 @@ import {
   Tabs,
   Tab,
   CenterWrapper,
-  List,
   EmptyText,
   BottomNav,
   NavItem,
   Card,
-  CardContent,
-  CardTitleRow,
+   CardTitleRow,
   CardTitle,
   CardRank,
-  Details,
-  Detail,
-  DetailLabel,
-  DetailValue,
+  CardLabel,
+  CardValue,
   ProgressWrapper,
-  ProgressHeader,
-  ProgressLabel,
-  ProgressPercentage,
   ProgressBar,
   ProgressFill,
-  Participants,
-  Avatars,
-  Avatar,
-  ParticipantsCount,
+  ProgressText,
   PrimaryButton,
-  FadeTop,
-  FadeBottom,
-  StatusBar,
-  Time,
-  StatusIcons,
 } from './styles';
 
 type HomeProps = {
   onNavigate: (screen: 'home' | 'create') => void;
   refreshKey: number;
 };
+
+
 
 type ChallengeItem = {
   participant_id: string;
@@ -53,48 +41,13 @@ type ChallengeItem = {
   is_finished: boolean;
 };
 
-// Генерация случайных цветов для прогресса
-const generateColors = (): string => {
-  const colors = [
-    '#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336',
-    '#00BCD4', '#3F51B5', '#8BC34A', '#FF5722', '#673AB7'
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
-};
-
-// Генерация аватаров
-const generateAvatars = (count: number): Array<{ color: string; letter: string }> => {
-  const avatars = [];
-  const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2'];
-  
-  for (let i = 0; i < count; i++) {
-    const color = colors[i % colors.length];
-    const letter = String.fromCharCode(65 + i);
-    avatars.push({ color, letter });
-  }
-  
-  return avatars;
-};
-
 export function Home({ onNavigate, refreshKey }: HomeProps) {
-  const [tab, setTab] = useState<'active' | 'completed' | 'popular'>('active');
-  const [loading, setLoading] = useState<boolean>(true);
+
+  const [tab, setTab] = useState<'active' | 'completed'>('active');
+  const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
-  const [currentTime, setCurrentTime] = useState<string>('');
-  const listRef = useRef<HTMLDivElement>(null);
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Обновление времени
-  const updateTime = (): void => {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('ru-RU', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-    setCurrentTime(timeString);
-  };
-
-  async function load(): Promise<void> {
+  async function load() {
     console.log('[HOME] load() start');
     setLoading(true);
 
@@ -113,7 +66,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       .eq('telegram_id', tgUser.id)
       .single();
 
-    console.log('[HOME] user from db', user, userError);
+      console.log('[HOME] user from db', user, userError);
+
 
     if (userError || !user) {
       setItems([]);
@@ -129,14 +83,12 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         challenge:challenge_id (
           id,
           title,
-          is_finished,
-          created_at,
-          description
+          is_finished
         )
       `)
       .eq('user_id', user.id);
-    
-    console.log('[HOME] participants raw', data, error);
+      console.log('[HOME] participants raw', data, error);
+
 
     if (error || !data) {
       setItems([]);
@@ -146,7 +98,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
     // 3. НОРМАЛИЗАЦИЯ
     const normalized: ChallengeItem[] = data
-      .filter((p: any) => p.challenge)
+      .filter((p: any) => p.challenge) // ⬅️ КРИТИЧНО
       .map((p: any) => ({
         participant_id: p.id,
         challenge_id: p.challenge.id,
@@ -154,129 +106,28 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         is_finished: p.challenge.is_finished,
       }));
 
-    console.log('[HOME] normalized items', normalized);
+      console.log('[HOME] normalized items', normalized);
 
     setItems(normalized);
     setLoading(false);
   }
 
-  useEffect(() => {
-    console.log('[HOME] useEffect refreshKey', refreshKey);
-    load();
-    updateTime();
-    
-    // Обновление времени каждую минуту
-    const timeInterval = setInterval(updateTime, 60000);
-    
-    return () => {
-      clearInterval(timeInterval);
-      if (scrollTimerRef.current) {
-        clearTimeout(scrollTimerRef.current);
-      }
-    };
-  }, [refreshKey]);
+    useEffect(() => {
+  console.log('[HOME] useEffect refreshKey', refreshKey);
+  load();
+}, [refreshKey]);
 
-  // Эффект фокуса при скролле
-  useEffect(() => {
-    const updateCardStyles = (): void => {
-      if (!listRef.current) return;
-      
-      const cards = listRef.current.querySelectorAll('.card');
-      if (cards.length === 0) return;
 
-      const center = listRef.current.scrollTop + listRef.current.clientHeight / 2;
 
-      cards.forEach((card: Element) => {
-        const cardElement = card as HTMLElement;
-        const cardCenter = cardElement.offsetTop + cardElement.offsetHeight / 2;
-        const distance = Math.abs(cardCenter - center);
-        const maxDistance = listRef.current!.clientHeight / 2;
-        
-        const ratio = Math.min(distance / maxDistance, 1);
-        
-        // Scale effect
-        const scale = 1 - ratio * 0.05;
-        cardElement.style.transform = `scale(${scale})`;
-        
-        // Opacity effect
-        const opacity = 1 - ratio * 0.3;
-        cardElement.style.opacity = opacity.toString();
-        
-        // Border effect for focused card
-        if (ratio < 0.1) {
-          cardElement.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-          cardElement.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
-        } else {
-          cardElement.style.borderColor = 'rgba(255, 255, 255, 0.05)';
-          cardElement.style.boxShadow = 'none';
-        }
-      });
-    };
 
-    const handleScroll = (): void => {
-      if (scrollTimerRef.current) {
-        clearTimeout(scrollTimerRef.current);
-      }
-      
-      scrollTimerRef.current = setTimeout(() => {
-        requestAnimationFrame(updateCardStyles);
-      }, 10);
-    };
-
-    const listElement = listRef.current;
-    if (listElement) {
-      listElement.addEventListener('scroll', handleScroll);
-      
-      // Initial update
-      setTimeout(() => updateCardStyles(), 100);
-      
-      return () => {
-        listElement.removeEventListener('scroll', handleScroll);
-      };
-    }
-  }, [items]);
 
   const active = items.filter((i) => !i.is_finished);
   const completed = items.filter((i) => i.is_finished);
-  const popular = [...active, ...completed]
-    .sort(() => Math.random() - 0.5)
-    .slice(0, Math.min(5, active.length + completed.length));
 
-  const list = tab === 'active' ? active : tab === 'completed' ? completed : popular;
-
-  // Статистика для карточек (заглушка, можно заменить реальными данными)
-  const getChallengeStats = (index: number) => {
-    const durations = [14, 21, 30, 7, 14, 21, 30, 14];
-    const currentDays = [7, 14, 22, 3, 5, 18, 11, 9];
-    const participants = [142, 89, 256, 78, 203, 167, 94, 312];
-    const ranks = [5, 3, 1, 8, 2, 4, 7, 1];
-    
-    const i = index % 8;
-    const progress = (currentDays[i] / durations[i]) * 100;
-    
-    return {
-      duration: durations[i],
-      currentDay: currentDays[i],
-      participants: participants[i],
-      rank: ranks[i],
-      progress: Math.round(progress),
-      color: generateColors(),
-    };
-  };
-
-  const avatars = generateAvatars(3);
+  const list = tab === 'active' ? active : completed;
 
   return (
     <SafeArea>
-      <StatusBar>
-        <Time>{currentTime}</Time>
-        <StatusIcons>
-          <span>📶</span>
-          <span>📡</span>
-          <span>🔋</span>
-        </StatusIcons>
-      </StatusBar>
-
       <HomeContainer>
         {/* HEADER */}
         <Header>
@@ -286,142 +137,84 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
               ? active.length === 0
                 ? 'Нет активных вызовов'
                 : 'Активные вызовы'
-              : tab === 'completed'
-              ? completed.length === 0
-                ? 'Нет завершённых вызовов'
-                : 'Завершённые вызовы'
-              : 'Популярные вызовы'}
+              : completed.length === 0
+              ? 'Нет завершённых вызовов'
+              : 'Завершённые вызовы'}
           </StatusTitle>
         </Header>
 
         {/* TABS */}
         <Tabs>
           <Tab $active={tab === 'active'} onClick={() => setTab('active')}>
-            Активные
+            Активные вызовы
           </Tab>
-          <Tab $active={tab === 'completed'} onClick={() => setTab('completed')}>
-            Завершённые
-          </Tab>
-          <Tab $active={tab === 'popular'} onClick={() => setTab('popular')}>
-            Популярные
+
+          <Tab
+            $active={tab === 'completed'}
+            onClick={() => setTab('completed')}
+          >
+            Завершённые вызовы
           </Tab>
         </Tabs>
 
         {/* CONTENT */}
         <CenterWrapper>
-          <FadeTop />
-          
-          <List ref={listRef}>
-            {loading ? (
-              <EmptyText>Загрузка…</EmptyText>
-            ) : list.length === 0 ? (
+          {loading ? (
+            <EmptyText>Загрузка…</EmptyText>
+          ) : list.length === 0 ? (
+            tab === 'active' ? (
               <EmptyText>
-                {tab === 'active' ? (
-                  <>
-                    Создайте новый вызов или
-                    <br />
-                    присоединитесь к существующему
-                  </>
-                ) : tab === 'completed' ? (
-                  <>
-                    У вас пока нет
-                    <br />
-                    завершённых вызовов
-                  </>
-                ) : (
-                  <>
-                    Популярные вызовы
-                    <br />
-                    появятся здесь
-                  </>
-                )}
+                Создайте новый вызов или
+                <br />
+                присоединитесь к существующему
               </EmptyText>
             ) : (
-              list.map((item, index) => {
-                const stats = getChallengeStats(index);
-                return (
-                  <Card key={item.participant_id} className="card">
-                    <CardContent>
-                      {/* TITLE + RANK */}
-                      <CardTitleRow>
-                        <CardTitle>{item.title}</CardTitle>
-                        <CardRank>#{stats.rank}</CardRank>
-                      </CardTitleRow>
+              <EmptyText>
+                У вас пока нет
+                <br />
+                завершённых вызовов
+              </EmptyText>
+            )
+          ) : (
+             list.map((item) => (
+  <Card key={item.participant_id}>
+    {/* TITLE + RANK */}
+    <CardTitleRow>
+      <CardTitle>{item.title}</CardTitle>
+      <CardRank>#12</CardRank>
+    </CardTitleRow>
 
-                      {/* DETAILS */}
-                      <Details>
-                        <Detail>
-                          <DetailLabel>Длительность</DetailLabel>
-                          <DetailValue>{stats.duration} дней</DetailValue>
-                        </Detail>
-                        <Detail>
-                          <DetailLabel>Прогресс</DetailLabel>
-                          <DetailValue>{stats.currentDay}/{stats.duration} дней</DetailValue>
-                        </Detail>
-                        <Detail>
-                          <DetailLabel>Участники</DetailLabel>
-                          <DetailValue>{stats.participants}</DetailValue>
-                        </Detail>
-                        <Detail>
-                          <DetailLabel>Статус</DetailLabel>
-                          <DetailValue>{item.is_finished ? '✅' : '⏳'}</DetailValue>
-                        </Detail>
-                      </Details>
+    {/* DURATION */}
+    <CardLabel>Длительность</CardLabel>
+    <CardValue>До 31 августа</CardValue>
 
-                      {/* PROGRESS */}
-                      <ProgressWrapper>
-                        <ProgressHeader>
-                          <ProgressLabel>Прогресс</ProgressLabel>
-                          <ProgressPercentage>{stats.progress}%</ProgressPercentage>
-                        </ProgressHeader>
-                        <ProgressBar>
-                          <ProgressFill 
-                            style={{ 
-                              width: `${stats.progress}%`,
-                              background: stats.color 
-                            }} 
-                          />
-                        </ProgressBar>
-                        
-                        {/* PARTICIPANTS AVATARS */}
-                        <Participants>
-                          <Avatars>
-                            {avatars.map((avatar, idx) => (
-                              <Avatar 
-                                key={idx} 
-                                style={{ 
-                                  background: avatar.color,
-                                  zIndex: avatars.length - idx
-                                }}
-                              >
-                                {avatar.letter}
-                              </Avatar>
-                            ))}
-                          </Avatars>
-                          <ParticipantsCount>
-                            +{stats.participants - 3} участников
-                          </ParticipantsCount>
-                        </Participants>
-                      </ProgressWrapper>
+    {/* PARTICIPANTS */}
+    <CardLabel>Участники</CardLabel>
+    <CardValue>89 человек</CardValue>
 
-                      {/* ACTION */}
-                      {!item.is_finished && (
-                        <PrimaryButton
-                          onClick={() => {
-                            console.log('go to report', item.participant_id);
-                          }}
-                        >
-                          Перейти к отчёту
-                        </PrimaryButton>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </List>
-          
-          <FadeBottom />
+    {/* PROGRESS */}
+    <ProgressWrapper>
+      <ProgressBar>
+        <ProgressFill style={{ width: '11%' }} />
+      </ProgressBar>
+      <ProgressText>3.2 / 30 км</ProgressText>
+    </ProgressWrapper>
+
+    {/* ACTION */}
+    {!item.is_finished && (
+      <PrimaryButton
+        onClick={() => {
+          // позже: navigate to challenge / report
+          console.log('go to report', item.participant_id);
+        }}
+      >
+        Перейти к отчёту
+      </PrimaryButton>
+    )}
+  </Card>
+))
+
+          )}
         </CenterWrapper>
       </HomeContainer>
 
