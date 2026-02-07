@@ -159,3 +159,44 @@ export const NavItem = styled.div<{ $active?: boolean }>`
     opacity: 0.7;
   }
 `;
+
+export const ProgressBar = styled.div`
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 6px;
+`;
+
+export const ProgressFill = styled.div`
+  height: 100%;
+  background: #fff;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+`;
+
+export const ProgressText = styled.div`
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 4px;
+`;
+
+export const ActionButton = styled.button`
+  margin-top: 12px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: none;
+
+  background: #fff;
+  color: #000;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  &:active {
+    opacity: 0.85;
+  }
+`;

@@ -15,6 +15,12 @@ import {
   NavItem,
   Card,
   Row,
+
+  /* ⬇️ ДОБАВЛЕНО */
+  ProgressBar,
+  ProgressFill,
+  ProgressText,
+  ActionButton,
 } from './styles';
 
 type HomeProps = {
@@ -22,17 +28,20 @@ type HomeProps = {
   refreshKey: number;
 };
 
-
-
 type ChallengeItem = {
   participant_id: string;
   challenge_id: string;
   title: string;
   is_finished: boolean;
+
+  /* ⬇️ ДОБАВЛЕНО (пока заглушки / nullable) */
+  end_date?: string;
+  participants_count?: number;
+  progress_current?: number;
+  progress_total?: number;
 };
 
 export function Home({ onNavigate, refreshKey }: HomeProps) {
-
   const [tab, setTab] = useState<'active' | 'completed'>('active');
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
@@ -56,8 +65,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       .eq('telegram_id', tgUser.id)
       .single();
 
-      console.log('[HOME] user from db', user, userError);
-
+    console.log('[HOME] user from db', user, userError);
 
     if (userError || !user) {
       setItems([]);
@@ -77,8 +85,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         )
       `)
       .eq('user_id', user.id);
-      console.log('[HOME] participants raw', data, error);
 
+    console.log('[HOME] participants raw', data, error);
 
     if (error || !data) {
       setItems([]);
@@ -88,32 +96,33 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
     // 3. НОРМАЛИЗАЦИЯ
     const normalized: ChallengeItem[] = data
-      .filter((p: any) => p.challenge) // ⬅️ КРИТИЧНО
+      .filter((p: any) => p.challenge)
       .map((p: any) => ({
         participant_id: p.id,
         challenge_id: p.challenge.id,
         title: p.challenge.title,
         is_finished: p.challenge.is_finished,
+
+        /* ⬇️ ДОБАВЛЕНО — ПОКА ЗАГЛУШКИ */
+        end_date: '31 августа',
+        participants_count: 89,
+        progress_current: 0,
+        progress_total: 30,
       }));
 
-      console.log('[HOME] normalized items', normalized);
+    console.log('[HOME] normalized items', normalized);
 
     setItems(normalized);
     setLoading(false);
   }
 
-    useEffect(() => {
-  console.log('[HOME] useEffect refreshKey', refreshKey);
-  load();
-}, [refreshKey]);
-
-
-
-
+  useEffect(() => {
+    console.log('[HOME] useEffect refreshKey', refreshKey);
+    load();
+  }, [refreshKey]);
 
   const active = items.filter((i) => !i.is_finished);
   const completed = items.filter((i) => i.is_finished);
-
   const list = tab === 'active' ? active : completed;
 
   return (
@@ -138,11 +147,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
           <Tab $active={tab === 'active'} onClick={() => setTab('active')}>
             Активные вызовы
           </Tab>
-
-          <Tab
-            $active={tab === 'completed'}
-            onClick={() => setTab('completed')}
-          >
+          <Tab $active={tab === 'completed'} onClick={() => setTab('completed')}>
             Завершённые вызовы
           </Tab>
         </Tabs>
@@ -168,7 +173,9 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
           ) : (
             list.map((item) => (
               <Card key={item.participant_id}>
+                {/* ⬇️ СТАРОЕ — НЕ ТРОГАЕМ */}
                 <Row><b>{item.title}</b></Row>
+
                 <Row>
                   Статус: {item.is_finished ? 'Завершён' : 'Идёт'}
                 </Row>
@@ -178,14 +185,42 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                     <button>Отметить выполнение</button>
                   </Row>
                 )}
+
+                {/* ⬇️ НОВОЕ (ДОБАВЛЕНО) */}
+                <Row style={{ opacity: 0.7 }}>
+                  До {item.end_date} · {item.participants_count} участников
+                </Row>
+
+                <ProgressBar>
+                  <ProgressFill
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        (item.progress_current! / item.progress_total!) * 100
+                      )}%`,
+                    }}
+                  />
+                </ProgressBar>
+
+                <ProgressText>
+                  {item.progress_current} / {item.progress_total}
+                </ProgressText>
+
+                {!item.is_finished && (
+                  <ActionButton
+                    onClick={() => onNavigate('home')}
+                  >
+                    Перейти к отчёту
+                  </ActionButton>
+                )}
               </Card>
             ))
           )}
         </CenterWrapper>
       </HomeContainer>
 
-      {/* BOTTOM NAV */}
-      <BottomNav>
+      {/* BOTTOM NAV — БЕЗ ИЗМЕНЕНИЙ */}
+       <BottomNav>
         <NavItem $active>
           <svg width="24" height="24" fill="none"
             stroke="currentColor" strokeWidth="2"
@@ -228,3 +263,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
     </SafeArea>
   );
 }
+
+
+
+
+
