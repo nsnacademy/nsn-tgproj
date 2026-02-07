@@ -65,11 +65,12 @@ function App() {
       )}
 
       {screen === 'challenge-details' && selectedChallengeId && (
-        <ChallengeDetails
-          challengeId={selectedChallengeId}
-          onBack={() => navigate('create')}
-        />
-      )}
+  <ChallengeDetails
+    challengeId={selectedChallengeId}
+    onNavigateHome={() => navigate('home')}
+  />
+)}
+
 
       {screen === 'create-flow-paid' && (
         <div
