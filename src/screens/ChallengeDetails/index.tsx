@@ -151,42 +151,71 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
 
  
    async function joinChallenge() {
-  if (!accepted || joining || alreadyJoined) return;
+  console.log('[JOIN] click');
+
+  if (!accepted || joining || alreadyJoined) {
+    console.log('[JOIN] blocked', { accepted, joining, alreadyJoined });
+    return;
+  }
 
   setJoining(true);
 
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  if (!tgUser) return;
+  console.log('[JOIN] tgUser', tgUser);
 
-  // 🚀 МГНОВЕННЫЙ ПЕРЕХОД НА HOME
-  onNavigateHome();
+  if (!tgUser) {
+    console.log('[JOIN] no telegram user');
+    setJoining(false);
+    return;
+  }
 
-  // 👇 ВСЁ НИЖЕ — В ФОНЕ
-  try {
-    const { data: user } = await supabase
-      .from('users')
-      .select('id')
-      .eq('telegram_id', tgUser.id)
-      .single();
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('telegram_id', tgUser.id)
+    .single();
 
-    if (!user) return;
+  console.log('[JOIN] user from db', user, userError);
 
-    const { data: existing } = await supabase
-      .from('participants')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('challenge_id', challengeId)
-      .maybeSingle();
+  if (!user) {
+    setJoining(false);
+    return;
+  }
 
-    if (existing) return;
+  const { data: existing } = await supabase
+    .from('participants')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('challenge_id', challengeId)
+    .maybeSingle();
 
-    await supabase.from('participants').insert({
+  console.log('[JOIN] existing participant', existing);
+
+  if (existing) {
+    console.log('[JOIN] already exists → go home');
+    setAlreadyJoined(true);
+    setJoining(false);
+    onNavigateHome();
+    return;
+  }
+
+  const { error } = await supabase
+    .from('participants')
+    .insert({
       user_id: user.id,
       challenge_id: challengeId,
     });
-  } catch (e) {
-    console.error('Join error', e);
+
+  console.log('[JOIN] insert result', error);
+
+  if (error) {
+    setJoining(false);
+    return;
   }
+
+  console.log('[JOIN] SUCCESS → go home');
+  setJoining(false);
+  onNavigateHome();
 }
 
 

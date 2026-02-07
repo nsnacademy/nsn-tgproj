@@ -45,9 +45,15 @@ function App() {
 
   /* === ЯВНОЕ ОБНОВЛЕНИЕ HOME === */
   const goHomeAndRefresh = () => {
-    setHomeRefreshKey((k) => k + 1);
-    setScreen('home');
-  };
+  console.log('[APP] goHomeAndRefresh');
+  setHomeRefreshKey((k) => {
+    const next = k + 1;
+    console.log('[APP] homeRefreshKey', next);
+    return next;
+  });
+  setScreen('home');
+};
+
 
   return (
     <>
@@ -58,11 +64,15 @@ function App() {
       )}
 
       {screen === 'home' && (
-        <Home
-          onNavigate={navigate}
-          refreshKey={homeRefreshKey}
-        />
-      )}
+  <>
+    {console.log('[APP] render Home with refreshKey', homeRefreshKey)}
+    <Home
+      onNavigate={navigate}
+      refreshKey={homeRefreshKey}
+    />
+  </>
+)}
+
 
       {screen === 'create' && (
         <Create onNavigate={navigate} />

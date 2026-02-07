@@ -38,9 +38,11 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
   const [items, setItems] = useState<ChallengeItem[]>([]);
 
   async function load() {
+    console.log('[HOME] load() start');
     setLoading(true);
 
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    console.log('[HOME] tgUser', tgUser);
     if (!tgUser) {
       setItems([]);
       setLoading(false);
@@ -53,6 +55,9 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       .select('id')
       .eq('telegram_id', tgUser.id)
       .single();
+
+      console.log('[HOME] user from db', user, userError);
+
 
     if (userError || !user) {
       setItems([]);
@@ -72,6 +77,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         )
       `)
       .eq('user_id', user.id);
+      console.log('[HOME] participants raw', data, error);
+
 
     if (error || !data) {
       setItems([]);
@@ -89,13 +96,17 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         is_finished: p.challenge.is_finished,
       }));
 
+      console.log('[HOME] normalized items', normalized);
+
     setItems(normalized);
     setLoading(false);
   }
 
     useEffect(() => {
+  console.log('[HOME] useEffect refreshKey', refreshKey);
   load();
 }, [refreshKey]);
+
 
 
 
