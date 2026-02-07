@@ -55,7 +55,19 @@ export const CenterWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 14px;
+
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
+  padding-bottom: 20px;
+
+  /* скрываем скроллбар */
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 `;
+
 
 /* === EMPTY TEXT === */
 export const EmptyText = styled.div`
