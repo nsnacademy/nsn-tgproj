@@ -148,48 +148,50 @@ export function ChallengeDetails({ challengeId, onBack }: Props) {
 
   /* ================= JOIN ================= */
 
-  async function joinChallenge() {
-    if (!accepted || joining || alreadyJoined) return;
+ 
+    async function joinChallenge() {
+  if (!accepted || joining || alreadyJoined) return;
 
-    setJoining(true);
+  setJoining(true);
 
-    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    if (!tgUser) {
-      alert('Нет пользователя Telegram');
-      setJoining(false);
-      return;
-    }
-
-    // 🔹 МГНОВЕННЫЙ ПЕРЕХОД (UX)
-    onBack();
-
-    // 🔹 дальше всё делаем в фоне
-    try {
-      const { data: user } = await supabase
-        .from('users')
-        .select('id')
-        .eq('telegram_id', tgUser.id)
-        .single();
-
-      if (!user) return;
-
-      const { data: existing } = await supabase
-        .from('participants')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('challenge_id', challengeId)
-        .maybeSingle();
-
-      if (existing) return;
-
-      await supabase.from('participants').insert({
-        user_id: user.id,
-        challenge_id: challengeId,
-      });
-    } catch (e) {
-      console.error(e);
-    }
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if (!tgUser) {
+    alert('Нет пользователя Telegram');
+    setJoining(false);
+    return;
   }
+
+  // 🚀 1. МГНОВЕННЫЙ ПЕРЕХОД НА HOME
+  onBack();
+
+  // 🧠 2. ВСЁ ОСТАЛЬНОЕ — В ФОНЕ
+  try {
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('telegram_id', tgUser.id)
+      .single();
+
+    if (!user) return;
+
+    const { data: existing } = await supabase
+      .from('participants')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('challenge_id', challengeId)
+      .maybeSingle();
+
+    if (existing) return;
+
+    await supabase.from('participants').insert({
+      user_id: user.id,
+      challenge_id: challengeId,
+    });
+  } catch (e) {
+    console.error('Join error', e);
+  }
+}
+
 
   /* ================= UI LOGIC ================= */
 
