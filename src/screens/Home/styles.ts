@@ -68,55 +68,38 @@ export const HomeContainer = styled.div`
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 
-  padding: 100px 30px 140px;
+  /* ⬅️ достаточно места, чтобы кнопка не упиралась */
+  padding: 90px 30px 160px;
 
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
   }
 
-  /* ===== FADE MASK (FIXED) ===== */
-  &::before,
+  /* ===== LOWER FADE (FIXED & SOFT) ===== */
   &::after {
     content: '';
-    position: sticky;
-    left: 0;
-    right: 0;
-    height: 60px; /* ⬅️ МЕНЬШЕ */
-    pointer-events: none;
-    z-index: 5;
-  }
-
-  &::before {
-    top: 0;
-    background: linear-gradient(
-      to bottom,
-      rgba(0,0,0,0.95) 0%,
-      rgba(0,0,0,0.6) 50%,
-      transparent 100%
-    );
-  }
-
-  /* нижний fade */
-  &::after {
-    content: '';
-    position: sticky;
-    bottom: 0;
+    position: absolute;
     left: 0;
     right: 0;
 
-    height: 72px; /* регулируй */
+    /* ⬇️ КЛЮЧ: ниже карточек и выше навигации */
+    bottom: 92px; /* ≈ bottom nav + gap */
+
+    height: 56px; /* ⬅️ меньше, аккуратнее */
     pointer-events: none;
-    z-index: 5;
+    z-index: 6;
 
     background: linear-gradient(
       to top,
-      rgba(0, 0, 0, 0.95) 0%,
-      rgba(0, 0, 0, 0.6) 40%,
-      rgba(0, 0, 0, 0.25) 70%,
-      rgba(0, 0, 0, 0) 100%
+      rgba(0,0,0,0.85) 0%,
+      rgba(0,0,0,0.55) 35%,
+      rgba(0,0,0,0.25) 65%,
+      rgba(0,0,0,0) 100%
     );
+  }
 `;
+
 
 /* === LIST === */
 export const CenterWrapper = styled.div`
