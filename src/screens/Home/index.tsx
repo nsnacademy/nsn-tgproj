@@ -41,6 +41,8 @@ type ChallengeItem = {
   start_at: string;
   end_at: string;
 
+  duration_days: number; // ⬅️ ВАЖНО
+
   has_goal: boolean;
   goal_value: number | null;
   user_progress: number | null;
@@ -50,6 +52,21 @@ type ChallengeItem = {
   user_completed: boolean;
   challenge_finished: boolean;
 };
+
+function getCurrentDay(startAt: string, duration: number) {
+  const start = new Date(startAt);
+  const today = new Date();
+
+  start.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+
+  const diff =
+    Math.floor(
+      (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+    ) + 1;
+
+  return Math.min(Math.max(diff, 1), duration);
+}
 
 export function Home({ onNavigate, refreshKey }: HomeProps) {
   const [tab, setTab] = useState<'active' | 'completed'>('active');
@@ -80,9 +97,9 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
-    // 2️⃣ вызываем RPC с UUID
+    // 2️⃣ вызываем RPC
     const { data, error } = await supabase.rpc('get_home_challenges', {
-      p_user_id: user.id, // ⚠️ ТОЛЬКО UUID
+      p_user_id: user.id,
     });
 
     if (error) {
@@ -135,7 +152,6 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </Tabs>
       </FixedHeaderWrapper>
 
-      {/* OFFSET под fixed header */}
       <HeaderOffset />
 
       {/* ===== CONTENT ===== */}
@@ -147,30 +163,23 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
             <EmptyText>Нет вызовов</EmptyText>
           ) : (
             list.map((item) => {
-              const start = new Date(item.start_at);
-              const end = new Date(item.end_at);
-              const today = new Date();
+              const currentDay = getCurrentDay(
+                item.start_at,
+                item.duration_days
+              );
 
-              const totalDays =
-                Math.max(
-                  1,
-                  Math.ceil(
-                    (end.getTime() - start.getTime()) /
-                      (1000 * 60 * 60 * 24)
-                  ) + 1
-                );
+              const daysLeft =
+                item.duration_days - currentDay;
 
-              const currentDay =
-                Math.min(
-                  totalDays,
-                  Math.max(
-                    1,
-                    Math.floor(
-                      (today.getTime() - start.getTime()) /
-                        (1000 * 60 * 60 * 24)
-                    ) + 1
-                  )
-                );
+              let dayStatus: 'pending' | 'done' | 'missed' = 'pending';
+
+              if (item.user_completed) {
+                dayStatus = 'done';
+              } else if (currentDay < item.duration_days) {
+                dayStatus = 'pending';
+              } else {
+                dayStatus = 'missed';
+              }
 
               const progress =
                 item.has_goal && item.goal_value
@@ -182,6 +191,9 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                     )
                   : 0;
 
+              const canOpenReport =
+                !item.challenge_finished;
+
               return (
                 <Card key={item.participant_id}>
                   <CardTitleRow>
@@ -190,34 +202,47 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
                   <CardLabel>День</CardLabel>
                   <CardValue>
-                    {currentDay} из {totalDays}
+                    {currentDay} из {item.duration_days}
                   </CardValue>
 
-                  <CardLabel>Длительность</CardLabel>
+                  <CardLabel>Статус дня</CardLabel>
                   <CardValue>
-                    До {end.toLocaleDateString()}
+                    {dayStatus === 'done'
+                      ? 'Выполнен'
+                      : dayStatus === 'pending'
+                      ? 'Сегодня'
+                      : 'Пропущен'}
+                  </CardValue>
+
+                  <CardLabel>Осталось</CardLabel>
+                  <CardValue>
+                    {daysLeft > 0
+                      ? `${daysLeft} дн.`
+                      : 'Последний день'}
                   </CardValue>
 
                   <CardLabel>Участники</CardLabel>
-                  <CardValue>{item.participants_count} человек</CardValue>
+                  <CardValue>
+                    {item.participants_count} человек
+                  </CardValue>
 
                   {item.has_goal && (
                     <ProgressWrapper>
-  <ProgressBar>
-    <ProgressFill style={{ width: `${progress}%` }} />
-  </ProgressBar>
-
-  <ProgressText>
-    {item.has_goal
-      ? `${item.user_progress ?? 0} / ${item.goal_value}`
-      : '0% выполнено'}
-  </ProgressText>
-</ProgressWrapper>
-
+                      <ProgressBar>
+                        <ProgressFill
+                          style={{ width: `${progress}%` }}
+                        />
+                      </ProgressBar>
+                      <ProgressText>
+                        {item.user_progress ?? 0} / {item.goal_value}
+                      </ProgressText>
+                    </ProgressWrapper>
                   )}
 
-                  {!item.challenge_finished && (
-                    <PrimaryButton>Перейти к отчёту</PrimaryButton>
+                  {canOpenReport && (
+                    <PrimaryButton>
+                      Перейти к отчёту
+                    </PrimaryButton>
                   )}
                 </Card>
               );
