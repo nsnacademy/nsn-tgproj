@@ -37,7 +37,6 @@ type ChallengeItem = {
   challenge_id: string;
 
   title: string;
-
   start_at: string;
   end_at: string;
 
@@ -60,78 +59,76 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   async function load() {
+    console.group('🏠 Home.load');
+
     setLoading(true);
 
+    // 1️⃣ Telegram
+    console.log('window.Telegram:', window.Telegram);
+
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    console.log('tgUser:', tgUser);
+
     if (!tgUser) {
+      console.error('❌ tgUser = null (Telegram WebApp не инициализирован)');
       setItems([]);
       setLoading(false);
+      console.groupEnd();
       return;
     }
 
-    // 1️⃣ получаем users.id по telegram_id
-    const { data: user } = await supabase
+    console.log('telegram_id:', tgUser.id);
+
+    // 2️⃣ users
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('telegram_id', tgUser.id)
       .single();
 
+    console.log('users query result:', user, userError);
+
     if (!user) {
+      console.error('❌ user НЕ НАЙДЕН в таблице users');
       setItems([]);
       setLoading(false);
+      console.groupEnd();
       return;
     }
 
-    // 2️⃣ грузим Home-данные через RPC
-    const { data } = await supabase.rpc('get_home_challenges', {
+    // 3️⃣ RPC
+    console.log('Calling RPC get_home_challenges with user.id:', user.id);
+
+    const { data, error } = await supabase.rpc('get_home_challenges', {
       p_user_id: user.id,
     });
 
+    console.log('RPC result:', data);
+    console.log('RPC error:', error);
+
+    if (error) {
+      console.error('❌ RPC ERROR', error);
+      setItems([]);
+      setLoading(false);
+      console.groupEnd();
+      return;
+    }
+
     setItems(data ?? []);
+    console.log('Final items state:', data);
+
     setLoading(false);
+    console.groupEnd();
   }
 
   useEffect(() => {
+    console.log('🔁 Home mounted / refreshKey changed:', refreshKey);
     load();
   }, [refreshKey]);
 
   const active = items.filter((i) => !i.challenge_finished);
   const completed = items.filter((i) => i.challenge_finished);
   const list = tab === 'active' ? active : completed;
-
-  /* === CENTER FOCUS SCROLL === */
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    const onScroll = () => {
-      const cards = Array.from(
-        el.querySelectorAll<HTMLElement>('[data-card-id]')
-      );
-
-      const center = el.scrollTop + el.clientHeight / 2;
-
-      let closest: string | null = null;
-      let min = Infinity;
-
-      cards.forEach((card) => {
-        const cardCenter =
-          card.offsetTop + card.offsetHeight / 2;
-        const dist = Math.abs(cardCenter - center);
-
-        if (dist < min) {
-          min = dist;
-          closest = card.dataset.cardId ?? null;
-        }
-      });
-
-      setFocusedId(closest);
-    };
-
-    onScroll();
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
-  }, [list]);
 
   return (
     <SafeArea>
@@ -197,9 +194,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                   </CardValue>
 
                   <CardLabel>Участники</CardLabel>
-                  <CardValue>
-                    {item.participants_count} человек
-                  </CardValue>
+                  <CardValue>{item.participants_count} человек</CardValue>
 
                   {item.has_goal && (
                     <ProgressWrapper>
@@ -213,9 +208,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                   )}
 
                   {!item.challenge_finished && (
-                    <PrimaryButton>
-                      Перейти к отчёту
-                    </PrimaryButton>
+                    <PrimaryButton>Перейти к отчёту</PrimaryButton>
                   )}
                 </Card>
               );
