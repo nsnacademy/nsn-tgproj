@@ -16,6 +16,13 @@ import {
   Card,
   CardTitleRow,
   CardTitle,
+  CardRank,
+  CardLabel,
+  CardValue,
+  ProgressWrapper,
+  ProgressBar,
+  ProgressFill,
+  ProgressText,
   PrimaryButton,
   FixedHeaderWrapper,
   HeaderSpacer,
@@ -104,9 +111,9 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
   const completed = items.filter((i) => i.is_finished);
   const list = tab === 'active' ? active : completed;
 
-  /* ===============================
-     CENTER FOCUS SCROLL
-  =============================== */
+  /* ===========================
+     CENTER FOCUS SCROLL LOGIC
+  =========================== */
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -118,21 +125,21 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
       const center = el.scrollTop + el.clientHeight / 2;
 
-      let closestId: string | null = null;
-      let minDistance = Infinity;
+      let closest: string | null = null;
+      let min = Infinity;
 
       cards.forEach((card) => {
         const cardCenter =
           card.offsetTop + card.offsetHeight / 2;
-        const distance = Math.abs(cardCenter - center);
+        const dist = Math.abs(cardCenter - center);
 
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestId = card.dataset.cardId ?? null;
+        if (dist < min) {
+          min = dist;
+          closest = card.dataset.cardId ?? null;
         }
       });
 
-      setFocusedId(closestId);
+      setFocusedId(closest);
     };
 
     onScroll();
@@ -142,7 +149,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
   return (
     <SafeArea>
-      {/* ===== FIXED HEADER ===== */}
+      {/* FIXED HEADER */}
       <FixedHeaderWrapper>
         <HeaderSpacer />
         <Header>
@@ -160,18 +167,18 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
         <Tabs>
           <Tab $active={tab === 'active'} onClick={() => setTab('active')}>
-            Активные
+            Активные вызовы
           </Tab>
           <Tab
             $active={tab === 'completed'}
             onClick={() => setTab('completed')}
           >
-            Завершённые
+            Завершённые вызовы
           </Tab>
         </Tabs>
       </FixedHeaderWrapper>
 
-      {/* ===== SCROLL ===== */}
+      {/* SCROLL */}
       <HomeContainer ref={scrollRef}>
         <CenterWrapper>
           {loading ? (
@@ -187,12 +194,24 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
               >
                 <CardTitleRow>
                   <CardTitle>{item.title}</CardTitle>
+                  <CardRank>#12</CardRank>
                 </CardTitleRow>
 
+                <CardLabel>Длительность</CardLabel>
+                <CardValue>До 31 августа</CardValue>
+
+                <CardLabel>Участники</CardLabel>
+                <CardValue>89 человек</CardValue>
+
+                <ProgressWrapper>
+                  <ProgressBar>
+                    <ProgressFill style={{ width: '11%' }} />
+                  </ProgressBar>
+                  <ProgressText>3.2 / 30 км</ProgressText>
+                </ProgressWrapper>
+
                 {!item.is_finished && (
-                  <PrimaryButton>
-                    Перейти к отчёту
-                  </PrimaryButton>
+                  <PrimaryButton>Перейти к отчёту</PrimaryButton>
                 )}
               </Card>
             ))
@@ -200,47 +219,51 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
-      {/* ===== BOTTOM NAV ===== */}
+      {/* BOTTOM NAV */}
       <BottomNav>
-        <NavItem $active>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 10.5L12 3l9 7.5" />
-            <path d="M5 9.5V21h14V9.5" />
-          </svg>
-        </NavItem>
-
-        <NavItem onClick={() => onNavigate('create')}>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-          </svg>
-        </NavItem>
-
-        <NavItem>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round">
-            <line x1="6" y1="18" x2="6" y2="14" />
-            <line x1="12" y1="18" x2="12" y2="10" />
-            <line x1="18" y1="18" x2="18" y2="6" />
-          </svg>
-        </NavItem>
-
-        <NavItem>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="7" r="4" />
-            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-          </svg>
-        </NavItem>
-      </BottomNav>
+                   {/* HOME */}
+                   <NavItem $active>
+                     <svg width="24" height="24" fill="none"
+                       stroke="currentColor" strokeWidth="2"
+                       strokeLinecap="round" strokeLinejoin="round">
+                       <path d="M3 10.5L12 3l9 7.5" />
+                       <path d="M5 9.5V21h14V9.5" />
+                     </svg>
+                   </NavItem>
+           
+                   {/* CREATE */}
+                   <NavItem onClick={() => onNavigate('create')}>
+                     <svg width="24" height="24" fill="none"
+                       stroke="currentColor" strokeWidth="2"
+                       strokeLinecap="round" strokeLinejoin="round">
+                       <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                       <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                       <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                       <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                     </svg>
+                   </NavItem>
+           
+                   {/* SIGNAL */}
+                   <NavItem>
+                     <svg width="24" height="24" fill="none"
+                       stroke="currentColor" strokeWidth="2"
+                       strokeLinecap="round">
+                       <line x1="6" y1="18" x2="6" y2="14" />
+                       <line x1="12" y1="18" x2="12" y2="10" />
+                       <line x1="18" y1="18" x2="18" y2="6" />
+                     </svg>
+                   </NavItem>
+           
+                   {/* PROFILE */}
+                   <NavItem>
+                     <svg width="24" height="24" fill="none"
+                       stroke="currentColor" strokeWidth="2"
+                       strokeLinecap="round" strokeLinejoin="round">
+                       <circle cx="12" cy="7" r="4" />
+                       <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+                     </svg>
+                   </NavItem>
+                 </BottomNav>
     </SafeArea>
   );
 }

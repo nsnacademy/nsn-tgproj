@@ -1,8 +1,6 @@
 import styled from 'styled-components';
 
-/* ===============================
-   PAGE
-=============================== */
+/* === PAGE === */
 export const SafeArea = styled.div`
   height: 100vh;
   overflow: hidden;
@@ -13,9 +11,7 @@ export const SafeArea = styled.div`
   position: relative;
 `;
 
-/* ===============================
-   FIXED HEADER
-=============================== */
+/* === FIXED HEADER === */
 export const FixedHeaderWrapper = styled.div`
   position: fixed;
   top: 0;
@@ -44,9 +40,7 @@ export const StatusTitle = styled.div`
   margin-top: 4px;
 `;
 
-/* ===============================
-   TABS
-=============================== */
+/* === TABS === */
 export const Tabs = styled.div`
   display: flex;
   gap: 18px;
@@ -69,11 +63,12 @@ export const HomeContainer = styled.div`
   position: relative;
 
   margin-top: 115px;
-  height: calc(110vh - 305px - 100px);
+  height: calc(115vh - 305px - 100px);
 
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 
+  /* ⬅️ достаточно места, чтобы кнопка не упиралась */
   padding: 90px 30px 70px;
 
   scrollbar-width: none;
@@ -81,14 +76,17 @@ export const HomeContainer = styled.div`
     display: none;
   }
 
-  /* нижний fade — ТОЛЬКО над навигацией */
+  /* ===== LOWER FADE (FIXED & SOFT) ===== */
   &::after {
     content: '';
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 92px; /* высота nav + зазор */
-    height: 56px;
+
+    /* ⬇️ КЛЮЧ: ниже карточек и выше навигации */
+    bottom: 92px; /* ≈ bottom nav + gap */
+
+    height: 56px; /* ⬅️ меньше, аккуратнее */
     pointer-events: none;
     z-index: 6;
 
@@ -102,18 +100,15 @@ export const HomeContainer = styled.div`
   }
 `;
 
-/* ===============================
-   LIST
-=============================== */
+
+/* === LIST === */
 export const CenterWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 18px;
 `;
 
-/* ===============================
-   EMPTY STATE
-=============================== */
+/* === EMPTY === */
 export const EmptyText = styled.div`
   margin-top: 40px;
   text-align: center;
@@ -121,7 +116,7 @@ export const EmptyText = styled.div`
 `;
 
 /* ===============================
-   CARD (DB-ONLY)
+   CARD
 =============================== */
 export const Card = styled.div<{ $focused?: boolean }>`
   background: linear-gradient(
@@ -131,11 +126,7 @@ export const Card = styled.div<{ $focused?: boolean }>`
   );
 
   border-radius: 22px;
-  padding: 20px;
-
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  padding: 18px 20px;
 
   transform-origin: center;
   transition:
@@ -155,6 +146,7 @@ export const Card = styled.div<{ $focused?: boolean }>`
 /* === CARD CONTENT === */
 export const CardTitleRow = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
 `;
 
@@ -163,25 +155,54 @@ export const CardTitle = styled.div`
   font-weight: 600;
 `;
 
-/* ===============================
-   BUTTON
-=============================== */
-export const PrimaryButton = styled.button`
-  align-self: flex-start;
+export const CardRank = styled.div`
+  font-size: 13px;
+  opacity: 0.6;
+`;
 
+export const CardLabel = styled.div`
+  font-size: 11px;
+  opacity: 0.45;
+  margin-top: 10px;
+`;
+
+export const CardValue = styled.div`
+  font-size: 14px;
+  opacity: 0.85;
+`;
+
+/* === PROGRESS === */
+export const ProgressWrapper = styled.div`
+  margin-top: 14px;
+`;
+
+export const ProgressBar = styled.div`
+  height: 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.15);
+  overflow: hidden;
+`;
+
+export const ProgressFill = styled.div`
+  height: 100%;
+  background: #fff;
+`;
+
+export const ProgressText = styled.div`
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.65;
+`;
+
+/* === BUTTON === */
+export const PrimaryButton = styled.button`
+  margin-top: 14px;
   padding: 10px 16px;
   border-radius: 12px;
   border: none;
-
   background: #fff;
   color: #000;
   font-weight: 500;
-
-  cursor: pointer;
-
-  &:active {
-    opacity: 0.85;
-  }
 `;
 
 /* ===============================
