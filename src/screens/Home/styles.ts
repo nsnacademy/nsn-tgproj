@@ -44,7 +44,7 @@ export const HomeContainer = styled.div`
   -webkit-overflow-scrolling: touch;
 
   padding: 0 20px;
-  margin-top: 187px;
+  margin-top: 195px;
 `;
 
 /* === HEADER === */
