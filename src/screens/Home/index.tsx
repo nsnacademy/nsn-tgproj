@@ -203,13 +203,17 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
                   {item.has_goal && (
                     <ProgressWrapper>
-                      <ProgressBar>
-                        <ProgressFill style={{ width: `${progress}%` }} />
-                      </ProgressBar>
-                      <ProgressText>
-                        {item.user_progress ?? 0} / {item.goal_value}
-                      </ProgressText>
-                    </ProgressWrapper>
+  <ProgressBar>
+    <ProgressFill style={{ width: `${progress}%` }} />
+  </ProgressBar>
+
+  <ProgressText>
+    {item.has_goal
+      ? `${item.user_progress ?? 0} / ${item.goal_value}`
+      : '0% выполнено'}
+  </ProgressText>
+</ProgressWrapper>
+
                   )}
 
                   {!item.challenge_finished && (

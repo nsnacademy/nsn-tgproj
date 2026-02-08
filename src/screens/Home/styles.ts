@@ -118,25 +118,16 @@ export const EmptyText = styled.div`
 /* ======================
    CARD
 ====================== */
-export const Card = styled.div<{ $focused?: boolean }>`
-  background: rgba(255, 255, 255, 0.04);
+export const Card = styled.div`
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 22px;
   padding: 18px 20px;
 
-  transform-origin: center;
-  transition:
-    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.28s ease,
-    box-shadow 0.28s ease;
-
-  transform: ${({ $focused }) =>
-    $focused ? 'scale(1.06)' : 'scale(0.92)'};
-
-  opacity: ${({ $focused }) => ($focused ? 1 : 0.45)};
-
-  box-shadow: ${({ $focused }) =>
-    $focused ? '0 24px 60px rgba(0,0,0,0.65)' : 'none'};
+  opacity: 1;
+  transform: none;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 `;
+
 
 export const CardTitleRow = styled.div`
   display: flex;
