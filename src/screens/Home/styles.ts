@@ -125,7 +125,7 @@ export const Card = styled.div`
     rgba(255, 255, 255, 0.02)
   );
   border-radius: 18px;
-  padding: 16px 18px;
+  padding: 25px 18px;
   display: flex;
   flex-direction: column;
   gap: 0px;
