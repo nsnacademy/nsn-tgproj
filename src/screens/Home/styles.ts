@@ -57,7 +57,7 @@ export const Tab = styled.div<{ $active?: boolean }>`
 `;
 
 /* ===============================
-   SCROLL CONTAINER
+   SCROLL CONTAINER (NO FADE)
 =============================== */
 export const HomeContainer = styled.div`
   position: relative;
@@ -68,38 +68,13 @@ export const HomeContainer = styled.div`
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 
-  /* ⬅️ достаточно места, чтобы кнопка не упиралась */
   padding: 90px 30px 70px;
 
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
   }
-
-  /* ===== LOWER FADE (FIXED & SOFT) ===== */
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-
-    /* ⬇️ КЛЮЧ: ниже карточек и выше навигации */
-    bottom: 92px; /* ≈ bottom nav + gap */
-
-    height: 56px; /* ⬅️ меньше, аккуратнее */
-    pointer-events: none;
-    z-index: 6;
-
-    background: linear-gradient(
-      to top,
-      rgba(0,0,0,0.85) 0%,
-      rgba(0,0,0,0.55) 35%,
-      rgba(0,0,0,0.25) 65%,
-      rgba(0,0,0,0) 100%
-    );
-  }
 `;
-
 
 /* === LIST === */
 export const CenterWrapper = styled.div`
@@ -116,14 +91,10 @@ export const EmptyText = styled.div`
 `;
 
 /* ===============================
-   CARD
+   CARD (NO GRADIENT)
 =============================== */
 export const Card = styled.div<{ $focused?: boolean }>`
-  background: linear-gradient(
-    180deg,
-    rgba(255,255,255,0.06),
-    rgba(255,255,255,0.02)
-  );
+  background: rgba(255,255,255,0.04);
 
   border-radius: 22px;
   padding: 18px 20px;
