@@ -57,35 +57,32 @@ export const Tab = styled.div<{ $active?: boolean }>`
 `;
 
 /* ===============================
-   SCROLL CONTAINER (KEY PART)
+   SCROLL CONTAINER
 =============================== */
 export const HomeContainer = styled.div`
   position: relative;
 
-  /* ⬇️ ключевая магия */
   margin-top: 115px;
   height: calc(100vh - 205px - 100px);
 
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 
-  padding:
-    100px 30px 120px; /* ⬅️ ОБРЕЗАЕТ верх/низ карточек */
+  padding: 100px 30px 140px;
 
-  /* скрываем scrollbar */
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
   }
 
-  /* fade mask */
+  /* ===== FADE MASK (FIXED) ===== */
   &::before,
   &::after {
     content: '';
     position: sticky;
     left: 0;
     right: 0;
-    height: 50px;
+    height: 60px; /* ⬅️ МЕНЬШЕ */
     pointer-events: none;
     z-index: 5;
   }
@@ -94,18 +91,18 @@ export const HomeContainer = styled.div`
     top: 0;
     background: linear-gradient(
       to bottom,
-      #000 0%,
-      rgba(0,0,0,0.85) 40%,
+      rgba(0,0,0,0.95) 0%,
+      rgba(0,0,0,0.6) 50%,
       transparent 100%
     );
   }
 
   &::after {
-    bottom: 0;
+    bottom: -20px; /* ⬅️ СПУСКАЕМ ВНИЗ */
     background: linear-gradient(
       to top,
-      #000 0%,
-      rgba(0,0,0,0.85) 40%,
+      rgba(0,0,0,0.95) 0%,
+      rgba(0,0,0,0.55) 45%,
       transparent 100%
     );
   }
@@ -126,7 +123,7 @@ export const EmptyText = styled.div`
 `;
 
 /* ===============================
-   CARD (FOCUS STACK)
+   CARD
 =============================== */
 export const Card = styled.div<{ $focused?: boolean }>`
   background: linear-gradient(
@@ -150,9 +147,7 @@ export const Card = styled.div<{ $focused?: boolean }>`
   opacity: ${({ $focused }) => ($focused ? 1 : 0.45)};
 
   box-shadow: ${({ $focused }) =>
-    $focused
-      ? '0 24px 60px rgba(0,0,0,0.65)'
-      : 'none'};
+    $focused ? '0 24px 60px rgba(0,0,0,0.65)' : 'none'};
 `;
 
 /* === CARD CONTENT === */
