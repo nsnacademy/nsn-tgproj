@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
 import {
@@ -55,6 +55,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
 
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
   async function load() {
     setLoading(true);
 
@@ -65,8 +67,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
-    // ⚠️ ВАЖНО:
-    // p_user_id — это UUID из users.id, НЕ telegram_id
+    // ✅ 1. Получаем UUID пользователя
     const { data: user } = await supabase
       .from('users')
       .select('id')
@@ -79,6 +80,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
+    // ✅ 2. Передаём UUID в RPC
     const { data } = await supabase.rpc('get_home_challenges', {
       p_user_id: user.id,
     });
@@ -126,8 +128,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </Tabs>
       </FixedHeaderWrapper>
 
-      {/* CONTENT */}
-      <HomeContainer>
+      {/* LIST */}
+      <HomeContainer ref={scrollRef}>
         <CenterWrapper>
           {loading ? (
             <EmptyText>Загрузка…</EmptyText>
