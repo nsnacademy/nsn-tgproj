@@ -83,7 +83,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
     /** ✅ 2. Передаём UUID в RPC */
     const { data, error } = await supabase.rpc('get_home_challenges', {
-      p_user_id: user.id, // ✅ ВОТ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ
+      p_user_id: tgUser.id, // ✅ ВОТ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ
     });
 
     if (error) {
