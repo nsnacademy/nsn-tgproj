@@ -44,19 +44,26 @@ export const HomeContainer = styled.div`
 `;
 
 /* === HEADER === */
+/* === HEADER === */
 export const Header = styled.div`
-  padding: 110px 20px 0 20px;
+  padding: 100px 20px 0 20px;
 `;
 
 export const StatusLabel = styled.div`
   font-size: 14px;
   opacity: 0.6;
+  margin-bottom: 4px;
 `;
 
 export const StatusTitle = styled.div`
   font-size: 22px;
   font-weight: 600;
   margin-top: 4px;
+  /* Добавьте эти свойства: */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 `;
 
 /* === TABS === */
@@ -66,6 +73,16 @@ export const Tabs = styled.div`
   padding: 15px 20px 15px 20px;
   background: #000;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  /* Убедитесь, что табы не переносятся: */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  /* Скрыть скроллбар */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  scrollbar-width: none;
 `;
 
 export const Tab = styled.div<{ $active?: boolean }>`
@@ -75,6 +92,8 @@ export const Tab = styled.div<{ $active?: boolean }>`
   opacity: ${({ $active }) => ($active ? 1 : 0.4)};
   border-bottom: ${({ $active }) =>
     $active ? '2px solid #fff' : '2px solid transparent'};
+  /* Не давать табам сжиматься: */
+  flex-shrink: 0;
 `;
 
 /* === CENTER === */
