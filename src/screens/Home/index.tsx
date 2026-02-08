@@ -40,8 +40,7 @@ type ChallengeItem = {
   title: string;
   start_at: string;
   end_at: string;
-
-  duration_days: number; // ⬅️ ВАЖНО
+  duration_days: number;
 
   has_goal: boolean;
   goal_value: number | null;
@@ -52,21 +51,6 @@ type ChallengeItem = {
   user_completed: boolean;
   challenge_finished: boolean;
 };
-
-function getCurrentDay(startAt: string, duration: number) {
-  const start = new Date(startAt);
-  const today = new Date();
-
-  start.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
-
-  const diff =
-    Math.floor(
-      (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-    ) + 1;
-
-  return Math.min(Math.max(diff, 1), duration);
-}
 
 export function Home({ onNavigate, refreshKey }: HomeProps) {
   const [tab, setTab] = useState<'active' | 'completed'>('active');
@@ -83,21 +67,18 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
-    // 1️⃣ получаем UUID пользователя
-    const { data: user, error: userError } = await supabase
+    const { data: user } = await supabase
       .from('users')
       .select('id')
       .eq('telegram_id', tgUser.id)
       .single();
 
-    if (userError || !user) {
-      console.error('[HOME] user not found', userError);
+    if (!user) {
       setItems([]);
       setLoading(false);
       return;
     }
 
-    // 2️⃣ вызываем RPC
     const { data, error } = await supabase.rpc('get_home_challenges', {
       p_user_id: user.id,
     });
@@ -123,7 +104,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
   return (
     <SafeArea>
-      {/* ===== FIXED HEADER ===== */}
+      {/* HEADER */}
       <FixedHeaderWrapper>
         <HeaderSpacer />
         <Header>
@@ -154,7 +135,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
       <HeaderOffset />
 
-      {/* ===== CONTENT ===== */}
+      {/* CONTENT */}
       <HomeContainer>
         <CenterWrapper>
           {loading ? (
@@ -163,36 +144,23 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
             <EmptyText>Нет вызовов</EmptyText>
           ) : (
             list.map((item) => {
-              const currentDay = getCurrentDay(
-                item.start_at,
-                item.duration_days
+              const start = new Date(item.start_at);
+              const today = new Date();
+
+              const currentDay = Math.min(
+                item.duration_days,
+                Math.max(
+                  1,
+                  Math.floor(
+                    (today.getTime() - start.getTime()) /
+                      (1000 * 60 * 60 * 24)
+                  ) + 1
+                )
               );
 
-              const daysLeft =
-                item.duration_days - currentDay;
-
-              let dayStatus: 'pending' | 'done' | 'missed' = 'pending';
-
-              if (item.user_completed) {
-                dayStatus = 'done';
-              } else if (currentDay < item.duration_days) {
-                dayStatus = 'pending';
-              } else {
-                dayStatus = 'missed';
-              }
-
-              const progress =
-                item.has_goal && item.goal_value
-                  ? Math.min(
-                      100,
-                      Math.round(
-                        ((item.user_progress ?? 0) / item.goal_value) * 100
-                      )
-                    )
-                  : 0;
-
-              const canOpenReport =
-                !item.challenge_finished;
+              const progressPercent = Math.round(
+                (currentDay / item.duration_days) * 100
+              );
 
               return (
                 <Card key={item.participant_id}>
@@ -200,49 +168,26 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                     <CardTitle>{item.title}</CardTitle>
                   </CardTitleRow>
 
-                  <CardLabel>День</CardLabel>
-                  <CardValue>
-                    {currentDay} из {item.duration_days}
-                  </CardValue>
-
-                  <CardLabel>Статус дня</CardLabel>
-                  <CardValue>
-                    {dayStatus === 'done'
-                      ? 'Выполнен'
-                      : dayStatus === 'pending'
-                      ? 'Сегодня'
-                      : 'Пропущен'}
-                  </CardValue>
+                  {/* 🔥 ПРОГРЕСС ПО ДНЯМ */}
+                  <ProgressWrapper>
+                    <ProgressBar>
+                      <ProgressFill style={{ width: `${progressPercent}%` }} />
+                    </ProgressBar>
+                    <ProgressText>
+                      День {currentDay} из {item.duration_days}
+                    </ProgressText>
+                  </ProgressWrapper>
 
                   <CardLabel>Осталось</CardLabel>
                   <CardValue>
-                    {daysLeft > 0
-                      ? `${daysLeft} дн.`
-                      : 'Последний день'}
+                    {Math.max(item.duration_days - currentDay, 0)} дн.
                   </CardValue>
 
                   <CardLabel>Участники</CardLabel>
-                  <CardValue>
-                    {item.participants_count} человек
-                  </CardValue>
+                  <CardValue>{item.participants_count} человек</CardValue>
 
-                  {item.has_goal && (
-                    <ProgressWrapper>
-                      <ProgressBar>
-                        <ProgressFill
-                          style={{ width: `${progress}%` }}
-                        />
-                      </ProgressBar>
-                      <ProgressText>
-                        {item.user_progress ?? 0} / {item.goal_value}
-                      </ProgressText>
-                    </ProgressWrapper>
-                  )}
-
-                  {canOpenReport && (
-                    <PrimaryButton>
-                      Перейти к отчёту
-                    </PrimaryButton>
+                  {!item.challenge_finished && (
+                    <PrimaryButton>Перейти к отчёту</PrimaryButton>
                   )}
                 </Card>
               );
@@ -251,7 +196,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
-      {/* ===== BOTTOM NAV ===== */}
+      {/* BOTTOM NAV */}
       <BottomNav>
         <NavItem $active>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
