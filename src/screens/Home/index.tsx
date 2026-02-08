@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
 import {
@@ -26,7 +26,6 @@ import {
   PrimaryButton,
   FixedHeaderWrapper,
   HeaderSpacer,
-  BottomNavSpacer,
 } from './styles';
 
 type HomeProps = {
@@ -45,36 +44,33 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
   const [tab, setTab] = useState<'active' | 'completed'>('active');
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   async function load() {
-    console.log('[HOME] load() start');
     setLoading(true);
 
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    console.log('[HOME] tgUser', tgUser);
     if (!tgUser) {
       setItems([]);
       setLoading(false);
       return;
     }
 
-    // 1. USER
-    const { data: user, error: userError } = await supabase
+    const { data: user } = await supabase
       .from('users')
       .select('id')
       .eq('telegram_id', tgUser.id)
       .single();
 
-    console.log('[HOME] user from db', user, userError);
-
-    if (userError || !user) {
+    if (!user) {
       setItems([]);
       setLoading(false);
       return;
     }
 
-    // 2. PARTICIPANTS + CHALLENGES
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('participants')
       .select(
         `
@@ -87,17 +83,15 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       `
       )
       .eq('user_id', user.id);
-    console.log('[HOME] participants raw', data, error);
 
-    if (error || !data) {
+    if (!data) {
       setItems([]);
       setLoading(false);
       return;
     }
 
-    // 3. НОРМАЛИЗАЦИЯ
     const normalized: ChallengeItem[] = data
-      .filter((p: any) => p.challenge) // ⬅️ КРИТИЧНО
+      .filter((p: any) => p.challenge)
       .map((p: any) => ({
         participant_id: p.id,
         challenge_id: p.challenge.id,
@@ -105,21 +99,53 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         is_finished: p.challenge.is_finished,
       }));
 
-    console.log('[HOME] normalized items', normalized);
-
     setItems(normalized);
     setLoading(false);
   }
 
   useEffect(() => {
-    console.log('[HOME] useEffect refreshKey', refreshKey);
     load();
   }, [refreshKey]);
 
   const active = items.filter((i) => !i.is_finished);
   const completed = items.filter((i) => i.is_finished);
-
   const list = tab === 'active' ? active : completed;
+
+  /* ===========================
+     CENTER FOCUS SCROLL LOGIC
+  =========================== */
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const cards = Array.from(
+        el.querySelectorAll<HTMLElement>('[data-card-id]')
+      );
+
+      const center = el.scrollTop + el.clientHeight / 2;
+
+      let closest: string | null = null;
+      let min = Infinity;
+
+      cards.forEach((card) => {
+        const cardCenter =
+          card.offsetTop + card.offsetHeight / 2;
+        const dist = Math.abs(cardCenter - center);
+
+        if (dist < min) {
+          min = dist;
+          closest = card.dataset.cardId ?? null;
+        }
+      });
+
+      setFocusedId(closest);
+    };
+
+    onScroll();
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [list]);
 
   return (
     <SafeArea>
@@ -139,12 +165,10 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
           </StatusTitle>
         </Header>
 
-        {/* TABS */}
         <Tabs>
           <Tab $active={tab === 'active'} onClick={() => setTab('active')}>
             Активные вызовы
           </Tab>
-
           <Tab
             $active={tab === 'completed'}
             onClick={() => setTab('completed')}
@@ -154,43 +178,31 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </Tabs>
       </FixedHeaderWrapper>
 
-      {/* SCROLLABLE CONTENT */}
-      <HomeContainer>
+      {/* SCROLL */}
+      <HomeContainer ref={scrollRef}>
         <CenterWrapper>
           {loading ? (
             <EmptyText>Загрузка…</EmptyText>
           ) : list.length === 0 ? (
-            tab === 'active' ? (
-              <EmptyText>
-                Создайте новый вызов или
-                <br />
-                присоединитесь к существующему
-              </EmptyText>
-            ) : (
-              <EmptyText>
-                У вас пока нет
-                <br />
-                завершённых вызовов
-              </EmptyText>
-            )
+            <EmptyText>Нет вызовов</EmptyText>
           ) : (
             list.map((item) => (
-              <Card key={item.participant_id}>
-                {/* TITLE + RANK */}
+              <Card
+                key={item.participant_id}
+                data-card-id={item.participant_id}
+                $focused={focusedId === item.participant_id}
+              >
                 <CardTitleRow>
                   <CardTitle>{item.title}</CardTitle>
                   <CardRank>#12</CardRank>
                 </CardTitleRow>
 
-                {/* DURATION */}
                 <CardLabel>Длительность</CardLabel>
                 <CardValue>До 31 августа</CardValue>
 
-                {/* PARTICIPANTS */}
                 <CardLabel>Участники</CardLabel>
                 <CardValue>89 человек</CardValue>
 
-                {/* PROGRESS */}
                 <ProgressWrapper>
                   <ProgressBar>
                     <ProgressFill style={{ width: '11%' }} />
@@ -198,88 +210,60 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                   <ProgressText>3.2 / 30 км</ProgressText>
                 </ProgressWrapper>
 
-                {/* ACTION */}
                 {!item.is_finished && (
-                  <PrimaryButton
-                    onClick={() => {
-                      // позже: navigate to challenge / report
-                      console.log('go to report', item.participant_id);
-                    }}
-                  >
-                    Перейти к отчёту
-                  </PrimaryButton>
+                  <PrimaryButton>Перейти к отчёту</PrimaryButton>
                 )}
               </Card>
             ))
           )}
         </CenterWrapper>
-        <BottomNavSpacer />
       </HomeContainer>
 
-      {/* FIXED BOTTOM NAV */}
+      {/* BOTTOM NAV */}
       <BottomNav>
-        <NavItem $active>
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 10.5L12 3l9 7.5" />
-            <path d="M5 9.5V21h14V9.5" />
-          </svg>
-        </NavItem>
-
-        <NavItem onClick={() => onNavigate('create')}>
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-          </svg>
-        </NavItem>
-
-        <NavItem>
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <line x1="6" y1="18" x2="6" y2="14" />
-            <line x1="12" y1="18" x2="12" y2="10" />
-            <line x1="18" y1="18" x2="18" y2="6" />
-          </svg>
-        </NavItem>
-
-        <NavItem>
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="7" r="4" />
-            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-          </svg>
-        </NavItem>
-      </BottomNav>
+                   {/* HOME */}
+                   <NavItem $active>
+                     <svg width="24" height="24" fill="none"
+                       stroke="currentColor" strokeWidth="2"
+                       strokeLinecap="round" strokeLinejoin="round">
+                       <path d="M3 10.5L12 3l9 7.5" />
+                       <path d="M5 9.5V21h14V9.5" />
+                     </svg>
+                   </NavItem>
+           
+                   {/* CREATE */}
+                   <NavItem onClick={() => onNavigate('create')}>
+                     <svg width="24" height="24" fill="none"
+                       stroke="currentColor" strokeWidth="2"
+                       strokeLinecap="round" strokeLinejoin="round">
+                       <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                       <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                       <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                       <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                     </svg>
+                   </NavItem>
+           
+                   {/* SIGNAL */}
+                   <NavItem>
+                     <svg width="24" height="24" fill="none"
+                       stroke="currentColor" strokeWidth="2"
+                       strokeLinecap="round">
+                       <line x1="6" y1="18" x2="6" y2="14" />
+                       <line x1="12" y1="18" x2="12" y2="10" />
+                       <line x1="18" y1="18" x2="18" y2="6" />
+                     </svg>
+                   </NavItem>
+           
+                   {/* PROFILE */}
+                   <NavItem>
+                     <svg width="24" height="24" fill="none"
+                       stroke="currentColor" strokeWidth="2"
+                       strokeLinecap="round" strokeLinejoin="round">
+                       <circle cx="12" cy="7" r="4" />
+                       <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+                     </svg>
+                   </NavItem>
+                 </BottomNav>
     </SafeArea>
   );
 }
