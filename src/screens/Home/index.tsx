@@ -17,8 +17,6 @@ import {
   Card,
   CardTitleRow,
   CardTitle,
-  CardLabel,
-  CardValue,
   ProgressWrapper,
   ProgressBar,
   ProgressFill,
@@ -155,12 +153,9 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                     )
                   : 0;
 
-              // 🔖 заглушка рейтинга
-              const hasRating = false;
-
-              // дни — только как ограничение
               const start = new Date(item.start_at);
               const today = new Date();
+
               const currentDay = Math.min(
                 item.duration_days,
                 Math.max(
@@ -171,6 +166,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                   ) + 1
                 )
               );
+
+              const hasRating = false; // 🔖 заглушка
 
               return (
                 <Card key={item.participant_id}>
@@ -184,18 +181,43 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                     )}
                   </CardTitleRow>
 
-                  {/* PARTICIPANTS */}
-                  <CardLabel>Участники</CardLabel>
-                  <CardValue>{item.participants_count} человек</CardValue>
+                  {/* 👤 PARTICIPANTS */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      marginTop: 8,
+                      opacity: 0.7,
+                      fontSize: 14,
+                    }}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="7" r="4" />
+                      <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+                    </svg>
+                    {item.participants_count}
+                  </div>
 
-                  {/* PROGRESS BY GOAL */}
+                  {/* PROGRESS */}
                   <ProgressWrapper>
                     <ProgressBar>
                       <ProgressFill style={{ width: `${progressPercent}%` }} />
                     </ProgressBar>
+
                     <ProgressText>
                       {progressValue} / {goalValue}
                     </ProgressText>
+
                     <ProgressText style={{ opacity: 0.45 }}>
                       День {currentDay} из {item.duration_days}
                     </ProgressText>
