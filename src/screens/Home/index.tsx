@@ -162,13 +162,28 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                 (currentDay / item.duration_days) * 100
               );
 
+              /** 🔖 ЗАГЛУШКА РЕЙТИНГА */
+              const hasRating = false; // ← позже заменим на поле из БД
+
               return (
                 <Card key={item.participant_id}>
                   <CardTitleRow>
                     <CardTitle>{item.title}</CardTitle>
+
+                    {hasRating && (
+                      <span
+                        style={{
+                          fontSize: 12,
+                          opacity: 0.6,
+                          fontWeight: 500,
+                        }}
+                      >
+                        #rating
+                      </span>
+                    )}
                   </CardTitleRow>
 
-                  {/* 🔥 ПРОГРЕСС ПО ДНЯМ */}
+                  {/* ПРОГРЕСС */}
                   <ProgressWrapper>
                     <ProgressBar>
                       <ProgressFill style={{ width: `${progressPercent}%` }} />
@@ -177,11 +192,6 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                       День {currentDay} из {item.duration_days}
                     </ProgressText>
                   </ProgressWrapper>
-
-                  <CardLabel>Осталось</CardLabel>
-                  <CardValue>
-                    {Math.max(item.duration_days - currentDay, 0)} дн.
-                  </CardValue>
 
                   <CardLabel>Участники</CardLabel>
                   <CardValue>{item.participants_count} человек</CardValue>
