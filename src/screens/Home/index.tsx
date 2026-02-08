@@ -104,7 +104,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
   return (
     <SafeArea>
-      {/* HEADER */}
+      {/* ===== HEADER ===== */}
       <FixedHeaderWrapper>
         <HeaderSpacer />
         <Header>
@@ -135,7 +135,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
       <HeaderOffset />
 
-      {/* CONTENT */}
+      {/* ===== CONTENT ===== */}
       <HomeContainer>
         <CenterWrapper>
           {loading ? (
@@ -144,9 +144,23 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
             <EmptyText>Нет вызовов</EmptyText>
           ) : (
             list.map((item) => {
+              const progressValue = item.user_progress ?? 0;
+              const goalValue = item.goal_value ?? 0;
+
+              const progressPercent =
+                item.has_goal && goalValue > 0
+                  ? Math.min(
+                      100,
+                      Math.round((progressValue / goalValue) * 100)
+                    )
+                  : 0;
+
+              // 🔖 заглушка рейтинга
+              const hasRating = false;
+
+              // дни — только как ограничение
               const start = new Date(item.start_at);
               const today = new Date();
-
               const currentDay = Math.min(
                 item.duration_days,
                 Math.max(
@@ -158,43 +172,34 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                 )
               );
 
-              const progressPercent = Math.round(
-                (currentDay / item.duration_days) * 100
-              );
-
-              /** 🔖 ЗАГЛУШКА РЕЙТИНГА */
-              const hasRating = false; // ← позже заменим на поле из БД
-
               return (
                 <Card key={item.participant_id}>
+                  {/* TITLE + RATING */}
                   <CardTitleRow>
                     <CardTitle>{item.title}</CardTitle>
-
                     {hasRating && (
-                      <span
-                        style={{
-                          fontSize: 12,
-                          opacity: 0.6,
-                          fontWeight: 500,
-                        }}
-                      >
+                      <span style={{ fontSize: 12, opacity: 0.6 }}>
                         #rating
                       </span>
                     )}
                   </CardTitleRow>
 
-                  {/* ПРОГРЕСС */}
+                  {/* PARTICIPANTS */}
+                  <CardLabel>Участники</CardLabel>
+                  <CardValue>{item.participants_count} человек</CardValue>
+
+                  {/* PROGRESS BY GOAL */}
                   <ProgressWrapper>
                     <ProgressBar>
                       <ProgressFill style={{ width: `${progressPercent}%` }} />
                     </ProgressBar>
                     <ProgressText>
+                      {progressValue} / {goalValue}
+                    </ProgressText>
+                    <ProgressText style={{ opacity: 0.45 }}>
                       День {currentDay} из {item.duration_days}
                     </ProgressText>
                   </ProgressWrapper>
-
-                  <CardLabel>Участники</CardLabel>
-                  <CardValue>{item.participants_count} человек</CardValue>
 
                   {!item.challenge_finished && (
                     <PrimaryButton>Перейти к отчёту</PrimaryButton>
@@ -206,7 +211,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
-      {/* BOTTOM NAV */}
+      {/* ===== BOTTOM NAV ===== */}
       <BottomNav>
         <NavItem $active>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
