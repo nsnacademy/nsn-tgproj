@@ -63,7 +63,7 @@ export const HomeContainer = styled.div`
   position: relative;
 
   margin-top: 115px;
-  height: calc(115vh - 305px);
+  height: calc(110vh - 305px - 100px);
 
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
