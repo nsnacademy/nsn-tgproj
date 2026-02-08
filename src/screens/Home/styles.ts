@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 
-/* === PAGE === */
 export const SafeArea = styled.div`
   height: 100vh;
   overflow: hidden;
@@ -10,7 +9,6 @@ export const SafeArea = styled.div`
   flex-direction: column;
 `;
 
-/* === FIXED HEADER === */
 export const FixedHeaderWrapper = styled.div`
   position: fixed;
   top: 0;
@@ -22,6 +20,14 @@ export const FixedHeaderWrapper = styled.div`
 
 export const HeaderSpacer = styled.div`
   height: env(safe-area-inset-top, 0px);
+`;
+
+export const HomeContainer = styled.div`
+  margin-top: 205px;
+  height: calc(100vh - 205px - 100px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 20px;
 `;
 
 export const Header = styled.div`
@@ -36,9 +42,9 @@ export const StatusLabel = styled.div`
 export const StatusTitle = styled.div`
   font-size: 22px;
   font-weight: 600;
+  margin-top: 4px;
 `;
 
-/* === TABS === */
 export const Tabs = styled.div`
   display: flex;
   gap: 18px;
@@ -54,51 +60,39 @@ export const Tab = styled.div<{ $active?: boolean }>`
     $active ? '2px solid #fff' : '2px solid transparent'};
 `;
 
-/* === CONTENT === */
-export const HomeContainer = styled.div`
-  margin-top: 205px;
-  height: calc(100vh - 205px - 100px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 0 20px;
-`;
-
 export const CenterWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   padding-bottom: 40px;
 `;
 
 export const EmptyText = styled.div`
   margin-top: 40px;
   text-align: center;
-  opacity: 0.8;
+  opacity: 0.7;
 `;
 
-/* === CARD (FOCUSED MAGIC) === */
 export const Card = styled.div<{ $focused?: boolean }>`
   background: linear-gradient(
     180deg,
-    rgba(255,255,255, ${({ $focused }) => ($focused ? 0.12 : 0.06)}),
+    rgba(255,255,255,0.06),
     rgba(255,255,255,0.02)
   );
+  border-radius: 18px;
+  padding: 16px 18px;
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.25s ease,
+    box-shadow 0.25s ease;
 
-  border-radius: 20px;
-  padding: 18px 20px;
+  transform: ${({ $focused }) =>
+    $focused ? 'scale(1.04)' : 'scale(0.96)'};
 
-  transform: scale(${({ $focused }) => ($focused ? 1.05 : 0.96)});
-  opacity: ${({ $focused }) => ($focused ? 1 : 0.55)};
+  opacity: ${({ $focused }) => ($focused ? 1 : 0.6)};
 
   box-shadow: ${({ $focused }) =>
-    $focused
-      ? '0 20px 60px rgba(0,0,0,0.6)'
-      : '0 6px 16px rgba(0,0,0,0.25)'};
-
-  transition:
-    transform 0.35s cubic-bezier(0.2,0.8,0.2,1),
-    opacity 0.25s ease,
-    box-shadow 0.35s cubic-bezier(0.2,0.8,0.2,1);
+    $focused ? '0 20px 50px rgba(0,0,0,0.6)' : 'none'};
 `;
 
 export const CardTitleRow = styled.div`
@@ -124,6 +118,7 @@ export const CardLabel = styled.div`
 
 export const CardValue = styled.div`
   font-size: 14px;
+  opacity: 0.85;
 `;
 
 export const ProgressWrapper = styled.div`
@@ -132,8 +127,8 @@ export const ProgressWrapper = styled.div`
 
 export const ProgressBar = styled.div`
   height: 8px;
-  background: rgba(255,255,255,0.15);
   border-radius: 10px;
+  background: rgba(255,255,255,0.15);
   overflow: hidden;
 `;
 
@@ -155,6 +150,7 @@ export const PrimaryButton = styled.button`
   border: none;
   background: #fff;
   color: #000;
+  font-weight: 500;
 `;
 
 /* === BOTTOM NAV === */
