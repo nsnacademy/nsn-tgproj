@@ -66,7 +66,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
-    /* 1️⃣ получаем UUID пользователя */
+    // 1️⃣ получаем UUID пользователя
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
@@ -80,9 +80,9 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
-    /* 2️⃣ вызываем RPC С UUID */
+    // 2️⃣ вызываем RPC с UUID
     const { data, error } = await supabase.rpc('get_home_challenges', {
-      p_user_id: user.id, // ✅ ВАЖНО: UUID
+      p_user_id: user.id, // ⚠️ ТОЛЬКО UUID
     });
 
     if (error) {
@@ -135,7 +135,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </Tabs>
       </FixedHeaderWrapper>
 
-      {/* 👇 ОБЯЗАТЕЛЬНЫЙ OFFSET */}
+      {/* OFFSET под fixed header */}
       <HeaderOffset />
 
       {/* ===== CONTENT ===== */}
@@ -147,6 +147,31 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
             <EmptyText>Нет вызовов</EmptyText>
           ) : (
             list.map((item) => {
+              const start = new Date(item.start_at);
+              const end = new Date(item.end_at);
+              const today = new Date();
+
+              const totalDays =
+                Math.max(
+                  1,
+                  Math.ceil(
+                    (end.getTime() - start.getTime()) /
+                      (1000 * 60 * 60 * 24)
+                  ) + 1
+                );
+
+              const currentDay =
+                Math.min(
+                  totalDays,
+                  Math.max(
+                    1,
+                    Math.floor(
+                      (today.getTime() - start.getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    ) + 1
+                  )
+                );
+
               const progress =
                 item.has_goal && item.goal_value
                   ? Math.min(
@@ -163,9 +188,14 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                     <CardTitle>{item.title}</CardTitle>
                   </CardTitleRow>
 
+                  <CardLabel>День</CardLabel>
+                  <CardValue>
+                    {currentDay} из {totalDays}
+                  </CardValue>
+
                   <CardLabel>Длительность</CardLabel>
                   <CardValue>
-                    До {new Date(item.end_at).toLocaleDateString()}
+                    До {end.toLocaleDateString()}
                   </CardValue>
 
                   <CardLabel>Участники</CardLabel>
