@@ -61,8 +61,41 @@ export const Tab = styled.div<{ $active?: boolean }>`
 =============================== */
 export const HomeContainer = styled.div`
   position: relative;
+
+  margin-top: 115px;
+  height: calc(100vh - 205px - 100px);
+
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+
+  padding: 100px 30px 140px;
+
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ===== FADE MASK (FIXED) ===== */
+  &::before,
+  &::after {
+    content: '';
+    position: sticky;
+    left: 0;
+    right: 0;
+    height: 60px; /* ⬅️ МЕНЬШЕ */
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  &::before {
+    top: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.95) 0%,
+      rgba(0,0,0,0.6) 50%,
+      transparent 100%
+    );
+  }
 
   /* нижний fade */
   &::after {
@@ -83,9 +116,7 @@ export const HomeContainer = styled.div`
       rgba(0, 0, 0, 0.25) 70%,
       rgba(0, 0, 0, 0) 100%
     );
-  }
 `;
-
 
 /* === LIST === */
 export const CenterWrapper = styled.div`
