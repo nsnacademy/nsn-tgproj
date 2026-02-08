@@ -67,23 +67,31 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
-    // ✅ 1. Получаем UUID пользователя
-    const { data: user } = await supabase
+    /** ✅ 1. Получаем USER UUID по telegram_id */
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('telegram_id', tgUser.id)
       .single();
 
-    if (!user) {
+    if (userError || !user) {
+      console.error('[HOME] user not found', userError);
       setItems([]);
       setLoading(false);
       return;
     }
 
-    // ✅ 2. Передаём UUID в RPC
-    const { data } = await supabase.rpc('get_home_challenges', {
-      p_user_id: user.id,
+    /** ✅ 2. Передаём UUID в RPC */
+    const { data, error } = await supabase.rpc('get_home_challenges', {
+      p_user_id: user.id, // ✅ ВОТ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ
     });
+
+    if (error) {
+      console.error('[HOME] rpc error', error);
+      setItems([]);
+      setLoading(false);
+      return;
+    }
 
     setItems(data ?? []);
     setLoading(false);
@@ -99,7 +107,6 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
   return (
     <SafeArea>
-      {/* HEADER */}
       <FixedHeaderWrapper>
         <HeaderSpacer />
         <Header>
@@ -128,7 +135,6 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </Tabs>
       </FixedHeaderWrapper>
 
-      {/* LIST */}
       <HomeContainer ref={scrollRef}>
         <CenterWrapper>
           {loading ? (
@@ -182,47 +188,50 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
-      {/* BOTTOM NAV */}
-      <BottomNav>
-        <NavItem $active>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 10.5L12 3l9 7.5" />
-            <path d="M5 9.5V21h14V9.5" />
-          </svg>
-        </NavItem>
-
-        <NavItem onClick={() => onNavigate('create')}>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-          </svg>
-        </NavItem>
-
-        <NavItem>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round">
-            <line x1="6" y1="18" x2="6" y2="14" />
-            <line x1="12" y1="18" x2="12" y2="10" />
-            <line x1="18" y1="18" x2="18" y2="6" />
-          </svg>
-        </NavItem>
-
-        <NavItem>
-          <svg width="24" height="24" fill="none"
-            stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="7" r="4" />
-            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-          </svg>
-        </NavItem>
-      </BottomNav>
+       <BottomNav>
+                    {/* HOME */}
+                    <NavItem $active>
+                      <svg width="24" height="24" fill="none"
+                        stroke="currentColor" strokeWidth="2"
+                        strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 10.5L12 3l9 7.5" />
+                        <path d="M5 9.5V21h14V9.5" />
+                      </svg>
+                    </NavItem>
+            
+                    {/* CREATE */}
+                    <NavItem onClick={() => onNavigate('create')}>
+                      <svg width="24" height="24" fill="none"
+                        stroke="currentColor" strokeWidth="2"
+                        strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                      </svg>
+                    </NavItem>
+            
+                    {/* SIGNAL */}
+                    <NavItem>
+                      <svg width="24" height="24" fill="none"
+                        stroke="currentColor" strokeWidth="2"
+                        strokeLinecap="round">
+                        <line x1="6" y1="18" x2="6" y2="14" />
+                        <line x1="12" y1="18" x2="12" y2="10" />
+                        <line x1="18" y1="18" x2="18" y2="6" />
+                      </svg>
+                    </NavItem>
+            
+                    {/* PROFILE */}
+                    <NavItem>
+                      <svg width="24" height="24" fill="none"
+                        stroke="currentColor" strokeWidth="2"
+                        strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="7" r="4" />
+                        <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+                      </svg>
+                    </NavItem>
+                  </BottomNav>
     </SafeArea>
   );
 }
