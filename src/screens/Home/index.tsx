@@ -60,52 +60,75 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   async function load() {
+    console.log('--- HOME LOAD START ---');
     setLoading(true);
 
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    console.log('TG USER:', tgUser);
+
     if (!tgUser) {
+      console.warn('❌ NO TELEGRAM USER');
       setItems([]);
       setLoading(false);
       return;
     }
 
-    // 🔹 1. Получаем UUID пользователя
+    // 1️⃣ USER TABLE
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id')
+      .select('id, telegram_id')
       .eq('telegram_id', tgUser.id)
       .single();
 
-    if (userError || !user) {
-      console.error('User not found', userError);
+    console.log('USER QUERY RESULT:', user);
+    console.log('USER QUERY ERROR:', userError);
+
+    if (!user) {
+      console.error('❌ USER NOT FOUND IN users TABLE');
       setItems([]);
       setLoading(false);
       return;
     }
 
-    // 🔹 2. Передаём UUID в RPC
+    // 2️⃣ RPC CALL
+    console.log('CALLING RPC get_home_challenges WITH:', user.id);
+
     const { data, error } = await supabase.rpc('get_home_challenges', {
       p_user_id: user.id,
     });
 
+    console.log('RPC DATA:', data);
+    console.log('RPC ERROR:', error);
+
     if (error) {
-      console.error('RPC error', error);
+      console.error('❌ RPC FAILED');
       setItems([]);
       setLoading(false);
       return;
     }
 
+    if (!data || data.length === 0) {
+      console.warn('⚠️ RPC RETURNED EMPTY ARRAY');
+    }
+
     setItems(data ?? []);
     setLoading(false);
+    console.log('--- HOME LOAD END ---');
   }
 
   useEffect(() => {
+    console.log('REFRESH KEY CHANGED:', refreshKey);
     load();
   }, [refreshKey]);
 
   const active = items.filter((i) => !i.challenge_finished);
   const completed = items.filter((i) => i.challenge_finished);
   const list = tab === 'active' ? active : completed;
+
+  console.log('ALL ITEMS:', items);
+  console.log('ACTIVE ITEMS:', active);
+  console.log('COMPLETED ITEMS:', completed);
+  console.log('CURRENT TAB:', tab);
 
   /* === CENTER FOCUS SCROLL === */
   useEffect(() => {
@@ -179,6 +202,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
             <EmptyText>Нет вызовов</EmptyText>
           ) : (
             list.map((item) => {
+              console.log('RENDER CARD:', item);
+
               const progress =
                 item.has_goal && item.goal_value
                   ? Math.min(
