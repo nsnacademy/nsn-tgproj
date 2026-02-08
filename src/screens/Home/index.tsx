@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
-import { BottomFade } from '../../shared/ui/BottomFade';
 
 import {
   SafeArea,
@@ -17,13 +16,6 @@ import {
   Card,
   CardTitleRow,
   CardTitle,
-  CardRank,
-  CardLabel,
-  CardValue,
-  ProgressWrapper,
-  ProgressBar,
-  ProgressFill,
-  ProgressText,
   PrimaryButton,
   FixedHeaderWrapper,
   HeaderSpacer,
@@ -150,7 +142,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
   return (
     <SafeArea>
-      {/* ================= HEADER ================= */}
+      {/* ===== FIXED HEADER ===== */}
       <FixedHeaderWrapper>
         <HeaderSpacer />
         <Header>
@@ -168,18 +160,18 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
         <Tabs>
           <Tab $active={tab === 'active'} onClick={() => setTab('active')}>
-            Активные вызовы
+            Активные
           </Tab>
           <Tab
             $active={tab === 'completed'}
             onClick={() => setTab('completed')}
           >
-            Завершённые вызовы
+            Завершённые
           </Tab>
         </Tabs>
       </FixedHeaderWrapper>
 
-      {/* ================= SCROLL ================= */}
+      {/* ===== SCROLL ===== */}
       <HomeContainer ref={scrollRef}>
         <CenterWrapper>
           {loading ? (
@@ -195,21 +187,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
               >
                 <CardTitleRow>
                   <CardTitle>{item.title}</CardTitle>
-                  <CardRank>#12</CardRank>
                 </CardTitleRow>
-
-                <CardLabel>Длительность</CardLabel>
-                <CardValue>До 31 августа</CardValue>
-
-                <CardLabel>Участники</CardLabel>
-                <CardValue>89 человек</CardValue>
-
-                <ProgressWrapper>
-                  <ProgressBar>
-                    <ProgressFill style={{ width: '11%' }} />
-                  </ProgressBar>
-                  <ProgressText>3.2 / 30 км</ProgressText>
-                </ProgressWrapper>
 
                 {!item.is_finished && (
                   <PrimaryButton>
@@ -222,10 +200,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
-      {/* ======= FADE МЕЖДУ КОНТЕНТОМ И NAV ======= */}
-      <BottomFade />
-
-      {/* ================= BOTTOM NAV ================= */}
+      {/* ===== BOTTOM NAV ===== */}
       <BottomNav>
         <NavItem $active>
           <svg width="24" height="24" fill="none"
