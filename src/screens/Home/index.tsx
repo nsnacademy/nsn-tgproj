@@ -1,18 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
 import {
   SafeArea,
-  HomeContainer,
+  FixedHeaderWrapper,
+  HeaderSpacer,
   Header,
   StatusLabel,
   StatusTitle,
   Tabs,
   Tab,
+  HeaderOffset,
+  HomeContainer,
   CenterWrapper,
   EmptyText,
-  BottomNav,
-  NavItem,
   Card,
   CardTitleRow,
   CardTitle,
@@ -23,8 +24,8 @@ import {
   ProgressFill,
   ProgressText,
   PrimaryButton,
-  FixedHeaderWrapper,
-  HeaderSpacer,
+  BottomNav,
+  NavItem,
 } from './styles';
 
 type HomeProps = {
@@ -55,8 +56,6 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
 
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-
   async function load() {
     setLoading(true);
 
@@ -67,7 +66,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
-    /** ✅ 1. Получаем USER UUID по telegram_id */
+    /* 1️⃣ получаем UUID пользователя */
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
@@ -81,9 +80,9 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
-    /** ✅ 2. Передаём UUID в RPC */
+    /* 2️⃣ вызываем RPC С UUID */
     const { data, error } = await supabase.rpc('get_home_challenges', {
-      p_user_id: tgUser.id, // ✅ ВОТ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ
+      p_user_id: user.id, // ✅ ВАЖНО: UUID
     });
 
     if (error) {
@@ -107,6 +106,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
   return (
     <SafeArea>
+      {/* ===== FIXED HEADER ===== */}
       <FixedHeaderWrapper>
         <HeaderSpacer />
         <Header>
@@ -135,7 +135,11 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </Tabs>
       </FixedHeaderWrapper>
 
-      <HomeContainer ref={scrollRef}>
+      {/* 👇 ОБЯЗАТЕЛЬНЫЙ OFFSET */}
+      <HeaderOffset />
+
+      {/* ===== CONTENT ===== */}
+      <HomeContainer>
         <CenterWrapper>
           {loading ? (
             <EmptyText>Загрузка…</EmptyText>
@@ -188,50 +192,39 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
-       <BottomNav>
-                    {/* HOME */}
-                    <NavItem $active>
-                      <svg width="24" height="24" fill="none"
-                        stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 10.5L12 3l9 7.5" />
-                        <path d="M5 9.5V21h14V9.5" />
-                      </svg>
-                    </NavItem>
-            
-                    {/* CREATE */}
-                    <NavItem onClick={() => onNavigate('create')}>
-                      <svg width="24" height="24" fill="none"
-                        stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                        <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                        <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                        <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                      </svg>
-                    </NavItem>
-            
-                    {/* SIGNAL */}
-                    <NavItem>
-                      <svg width="24" height="24" fill="none"
-                        stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round">
-                        <line x1="6" y1="18" x2="6" y2="14" />
-                        <line x1="12" y1="18" x2="12" y2="10" />
-                        <line x1="18" y1="18" x2="18" y2="6" />
-                      </svg>
-                    </NavItem>
-            
-                    {/* PROFILE */}
-                    <NavItem>
-                      <svg width="24" height="24" fill="none"
-                        stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="7" r="4" />
-                        <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-                      </svg>
-                    </NavItem>
-                  </BottomNav>
+      {/* ===== BOTTOM NAV ===== */}
+      <BottomNav>
+        <NavItem $active>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 10.5L12 3l9 7.5" />
+            <path d="M5 9.5V21h14V9.5" />
+          </svg>
+        </NavItem>
+
+        <NavItem onClick={() => onNavigate('create')}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+        </NavItem>
+
+        <NavItem>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="6" y1="18" x2="6" y2="14" />
+            <line x1="12" y1="18" x2="12" y2="10" />
+            <line x1="18" y1="18" x2="18" y2="6" />
+          </svg>
+        </NavItem>
+
+        <NavItem>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="7" r="4" />
+            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+          </svg>
+        </NavItem>
+      </BottomNav>
     </SafeArea>
   );
 }

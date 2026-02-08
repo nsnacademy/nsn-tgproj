@@ -1,32 +1,40 @@
 import styled from 'styled-components';
 
-/* === PAGE === */
+/* ======================
+   PAGE
+====================== */
 export const SafeArea = styled.div`
   height: 100vh;
-  overflow: hidden;
   background: #000;
   color: #fff;
+
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   position: relative;
 `;
 
-/* === FIXED HEADER === */
+/* ======================
+   FIXED HEADER
+====================== */
 export const FixedHeaderWrapper = styled.div`
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+
   background: #000;
   z-index: 1000;
 `;
 
+/* safe-area сверху (iOS / TG) */
 export const HeaderSpacer = styled.div`
   height: env(safe-area-inset-top, 0px);
 `;
 
+/* сам хедер */
 export const Header = styled.div`
-  padding: 100px 20px 0;
+  padding: 90px 20px 0;
 `;
 
 export const StatusLabel = styled.div`
@@ -40,35 +48,47 @@ export const StatusTitle = styled.div`
   margin-top: 4px;
 `;
 
-/* === TABS === */
+/* ======================
+   TABS
+====================== */
 export const Tabs = styled.div`
   display: flex;
   gap: 18px;
-  padding: 15px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+
+  padding: 14px 20px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 `;
 
 export const Tab = styled.div<{ $active?: boolean }>`
   font-size: 14px;
   cursor: pointer;
+
   opacity: ${({ $active }) => ($active ? 1 : 0.4)};
+  padding-bottom: 6px;
+
   border-bottom: ${({ $active }) =>
     $active ? '2px solid #fff' : '2px solid transparent'};
 `;
 
-/* ===============================
-   SCROLL CONTAINER (NO FADE)
-=============================== */
+/* ======================
+   SCROLL AREA
+====================== */
+
+/**
+ * Spacer под фиксированный header + tabs
+ * (чтобы контент начинался НИЖЕ header)
+ */
+export const HeaderOffset = styled.div`
+  height: 170px; /* header + tabs */
+  flex-shrink: 0;
+`;
+
 export const HomeContainer = styled.div`
-  position: relative;
-
-  margin-top: 115px;
-  height: calc(115vh - 305px - 100px);
-
+  flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 
-  padding: 90px 30px 70px;
+  padding: 20px 20px 120px; /* снизу место под BottomNav */
 
   scrollbar-width: none;
   &::-webkit-scrollbar {
@@ -76,26 +96,30 @@ export const HomeContainer = styled.div`
   }
 `;
 
-/* === LIST === */
+/* ======================
+   LIST
+====================== */
 export const CenterWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 18px;
 `;
 
-/* === EMPTY === */
+/* ======================
+   EMPTY STATE
+====================== */
 export const EmptyText = styled.div`
-  margin-top: 40px;
+  margin-top: 60px;
   text-align: center;
-  opacity: 0.7;
+  font-size: 14px;
+  opacity: 0.6;
 `;
 
-/* ===============================
-   CARD (NO GRADIENT)
-=============================== */
+/* ======================
+   CARD
+====================== */
 export const Card = styled.div<{ $focused?: boolean }>`
-  background: rgba(255,255,255,0.04);
-
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 22px;
   padding: 18px 20px;
 
@@ -114,7 +138,6 @@ export const Card = styled.div<{ $focused?: boolean }>`
     $focused ? '0 24px 60px rgba(0,0,0,0.65)' : 'none'};
 `;
 
-/* === CARD CONTENT === */
 export const CardTitleRow = styled.div`
   display: flex;
   justify-content: space-between;
@@ -132,9 +155,9 @@ export const CardRank = styled.div`
 `;
 
 export const CardLabel = styled.div`
+  margin-top: 10px;
   font-size: 11px;
   opacity: 0.45;
-  margin-top: 10px;
 `;
 
 export const CardValue = styled.div`
@@ -142,7 +165,9 @@ export const CardValue = styled.div`
   opacity: 0.85;
 `;
 
-/* === PROGRESS === */
+/* ======================
+   PROGRESS
+====================== */
 export const ProgressWrapper = styled.div`
   margin-top: 14px;
 `;
@@ -150,7 +175,7 @@ export const ProgressWrapper = styled.div`
 export const ProgressBar = styled.div`
   height: 8px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   overflow: hidden;
 `;
 
@@ -165,20 +190,26 @@ export const ProgressText = styled.div`
   opacity: 0.65;
 `;
 
-/* === BUTTON === */
+/* ======================
+   BUTTON
+====================== */
 export const PrimaryButton = styled.button`
   margin-top: 14px;
   padding: 10px 16px;
+
   border-radius: 12px;
   border: none;
+
   background: #fff;
   color: #000;
   font-weight: 500;
+
+  cursor: pointer;
 `;
 
-/* ===============================
+/* ======================
    BOTTOM NAV
-=============================== */
+====================== */
 export const BottomNav = styled.div<{ $hidden?: boolean }>`
   position: fixed;
   left: 16px;
@@ -192,6 +223,8 @@ export const BottomNav = styled.div<{ $hidden?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-around;
+
+  z-index: 1000;
 
   transition:
     transform 0.25s ease,
