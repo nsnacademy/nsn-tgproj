@@ -63,13 +63,13 @@ export const HomeContainer = styled.div`
   position: relative;
 
   margin-top: 115px;
-  height: calc(100vh - 205px - 100px);
+  height: calc(115vh - 305px - 100px);
 
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 
   /* ⬅️ достаточно места, чтобы кнопка не упиралась */
-  padding: 90px 30px 160px;
+  padding: 90px 30px 70px;
 
   scrollbar-width: none;
   &::-webkit-scrollbar {
