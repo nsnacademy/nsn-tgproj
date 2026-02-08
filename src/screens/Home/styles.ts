@@ -6,8 +6,6 @@ export const SafeArea = styled.div`
   overflow: hidden;
   background: #000;
   color: #fff;
-  display: flex;
-  flex-direction: column;
   position: relative;
 `;
 
@@ -57,49 +55,25 @@ export const Tab = styled.div<{ $active?: boolean }>`
 `;
 
 /* ===============================
-   SCROLL CONTAINER
+   SCROLL CONTAINER (FIXED)
 =============================== */
 export const HomeContainer = styled.div`
-  position: relative;
-
-  margin-top: 115px;
-  height: calc(110vh - 305px - 100px);
+  position: absolute;
+  top: 115px;        /* под header + tabs */
+  left: 0;
+  right: 0;
+  bottom: 120px;     /* ⬅️ место под nav */
 
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 
-  /* ⬅️ достаточно места, чтобы кнопка не упиралась */
-  padding: 90px 30px 70px;
+  padding: 24px 20px 40px;
 
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
   }
-
-  /* ===== LOWER FADE (FIXED & SOFT) ===== */
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-
-    /* ⬇️ КЛЮЧ: ниже карточек и выше навигации */
-    bottom: 92px; /* ≈ bottom nav + gap */
-
-    height: 56px; /* ⬅️ меньше, аккуратнее */
-    pointer-events: none;
-    z-index: 6;
-
-    background: linear-gradient(
-      to top,
-      rgba(0,0,0,0.85) 0%,
-      rgba(0,0,0,0.55) 35%,
-      rgba(0,0,0,0.25) 65%,
-      rgba(0,0,0,0) 100%
-    );
-  }
 `;
-
 
 /* === LIST === */
 export const CenterWrapper = styled.div`
@@ -128,16 +102,15 @@ export const Card = styled.div<{ $focused?: boolean }>`
   border-radius: 22px;
   padding: 18px 20px;
 
-  transform-origin: center;
   transition:
     transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.28s ease,
     box-shadow 0.28s ease;
 
   transform: ${({ $focused }) =>
-    $focused ? 'scale(1.06)' : 'scale(0.92)'};
+    $focused ? 'scale(1.05)' : 'scale(0.94)'};
 
-  opacity: ${({ $focused }) => ($focused ? 1 : 0.45)};
+  opacity: ${({ $focused }) => ($focused ? 1 : 0.5)};
 
   box-shadow: ${({ $focused }) =>
     $focused ? '0 24px 60px rgba(0,0,0,0.65)' : 'none'};
@@ -208,7 +181,7 @@ export const PrimaryButton = styled.button`
 /* ===============================
    BOTTOM NAV
 =============================== */
-export const BottomNav = styled.div<{ $hidden?: boolean }>`
+export const BottomNav = styled.div`
   position: fixed;
   left: 16px;
   right: 16px;
@@ -222,14 +195,7 @@ export const BottomNav = styled.div<{ $hidden?: boolean }>`
   align-items: center;
   justify-content: space-around;
 
-  transition:
-    transform 0.25s ease,
-    opacity 0.2s ease;
-
-  transform: ${({ $hidden }) =>
-    $hidden ? 'translateY(120%)' : 'translateY(0)'};
-
-  opacity: ${({ $hidden }) => ($hidden ? 0 : 1)};
+  z-index: 1000;
 `;
 
 export const NavItem = styled.div<{ $active?: boolean }>`

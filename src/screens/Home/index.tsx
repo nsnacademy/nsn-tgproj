@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
+import { BottomFade } from '../../shared/ui/BottomFade';
 
 import {
   SafeArea,
@@ -112,7 +113,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
   const list = tab === 'active' ? active : completed;
 
   /* ===============================
-     FOCUS SCROLL (CENTER CARD)
+     CENTER FOCUS SCROLL
   =============================== */
   useEffect(() => {
     const el = scrollRef.current;
@@ -149,7 +150,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
   return (
     <SafeArea>
-      {/* FIXED HEADER */}
+      {/* ================= HEADER ================= */}
       <FixedHeaderWrapper>
         <HeaderSpacer />
         <Header>
@@ -178,7 +179,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </Tabs>
       </FixedHeaderWrapper>
 
-      {/* SCROLL */}
+      {/* ================= SCROLL ================= */}
       <HomeContainer ref={scrollRef}>
         <CenterWrapper>
           {loading ? (
@@ -211,7 +212,9 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                 </ProgressWrapper>
 
                 {!item.is_finished && (
-                  <PrimaryButton>Перейти к отчёту</PrimaryButton>
+                  <PrimaryButton>
+                    Перейти к отчёту
+                  </PrimaryButton>
                 )}
               </Card>
             ))
@@ -219,7 +222,10 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
-      {/* BOTTOM NAV */}
+      {/* ======= FADE МЕЖДУ КОНТЕНТОМ И NAV ======= */}
+      <BottomFade />
+
+      {/* ================= BOTTOM NAV ================= */}
       <BottomNav>
         <NavItem $active>
           <svg width="24" height="24" fill="none"
