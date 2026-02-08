@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
 import {
@@ -54,75 +54,40 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
   const [tab, setTab] = useState<'active' | 'completed'>('active');
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
-  const [focusedId, setFocusedId] = useState<string | null>(null);
-
-  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   async function load() {
-    console.group('🏠 Home.load');
-
     setLoading(true);
 
-    // 1️⃣ Telegram
-    console.log('window.Telegram:', window.Telegram);
-
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    console.log('tgUser:', tgUser);
-
     if (!tgUser) {
-      console.error('❌ tgUser = null (Telegram WebApp не инициализирован)');
       setItems([]);
       setLoading(false);
-      console.groupEnd();
       return;
     }
 
-    console.log('telegram_id:', tgUser.id);
-
-    // 2️⃣ users
-    const { data: user, error: userError } = await supabase
+    // ⚠️ ВАЖНО:
+    // p_user_id — это UUID из users.id, НЕ telegram_id
+    const { data: user } = await supabase
       .from('users')
       .select('id')
       .eq('telegram_id', tgUser.id)
       .single();
 
-    console.log('users query result:', user, userError);
-
     if (!user) {
-      console.error('❌ user НЕ НАЙДЕН в таблице users');
       setItems([]);
       setLoading(false);
-      console.groupEnd();
       return;
     }
 
-    // 3️⃣ RPC
-    console.log('Calling RPC get_home_challenges with user.id:', user.id);
-
-    const { data, error } = await supabase.rpc('get_home_challenges', {
+    const { data } = await supabase.rpc('get_home_challenges', {
       p_user_id: user.id,
     });
 
-    console.log('RPC result:', data);
-    console.log('RPC error:', error);
-
-    if (error) {
-      console.error('❌ RPC ERROR', error);
-      setItems([]);
-      setLoading(false);
-      console.groupEnd();
-      return;
-    }
-
     setItems(data ?? []);
-    console.log('Final items state:', data);
-
     setLoading(false);
-    console.groupEnd();
   }
 
   useEffect(() => {
-    console.log('🔁 Home mounted / refreshKey changed:', refreshKey);
     load();
   }, [refreshKey]);
 
@@ -132,6 +97,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
   return (
     <SafeArea>
+      {/* HEADER */}
       <FixedHeaderWrapper>
         <HeaderSpacer />
         <Header>
@@ -160,7 +126,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </Tabs>
       </FixedHeaderWrapper>
 
-      <HomeContainer ref={scrollRef}>
+      {/* CONTENT */}
+      <HomeContainer>
         <CenterWrapper>
           {loading ? (
             <EmptyText>Загрузка…</EmptyText>
@@ -179,11 +146,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                   : 0;
 
               return (
-                <Card
-                  key={item.participant_id}
-                  data-card-id={item.participant_id}
-                  $focused={focusedId === item.participant_id}
-                >
+                <Card key={item.participant_id}>
                   <CardTitleRow>
                     <CardTitle>{item.title}</CardTitle>
                   </CardTitleRow>
@@ -217,6 +180,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
+      {/* BOTTOM NAV */}
       <BottomNav>
         <NavItem $active>
           <svg width="24" height="24" fill="none"
