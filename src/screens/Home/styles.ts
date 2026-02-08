@@ -85,7 +85,7 @@ export const HomeContainer = styled.div`
     position: sticky;
     left: 0;
     right: 0;
-    height: 90px;
+    height: 50px;
     pointer-events: none;
     z-index: 5;
   }
