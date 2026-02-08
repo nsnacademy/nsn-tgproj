@@ -63,14 +63,14 @@ export const HomeContainer = styled.div`
   position: relative;
 
   /* ⬇️ ключевая магия */
-  margin-top: 205px;
+  margin-top: 115px;
   height: calc(100vh - 205px - 100px);
 
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 
   padding:
-    120px 20px 120px; /* ⬅️ ОБРЕЗАЕТ верх/низ карточек */
+    100px 30px 120px; /* ⬅️ ОБРЕЗАЕТ верх/низ карточек */
 
   /* скрываем scrollbar */
   scrollbar-width: none;
