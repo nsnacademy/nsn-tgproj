@@ -41,19 +41,25 @@ export default function ChallengeReport({
     const payload =
       reportMode === 'result'
         ? {
+            challenge_id: challengeId, // ✅ ИСПОЛЬЗУЕМ
             participant_id: participantId,
             report_date: today,
             value: Number(value),
             report_type: 'result',
+            status: 'pending',
           }
         : {
+            challenge_id: challengeId, // ✅ ИСПОЛЬЗУЕМ
             participant_id: participantId,
             report_date: today,
             is_done: true,
             report_type: 'simple',
+            status: 'pending',
           };
 
-    const { error } = await supabase.from('reports').insert(payload);
+    const { error } = await supabase
+      .from('reports')
+      .insert(payload);
 
     if (error) {
       alert(error.message);
