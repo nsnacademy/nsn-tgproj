@@ -12,9 +12,11 @@ import {
   Input,
   Footer,
   PrimaryButton,
+  CheckRow,
+  CheckDot,
+  CheckText,
 } from './styles';
 
-/* === PROPS === */
 type Props = {
   challengeId: string;
   participantId: string;
@@ -31,10 +33,9 @@ export default function ChallengeReport({
   onBack,
 }: Props) {
   const [value, setValue] = useState('');
-  const [checked, setChecked] = useState(false); // ← КЛЮЧЕВОЕ
+  const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  /* === SUBMIT === */
   async function submit() {
     if (loading) return;
     setLoading(true);
@@ -78,7 +79,6 @@ export default function ChallengeReport({
     onBack();
   }
 
-  /* === CONDITIONS FOR BUTTON === */
   const canSubmit =
     checked &&
     (reportMode === 'simple' ||
@@ -92,10 +92,11 @@ export default function ChallengeReport({
       </Header>
 
       <Content>
-        {/* RESULT INPUT */}
         {reportMode === 'result' && (
           <Field>
-            <Label>Результат{metricName ? ` (${metricName})` : ''}</Label>
+            <Label>
+              Результат{metricName ? ` (${metricName})` : ''}
+            </Label>
             <Input
               type="number"
               value={value}
@@ -105,39 +106,15 @@ export default function ChallengeReport({
           </Field>
         )}
 
-        {/* CHECK MARK */}
         <Field>
           <Label>Отметка выполнения</Label>
 
-          <button
-            type="button"
-            onClick={() => setChecked(!checked)}
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: '50%',
-              border: '2px solid #fff',
-              background: checked ? '#fff' : 'transparent',
-              color: checked ? '#000' : '#fff',
-              fontSize: 24,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            ✓
-          </button>
-
-          <div
-            style={{
-              marginTop: 8,
-              fontSize: 13,
-              opacity: 0.6,
-            }}
-          >
-            {checked
-              ? 'Отметка подтверждена'
-              : 'Нажмите, чтобы отметить выполнение'}
-          </div>
+          <CheckRow onClick={() => setChecked(!checked)}>
+            <CheckDot active={checked} />
+            <CheckText active={checked}>
+              {checked ? 'Отмечено' : 'Не отмечено'}
+            </CheckText>
+          </CheckRow>
         </Field>
       </Content>
 
