@@ -10,6 +10,7 @@ import { CreateFlow } from '../screens/CreateFlow';
 import { CreateFlowFree } from '../screens/CreateFlowFree';
 import { ChallengeDetails } from '../screens/ChallengeDetails';
 import ChallengeProgress from '../screens/ChallengeProgress';
+import ChallengeReport from '../screens/ChallengeReport';
 
 /* === ЭКРАНЫ === */
 type Screen =
@@ -20,7 +21,8 @@ type Screen =
   | 'create-flow-free'
   | 'create-flow-paid'
   | 'challenge-details'
-  | 'challenge-progress';
+  | 'challenge-progress'
+  | 'challenge-report';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -31,6 +33,12 @@ function App() {
 
   // выбранный participant
   const [selectedParticipantId, setSelectedParticipantId] =
+    useState<string | null>(null);
+
+  // данные для отчёта
+  const [reportMode, setReportMode] =
+    useState<'simple' | 'result'>('simple');
+  const [metricName, setMetricName] =
     useState<string | null>(null);
 
   // 🔁 КЛЮЧ ОБНОВЛЕНИЯ HOME
@@ -57,16 +65,23 @@ function App() {
     setScreen(next);
   };
 
+  /* === ОТКРЫТИЕ ЭКРАНА ОТЧЁТА === */
+  const openReport = (data: {
+    challengeId: string;
+    participantId: string;
+    reportMode: 'simple' | 'result';
+    metricName?: string | null;
+  }) => {
+    setSelectedChallengeId(data.challengeId);
+    setSelectedParticipantId(data.participantId);
+    setReportMode(data.reportMode);
+    setMetricName(data.metricName || null);
+    setScreen('challenge-report');
+  };
+
   /* === ЯВНОЕ ОБНОВЛЕНИЕ HOME === */
   const goHomeAndRefresh = () => {
-    console.log('[APP] goHomeAndRefresh');
-
-    setHomeRefreshKey((k) => {
-      const next = k + 1;
-      console.log('[APP] homeRefreshKey', next);
-      return next;
-    });
-
+    setHomeRefreshKey((k) => k + 1);
     setScreen('home');
   };
 
@@ -79,13 +94,10 @@ function App() {
       )}
 
       {screen === 'home' && (
-        <>
-          {console.log('[APP] render Home with refreshKey', homeRefreshKey)}
-          <Home
-            onNavigate={navigate}
-            refreshKey={homeRefreshKey}
-          />
-        </>
+        <Home
+          onNavigate={navigate}
+          refreshKey={homeRefreshKey}
+        />
       )}
 
       {screen === 'create' && (
@@ -114,6 +126,25 @@ function App() {
             challengeId={selectedChallengeId}
             participantId={selectedParticipantId}
             onBack={goHomeAndRefresh}
+            onOpenReport={openReport}
+          />
+        )}
+
+      {screen === 'challenge-report' &&
+        selectedChallengeId &&
+        selectedParticipantId && (
+          <ChallengeReport
+            challengeId={selectedChallengeId}
+            participantId={selectedParticipantId}
+            reportMode={reportMode}
+            metricName={metricName}
+            onBack={() =>
+              navigate(
+                'challenge-progress',
+                selectedChallengeId,
+                selectedParticipantId
+              )
+            }
           />
         )}
 
