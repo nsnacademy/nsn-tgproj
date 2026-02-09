@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
 import {
@@ -25,6 +25,8 @@ type Props = {
   onBack: () => void;
 };
 
+type TodayStatus = 'none' | 'pending' | 'approved';
+
 export default function ChallengeReport({
   challengeId,
   participantId,
@@ -36,11 +38,38 @@ export default function ChallengeReport({
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  async function submit() {
-    if (loading) return;
-    setLoading(true);
+  const [todayStatus, setTodayStatus] =
+    useState<TodayStatus>('none');
 
-    const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+
+  /* === LOAD TODAY REPORT STATUS === */
+  useEffect(() => {
+    async function loadTodayReport() {
+      const { data } = await supabase
+        .from('reports')
+        .select('status')
+        .eq('challenge_id', challengeId)
+        .eq('participant_id', participantId)
+        .eq('report_date', today)
+        .maybeSingle();
+
+      if (data?.status === 'pending') {
+        setTodayStatus('pending');
+      } else if (data?.status === 'approved') {
+        setTodayStatus('approved');
+      } else {
+        setTodayStatus('none');
+      }
+    }
+
+    loadTodayReport();
+  }, [challengeId, participantId, today]);
+
+  /* === SUBMIT === */
+  async function submit() {
+    if (loading || todayStatus !== 'none') return;
+    setLoading(true);
 
     const basePayload = {
       challenge_id: challengeId,
@@ -66,9 +95,7 @@ export default function ChallengeReport({
 
     const { error } = await supabase
       .from('reports')
-      .upsert(payload, {
-        onConflict: 'participant_id,report_date',
-      });
+      .insert(payload);
 
     if (error) {
       alert(error.message);
@@ -76,10 +103,12 @@ export default function ChallengeReport({
       return;
     }
 
-    onBack();
+    setTodayStatus('pending');
+    setLoading(false);
   }
 
   const canSubmit =
+    todayStatus === 'none' &&
     checked &&
     (reportMode === 'simple' ||
       (reportMode === 'result' && value.trim().length > 0));
@@ -92,39 +121,66 @@ export default function ChallengeReport({
       </Header>
 
       <Content>
-        {reportMode === 'result' && (
+        {/* === WAITING STATE === */}
+        {todayStatus === 'pending' && (
           <Field>
-            <Label>
-              Результат{metricName ? ` (${metricName})` : ''}
-            </Label>
-            <Input
-              type="number"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="Введите значение"
-            />
+            <Label>Статус</Label>
+            <div style={{ opacity: 0.7 }}>
+              ⏳ Ожидает проверки
+            </div>
           </Field>
         )}
 
-        <Field>
-          <Label>Отметка выполнения</Label>
+        {/* === APPROVED STATE === */}
+        {todayStatus === 'approved' && (
+          <Field>
+            <Label>Статус</Label>
+            <div style={{ opacity: 0.7 }}>
+              ✅ Отчёт принят
+            </div>
+          </Field>
+        )}
 
-          <CheckRow onClick={() => setChecked(!checked)}>
-            <CheckDot active={checked} />
-            <CheckText active={checked}>
-              {checked ? 'Отмечено' : 'Не отмечено'}
-            </CheckText>
-          </CheckRow>
-        </Field>
+        {/* === FORM (ONLY IF NONE) === */}
+        {todayStatus === 'none' && (
+          <>
+            {reportMode === 'result' && (
+              <Field>
+                <Label>
+                  Результат
+                  {metricName ? ` (${metricName})` : ''}
+                </Label>
+                <Input
+                  type="number"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  placeholder="Введите значение"
+                />
+              </Field>
+            )}
+
+            <Field>
+              <Label>Отметка выполнения</Label>
+              <CheckRow onClick={() => setChecked(!checked)}>
+                <CheckDot active={checked} />
+                <CheckText active={checked}>
+                  {checked ? 'Отмечено' : 'Не отмечено'}
+                </CheckText>
+              </CheckRow>
+            </Field>
+          </>
+        )}
       </Content>
 
       <Footer>
-        <PrimaryButton
-          disabled={!canSubmit || loading}
-          onClick={submit}
-        >
-          {loading ? 'Отправка…' : 'Отправить отчёт'}
-        </PrimaryButton>
+        {todayStatus === 'none' && (
+          <PrimaryButton
+            disabled={!canSubmit || loading}
+            onClick={submit}
+          >
+            {loading ? 'Отправка…' : 'Отправить отчёт'}
+          </PrimaryButton>
+        )}
       </Footer>
     </SafeArea>
   );
