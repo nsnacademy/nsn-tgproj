@@ -41,12 +41,12 @@ type ChallengeItem = {
 
   title: string;
   start_at: string;
-  end_at: string;
+  end_at: string | null;
   duration_days: number;
 
   has_goal: boolean;
   goal_value: number | null;
-  user_progress: number | null;
+  user_progress: number | null; // sum(value) OR doneDays
 
   participants_count: number;
 
@@ -144,20 +144,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
             <EmptyText>Нет вызовов</EmptyText>
           ) : (
             list.map(item => {
-              const progressValue =
-                typeof item.user_progress === 'number'
-                  ? item.user_progress
-                  : 0;
-
+              const progressValue = item.user_progress ?? 0;
               const goalValue = item.goal_value ?? 0;
-
-              const progressPercent =
-                item.has_goal && goalValue > 0
-                  ? Math.min(
-                      100,
-                      Math.round((progressValue / goalValue) * 100)
-                    )
-                  : 0;
 
               const start = new Date(item.start_at);
               const today = new Date();
@@ -173,6 +161,13 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                 )
               );
 
+              const progressPercent = item.has_goal && goalValue > 0
+                ? Math.min(100, Math.round((progressValue / goalValue) * 100))
+                : Math.min(
+                    100,
+                    Math.round((progressValue / item.duration_days) * 100)
+                  );
+
               return (
                 <Card key={item.participant_id}>
                   <CardTitleRow>
@@ -184,9 +179,15 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                       <ProgressFill style={{ width: `${progressPercent}%` }} />
                     </ProgressBar>
 
-                    <ProgressText>
-                      {progressValue} / {goalValue}
-                    </ProgressText>
+                    {item.has_goal ? (
+                      <ProgressText>
+                        {progressValue} / {goalValue}
+                      </ProgressText>
+                    ) : (
+                      <ProgressText>
+                        Выполнено дней: {progressValue} из {item.duration_days}
+                      </ProgressText>
+                    )}
 
                     <ProgressText style={{ opacity: 0.45 }}>
                       День {currentDay} из {item.duration_days}
