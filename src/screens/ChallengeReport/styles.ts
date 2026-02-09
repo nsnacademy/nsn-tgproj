@@ -6,6 +6,7 @@ export const SafeArea = styled.div`
   color: #fff;
   display: flex;
   flex-direction: column;
+  padding-top: 100px;
 `;
 
 export const Header = styled.div`
