@@ -32,56 +32,61 @@ export default function ChallengeReport({
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
 
- 
-async function submit() {
-  if (loading) return;
-  setLoading(true);
+  async function submit() {
+    if (loading) return;
+    setLoading(true);
 
-  const today = new Date().toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
 
-  const basePayload = {
-    challenge_id: challengeId,
-    participant_id: participantId,
-    report_date: today,
+    /**
+     * БАЗОВЫЙ payload
+     * reviewed_* НЕ трогаем — это зона админки
+     */
+    const basePayload = {
+      challenge_id: challengeId,
+      participant_id: participantId,
+      report_date: today,
+      status: 'pending' as const,
+    };
 
-    status: 'pending',
+    /**
+     * SIMPLE — просто отметка
+     * RESULT — числовое значение
+     */
+    const payload =
+      reportMode === 'result'
+        ? {
+            ...basePayload,
+            report_type: 'result' as const,
+            value: Number(value),
+            is_done: null,
+          }
+        : {
+            ...basePayload,
+            report_type: 'simple' as const,
+            is_done: true,
+            value: null,
+          };
 
-    reviewed_by: null,
-    reviewed_at: null,
-    rejection_reason: null,
-  };
+    /**
+     * upsert — чтобы:
+     * - не было duplicate key
+     * - можно было перезаписать отчёт за день
+     */
+    const { error } = await supabase
+      .from('reports')
+      .upsert(payload, {
+        onConflict: 'participant_id,report_date',
+      });
 
-  const payload =
-    reportMode === 'result'
-      ? {
-          ...basePayload,
-          value: Number(value),
-          is_done: null,
-          report_type: 'result',
-        }
-      : {
-          ...basePayload,
-          is_done: true,
-          value: null,
-          report_type: 'simple',
-        };
+    if (error) {
+      alert(error.message);
+      setLoading(false);
+      return;
+    }
 
-  const { error } = await supabase
-    .from('reports')
-    .upsert(payload, {
-      onConflict: 'participant_id,report_date',
-    });
-
-  if (error) {
-    alert(error.message);
-    setLoading(false);
-    return;
+    onBack();
   }
-
-  onBack();
-}
-
-
 
   return (
     <SafeArea>
@@ -93,7 +98,7 @@ async function submit() {
       <Content>
         {reportMode === 'result' && (
           <Field>
-            <Label>Результат ({metricName})</Label>
+            <Label>Результат{metricName ? ` (${metricName})` : ''}</Label>
             <Input
               type="number"
               value={value}
@@ -102,10 +107,22 @@ async function submit() {
             />
           </Field>
         )}
+
+        {reportMode === 'simple' && (
+          <Field>
+            <Label>Отметка выполнения</Label>
+            <div style={{ opacity: 0.6, fontSize: 14 }}>
+              Нажмите кнопку ниже, чтобы отметить выполнение
+            </div>
+          </Field>
+        )}
       </Content>
 
       <Footer>
-        <PrimaryButton onClick={submit}>
+        <PrimaryButton
+          disabled={loading || (reportMode === 'result' && !value)}
+          onClick={submit}
+        >
           {loading ? 'Отправка…' : 'Отправить отчёт'}
         </PrimaryButton>
       </Footer>
