@@ -52,8 +52,10 @@ type ChallengeData = {
 };
 
 type RatingRow = {
+  place: number;
   username: string;
   value: number;
+  prize_title?: string | null;
 };
 
 export default function ChallengeProgress({
@@ -72,6 +74,8 @@ export default function ChallengeProgress({
   const [participantsCount, setParticipantsCount] = useState(0);
 
   const [rating, setRating] = useState<RatingRow[]>([]);
+  const [myPlace, setMyPlace] = useState<number | null>(null);
+  const [valueToPrize, setValueToPrize] = useState<number | null>(null);
 
   async function load() {
     setLoading(true);
@@ -95,7 +99,10 @@ export default function ChallengeProgress({
       .eq('id', challengeId)
       .single();
 
-    if (!challengeData) return;
+    if (!challengeData) {
+      setLoading(false);
+      return;
+    }
 
     setChallenge(challengeData);
 
@@ -112,6 +119,7 @@ export default function ChallengeProgress({
       .from('reports')
       .select('id')
       .eq('participant_id', participantId)
+      .eq('status', 'approved')
       .eq('is_done', true);
 
     setDoneDays(done?.length || 0);
@@ -119,18 +127,20 @@ export default function ChallengeProgress({
     /* === TODAY === */
     const { data: today } = await supabase
       .from('reports')
-      .select('is_done')
+      .select('id')
       .eq('participant_id', participantId)
       .eq('report_date', new Date().toISOString().slice(0, 10))
+      .eq('status', 'approved')
       .maybeSingle();
 
-    setTodayDone(!!today?.is_done);
+    setTodayDone(!!today);
 
     /* === TOTAL VALUE === */
     const { data: sum } = await supabase
       .from('reports')
       .select('value')
-      .eq('participant_id', participantId);
+      .eq('participant_id', participantId)
+      .eq('status', 'approved');
 
     const total =
       sum?.reduce((acc, r) => acc + Number(r.value || 0), 0) || 0;
@@ -147,43 +157,20 @@ export default function ChallengeProgress({
 
     setCurrentDay(Math.max(1, day));
 
-    /* === RATING === */
+    /* === RATING (RPC) === */
     if (challengeData.has_rating) {
-      const { data: ratingData } = await supabase
-        .from('participants')
-        .select(`
-          id,
-          profiles:profiles (
-            username
-          ),
-          reports (
-            value,
-            is_done
-          )
-        `)
-        .eq('challenge_id', challengeId);
+      const { data, error } = await supabase.rpc(
+        'get_challenge_progress',
+        {
+          p_challenge_id: challengeId,
+          p_participant_id: participantId,
+        }
+      );
 
-      if (ratingData) {
-        const mapped: RatingRow[] = ratingData.map((p: any) => {
-          const value =
-            challengeData.report_mode === 'result'
-              ? p.reports.reduce(
-                  (acc: number, r: any) => acc + Number(r.value || 0),
-                  0
-                )
-              : p.reports.filter((r: any) => r.is_done).length;
-
-          return {
-            username: p.profiles?.username || 'user',
-            value,
-          };
-        });
-
-        setRating(
-          mapped
-            .filter(r => r.value > 0)
-            .sort((a, b) => b.value - a.value)
-        );
+      if (!error && data) {
+        setRating(data.rating || []);
+        setMyPlace(data.me?.place ?? null);
+        setValueToPrize(data.me?.value_to_prize ?? null);
       }
     }
 
@@ -270,15 +257,25 @@ export default function ChallengeProgress({
           <Section>
             <SectionTitle>Рейтинг</SectionTitle>
             <RatingList>
-              {rating.map((r, i) => (
-                <RatingItem key={i}>
+              {rating.map(r => (
+                <RatingItem key={r.place}>
                   <span>
-                    {i + 1}. {r.username}
+                    {r.place}. {r.username}
+                    {r.prize_title && ` 🏆`}
                   </span>
                   <span>{r.value}</span>
                 </RatingItem>
               ))}
             </RatingList>
+          </Section>
+        )}
+
+        {/* TO PRIZE */}
+        {challenge.has_rating && myPlace && valueToPrize !== null && (
+          <Section>
+            <ProgressSubText>
+              ⬇️ До призового места: {valueToPrize} {challenge.metric_name}
+            </ProgressSubText>
           </Section>
         )}
       </Content>
