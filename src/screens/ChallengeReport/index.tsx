@@ -33,31 +33,37 @@ export default function ChallengeReport({
   const [loading, setLoading] = useState(false);
 
  
-  async function submit() {
+async function submit() {
   if (loading) return;
   setLoading(true);
 
   const today = new Date().toISOString().slice(0, 10);
 
+  const basePayload = {
+    challenge_id: challengeId,
+    participant_id: participantId,
+    report_date: today,
+
+    status: 'pending',
+
+    reviewed_by: null,
+    reviewed_at: null,
+    rejection_reason: null,
+  };
+
   const payload =
     reportMode === 'result'
       ? {
-          challenge_id: challengeId,
-          participant_id: participantId,
-          report_date: today,
+          ...basePayload,
           value: Number(value),
-          report_type: 'result',
-          status: 'pending',
           is_done: null,
+          report_type: 'result',
         }
       : {
-          challenge_id: challengeId,
-          participant_id: participantId,
-          report_date: today,
+          ...basePayload,
           is_done: true,
-          report_type: 'simple',
-          status: 'pending',
           value: null,
+          report_type: 'simple',
         };
 
   const { error } = await supabase
