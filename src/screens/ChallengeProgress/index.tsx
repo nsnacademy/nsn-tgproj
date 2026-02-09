@@ -124,42 +124,24 @@ export default function ChallengeProgress({
 
     setParticipantsCount(count || 0);
 
-    /* === DONE DAYS (approved) === */
-    const { data: done } = await supabase
+    /* === REPORTS (ONE QUERY INSTEAD OF THREE) === */
+    const { data: reports } = await supabase
       .from('reports')
-      .select('id')
-      .eq('participant_id', participantId)
-      .eq('challenge_id', challengeId)
-      .eq('status', 'approved')
-      .eq('is_done', true);
-
-    setDoneDays(done?.length || 0);
-
-    /* === TODAY DONE === */
-    const todayDate = new Date().toISOString().slice(0, 10);
-
-    const { data: today } = await supabase
-      .from('reports')
-      .select('id')
-      .eq('participant_id', participantId)
-      .eq('challenge_id', challengeId)
-      .eq('report_date', todayDate)
-      .eq('status', 'approved')
-      .maybeSingle();
-
-    setTodayDone(!!today);
-
-    /* === TOTAL VALUE (approved) === */
-    const { data: sum } = await supabase
-      .from('reports')
-      .select('value')
+      .select('value, is_done, report_date')
       .eq('participant_id', participantId)
       .eq('challenge_id', challengeId)
       .eq('status', 'approved');
 
-    const total =
-      sum?.reduce((acc, r) => acc + Number(r.value || 0), 0) || 0;
+    const todayDate = new Date().toISOString().slice(0, 10);
 
+    const done = reports?.filter(r => r.is_done) || [];
+    const today = reports?.find(r => r.report_date === todayDate);
+
+    const total =
+      reports?.reduce((acc, r) => acc + Number(r.value || 0), 0) || 0;
+
+    setDoneDays(done.length);
+    setTodayDone(!!today);
     setTotalValue(total);
 
     /* === CURRENT DAY === */
@@ -172,7 +154,7 @@ export default function ChallengeProgress({
 
     setCurrentDay(Math.max(1, day));
 
-    /* === RATING (RPC) === */
+    /* === RATING (RPC, БЕЗ ИЗМЕНЕНИЙ) === */
     if (challengeData.has_rating) {
       const { data, error } = await supabase.rpc(
         'get_challenge_progress',
