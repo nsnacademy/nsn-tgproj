@@ -26,7 +26,6 @@ import {
   DisabledButton,
 } from './styles';
 
-/* === PROPS === */
 type Props = {
   challengeId: string;
   participantId: string;
@@ -39,22 +38,16 @@ type Props = {
   }) => void;
 };
 
-/* === TYPES === */
 type ChallengeData = {
   title: string;
   rules: string | null;
-
   report_mode: 'simple' | 'result';
   metric_name: string | null;
-
   has_goal: boolean;
   goal_value: number | null;
-
   has_limit: boolean;
   limit_per_day: number | null;
-
   has_rating: boolean;
-
   duration_days: number;
   start_at: string;
 };
@@ -65,8 +58,6 @@ type RatingRow = {
   value: number;
   prize_title?: string | null;
 };
-
-type TodayStatus = 'none' | 'pending' | 'approved';
 
 export default function ChallengeProgress({
   challengeId,
@@ -79,11 +70,9 @@ export default function ChallengeProgress({
 
   const [currentDay, setCurrentDay] = useState(1);
   const [doneDays, setDoneDays] = useState(0);
+  const [todayDone, setTodayDone] = useState(false);
+
   const [totalValue, setTotalValue] = useState(0);
-
-  const [todayStatus, setTodayStatus] =
-    useState<TodayStatus>('none');
-
   const [participantsCount, setParticipantsCount] = useState(0);
 
   const [rating, setRating] = useState<RatingRow[]>([]);
@@ -93,7 +82,6 @@ export default function ChallengeProgress({
   async function load() {
     setLoading(true);
 
-    /* === CHALLENGE === */
     const { data: challengeData } = await supabase
       .from('challenges')
       .select(`
@@ -119,7 +107,6 @@ export default function ChallengeProgress({
 
     setChallenge(challengeData);
 
-    /* === PARTICIPANTS COUNT === */
     const { count } = await supabase
       .from('participants')
       .select('*', { count: 'exact', head: true })
@@ -127,56 +114,45 @@ export default function ChallengeProgress({
 
     setParticipantsCount(count || 0);
 
-    const today = new Date().toISOString().slice(0, 10);
-
-    /* === TODAY REPORT (ANY STATUS) === */
-    const { data: todayReport } = await supabase
+    const { data: reports } = await supabase
       .from('reports')
-      .select('status')
-      .eq('challenge_id', challengeId)
+      .select('value, is_done, report_date, status')
       .eq('participant_id', participantId)
-      .eq('report_date', today)
-      .maybeSingle();
+      .eq('challenge_id', challengeId);
 
-    if (!todayReport) {
-      setTodayStatus('none');
-    } else {
-      setTodayStatus(todayReport.status as TodayStatus);
-    }
+    const todayDate = new Date().toISOString().slice(0, 10);
 
-    /* === APPROVED REPORTS (FOR PROGRESS) === */
-    const { data: approvedReports } = await supabase
-      .from('reports')
-      .select('value, is_done')
-      .eq('challenge_id', challengeId)
-      .eq('participant_id', participantId)
-      .eq('status', 'approved');
+    const todayReport = reports?.find(
+      r => r.report_date === todayDate
+    );
 
+    const approvedReports =
+      reports?.filter(r => r.status === 'approved') || [];
+
+    setTodayDone(!!todayReport);
+
+    const done = approvedReports.filter(r => r.is_done);
     const total =
-      approvedReports?.reduce(
+      approvedReports.reduce(
         (acc, r) => acc + Number(r.value || 0),
         0
-      ) || 0;
+      );
 
-    const done =
-      approvedReports?.filter(r => r.is_done).length || 0;
-
+    setDoneDays(done.length);
     setTotalValue(total);
-    setDoneDays(done);
 
-    /* === CURRENT DAY === */
     const start = new Date(challengeData.start_at);
     const now = new Date();
     const day =
       Math.floor(
-        (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+        (now.getTime() - start.getTime()) /
+          (1000 * 60 * 60 * 24)
       ) + 1;
 
     setCurrentDay(Math.max(1, day));
 
-    /* === RATING === */
     if (challengeData.has_rating) {
-      const { data } = await supabase.rpc(
+      const { data, error } = await supabase.rpc(
         'get_challenge_progress',
         {
           p_challenge_id: challengeId,
@@ -184,7 +160,7 @@ export default function ChallengeProgress({
         }
       );
 
-      if (data) {
+      if (!error && data) {
         setRating(data.rating || []);
         setMyPlace(data.me?.place ?? null);
         setValueToPrize(data.me?.value_to_prize ?? null);
@@ -198,9 +174,7 @@ export default function ChallengeProgress({
     load();
   }, []);
 
-  if (loading || !challenge) {
-    return <SafeArea />;
-  }
+  if (loading || !challenge) return <SafeArea />;
 
   const progressPercent =
     challenge.report_mode === 'result' && challenge.has_goal
@@ -248,7 +222,22 @@ export default function ChallengeProgress({
           </ProgressSubText>
         </ProgressBlock>
 
-        {/* PARTICIPANTS */}
+        {(challenge.rules || challenge.has_limit) && (
+          <Section>
+            <SectionTitle>Условия</SectionTitle>
+            <ConditionList>
+              {challenge.rules && (
+                <ConditionItem>{challenge.rules}</ConditionItem>
+              )}
+              {challenge.has_limit && (
+                <ConditionItem>
+                  Не более {challenge.limit_per_day} отчёта в день
+                </ConditionItem>
+              )}
+            </ConditionList>
+          </Section>
+        )}
+
         <Section>
           <SectionTitle>Участие</SectionTitle>
           <ParticipantsRow>
@@ -256,10 +245,40 @@ export default function ChallengeProgress({
             {participantsCount}
           </ParticipantsRow>
         </Section>
+
+        {challenge.has_rating && rating.length > 0 && (
+          <Section>
+            <SectionTitle>Рейтинг</SectionTitle>
+            <RatingList>
+              {rating.map(r => (
+                <RatingItem key={r.place}>
+                  <span>
+                    {r.place}. {r.username}
+                    {r.prize_title && ' 🏆'}
+                  </span>
+                  <span>{r.value}</span>
+                </RatingItem>
+              ))}
+            </RatingList>
+          </Section>
+        )}
+
+        {challenge.has_rating &&
+          myPlace &&
+          valueToPrize !== null && (
+            <Section>
+              <ProgressSubText>
+                ⬇️ До призового места: {valueToPrize}{' '}
+                {challenge.metric_name}
+              </ProgressSubText>
+            </Section>
+          )}
       </Content>
 
       <ActionBlock>
-        {todayStatus === 'none' && (
+        {todayDone ? (
+          <DisabledButton>Ожидает проверки</DisabledButton>
+        ) : (
           <PrimaryButton
             onClick={() =>
               onOpenReport({
@@ -272,14 +291,6 @@ export default function ChallengeProgress({
           >
             Перейти к отчёту
           </PrimaryButton>
-        )}
-
-        {todayStatus === 'pending' && (
-          <DisabledButton>⏳ Ожидает проверки</DisabledButton>
-        )}
-
-        {todayStatus === 'approved' && (
-          <DisabledButton>✅ Засчитано</DisabledButton>
         )}
       </ActionBlock>
     </SafeArea>
