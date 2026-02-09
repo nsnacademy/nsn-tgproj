@@ -124,11 +124,12 @@ export default function ChallengeProgress({
 
     setParticipantsCount(count || 0);
 
-    /* === DONE DAYS (approved only) === */
+    /* === DONE DAYS (approved) === */
     const { data: done } = await supabase
       .from('reports')
       .select('id')
       .eq('participant_id', participantId)
+      .eq('challenge_id', challengeId)
       .eq('status', 'approved')
       .eq('is_done', true);
 
@@ -141,18 +142,19 @@ export default function ChallengeProgress({
       .from('reports')
       .select('id')
       .eq('participant_id', participantId)
-      .eq('challenge_id', challengeId) // ⬅️ используем challengeId (важно!)
+      .eq('challenge_id', challengeId)
       .eq('report_date', todayDate)
       .eq('status', 'approved')
       .maybeSingle();
 
     setTodayDone(!!today);
 
-    /* === TOTAL VALUE (approved only) === */
+    /* === TOTAL VALUE (approved) === */
     const { data: sum } = await supabase
       .from('reports')
       .select('value')
       .eq('participant_id', participantId)
+      .eq('challenge_id', challengeId)
       .eq('status', 'approved');
 
     const total =
@@ -162,10 +164,10 @@ export default function ChallengeProgress({
 
     /* === CURRENT DAY === */
     const start = new Date(challengeData.start_at);
-    const todayD = new Date();
+    const now = new Date();
     const day =
       Math.floor(
-        (todayD.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+        (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
       ) + 1;
 
     setCurrentDay(Math.max(1, day));
