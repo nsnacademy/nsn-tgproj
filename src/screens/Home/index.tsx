@@ -249,7 +249,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                         )
                       }
                     >
-                      Перейти к отчёту
+                      Перейти к отчёт
                     </PrimaryButton>
                   )}
                 </Card>
