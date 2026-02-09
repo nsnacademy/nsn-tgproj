@@ -124,87 +124,115 @@ useEffect(() => {
   /* ========================================================= */
 
   async function publishChallenge() {
-    if (submitting) return; // ⛔ защита от повторного клика
-    setSubmitting(true);
+  if (submitting) return; // ⛔ защита от повторного клика
+  setSubmitting(true);
 
-    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    if (!tgUser) {
-      alert('Telegram user not found');
-      setSubmitting(false);
-      return;
-    }
-
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('telegram_id', tgUser.id)
-      .single();
-
-    if (userError || !user) {
-      console.error(userError);
-      alert('User not found in database');
-      setSubmitting(false);
-      return;
-    }
-
-    const payload = {
-      creator_id: user.id,
-
-      title,
-      description,
-      rules: rules || null,
-
-      chat_link: chatLink || null,
-
-      start_mode: startMode,
-      start_date: startMode === 'date' ? startDate : null,
-      duration_days: Number(durationDays),
-
-      report_mode: reportMode,
-      metric_name: reportMode === 'result' ? metricName : null,
-
-      has_goal: hasGoal,
-      goal_value: hasGoal ? Number(goalValue) : null,
-
-      has_proof: hasProof,
-      proof_types: hasProof ? proofs : null,
-
-      has_limit: hasLimit,
-      limit_per_day: hasLimit ? Number(limitPerDay) : null,
-
-      has_rating: hasRating,
-    };
-
-    const { data: challenge, error } = await supabase
-      .from('challenges')
-      .insert(payload)
-      .select('id')
-      .single();
-
-    if (error || !challenge) {
-      console.error(error);
-      alert('Ошибка при создании вызова');
-      setSubmitting(false);
-      return;
-    }
-
-    const { error: participantError } = await supabase
-      .from('participants')
-      .insert({
-        user_id: user.id,
-        challenge_id: challenge.id,
-      });
-
-    if (participantError) {
-      console.error(participantError);
-      alert('Вызов создан, но не удалось добавить участника');
-      setSubmitting(false);
-      return;
-    }
-
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if (!tgUser) {
+    alert('Telegram user not found');
     setSubmitting(false);
-    onNavigate('home');
+    return;
   }
+
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('telegram_id', tgUser.id)
+    .single();
+
+  if (userError || !user) {
+    console.error(userError);
+    alert('User not found in database');
+    setSubmitting(false);
+    return;
+  }
+
+  const payload = {
+    creator_id: user.id,
+
+    title,
+    description,
+    rules: rules || null,
+
+    chat_link: chatLink || null,
+
+    start_mode: startMode,
+    start_date: startMode === 'date' ? startDate : null,
+    duration_days: Number(durationDays),
+
+    report_mode: reportMode,
+    metric_name: reportMode === 'result' ? metricName : null,
+
+    has_goal: hasGoal,
+    goal_value: hasGoal ? Number(goalValue) : null,
+
+    has_proof: hasProof,
+    proof_types: hasProof ? proofs : null,
+
+    has_limit: hasLimit,
+    limit_per_day: hasLimit ? Number(limitPerDay) : null,
+
+    has_rating: hasRating,
+  };
+
+  /* === CREATE CHALLENGE === */
+  const { data: challenge, error } = await supabase
+    .from('challenges')
+    .insert(payload)
+    .select('id')
+    .single();
+
+  if (error || !challenge) {
+    console.error(error);
+    alert('Ошибка при создании вызова');
+    setSubmitting(false);
+    return;
+  }
+
+  /* === SAVE PRIZES (КЛЮЧЕВОЕ ИЗМЕНЕНИЕ) === */
+  if (hasRating) {
+    const prizesPayload = rewards
+      .filter(r => r.value.trim().length > 0)
+      .map(r => ({
+        challenge_id: challenge.id,
+        place: r.place,
+        title: r.value,
+        description: null,
+      }));
+
+    if (prizesPayload.length > 0) {
+      const { error: prizesError } = await supabase
+        .from('challenge_prizes')
+        .insert(prizesPayload);
+
+      if (prizesError) {
+        console.error(prizesError);
+        alert('Ошибка при сохранении призов');
+        setSubmitting(false);
+        return;
+      }
+    }
+  }
+
+  /* === ADD CREATOR AS PARTICIPANT === */
+  const { error: participantError } = await supabase
+    .from('participants')
+    .insert({
+      user_id: user.id,
+      challenge_id: challenge.id,
+    });
+
+  if (participantError) {
+    console.error(participantError);
+    alert('Вызов создан, но не удалось добавить участника');
+    setSubmitting(false);
+    return;
+  }
+
+  setSubmitting(false);
+  onNavigate('home');
+}
+
 
   /* ==================== PREVIEW ==================== */
 
