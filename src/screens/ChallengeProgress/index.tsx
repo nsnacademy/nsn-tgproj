@@ -70,7 +70,6 @@ export default function ChallengeProgress({
 
   const [currentDay, setCurrentDay] = useState(1);
   const [doneDays, setDoneDays] = useState(0);
-  const [todayDone, setTodayDone] = useState(false);
 
   const [totalValue, setTotalValue] = useState(0);
   const [participantsCount, setParticipantsCount] = useState(0);
@@ -78,6 +77,9 @@ export default function ChallengeProgress({
   const [rating, setRating] = useState<RatingRow[]>([]);
   const [myPlace, setMyPlace] = useState<number | null>(null);
   const [valueToPrize, setValueToPrize] = useState<number | null>(null);
+
+  const [todayStatus, setTodayStatus] =
+    useState<'none' | 'pending' | 'approved'>('none');
 
   async function load() {
     setLoading(true);
@@ -121,22 +123,26 @@ export default function ChallengeProgress({
       .eq('challenge_id', challengeId);
 
     const todayDate = new Date().toISOString().slice(0, 10);
-
     const todayReport = reports?.find(
       r => r.report_date === todayDate
     );
 
+    if (!todayReport) {
+      setTodayStatus('none');
+    } else if (todayReport.status === 'pending') {
+      setTodayStatus('pending');
+    } else if (todayReport.status === 'approved') {
+      setTodayStatus('approved');
+    }
+
     const approvedReports =
       reports?.filter(r => r.status === 'approved') || [];
 
-    setTodayDone(!!todayReport);
-
     const done = approvedReports.filter(r => r.is_done);
-    const total =
-      approvedReports.reduce(
-        (acc, r) => acc + Number(r.value || 0),
-        0
-      );
+    const total = approvedReports.reduce(
+      (acc, r) => acc + Number(r.value || 0),
+      0
+    );
 
     setDoneDays(done.length);
     setTotalValue(total);
@@ -276,9 +282,7 @@ export default function ChallengeProgress({
       </Content>
 
       <ActionBlock>
-        {todayDone ? (
-          <DisabledButton>Ожидает проверки</DisabledButton>
-        ) : (
+        {todayStatus === 'none' && (
           <PrimaryButton
             onClick={() =>
               onOpenReport({
@@ -291,6 +295,14 @@ export default function ChallengeProgress({
           >
             Перейти к отчёту
           </PrimaryButton>
+        )}
+
+        {todayStatus === 'pending' && (
+          <DisabledButton>⏳ Ожидает проверки</DisabledButton>
+        )}
+
+        {todayStatus === 'approved' && (
+          <DisabledButton>✅ Выполнено</DisabledButton>
         )}
       </ActionBlock>
     </SafeArea>
