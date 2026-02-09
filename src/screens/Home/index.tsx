@@ -28,16 +28,12 @@ import {
 
 type HomeProps = {
   onNavigate: (
-    screen:
-      | 'home'
-      | 'create'
-      | 'challenge-progress',
+    screen: 'home' | 'create' | 'challenge-progress',
     challengeId?: string,
     participantId?: string
   ) => void;
   refreshKey: number;
 };
-
 
 type ChallengeItem = {
   participant_id: string;
@@ -45,7 +41,7 @@ type ChallengeItem = {
 
   title: string;
   start_at: string;
-  end_at: string;
+  end_at: string | null;
   duration_days: number;
 
   has_goal: boolean;
@@ -85,9 +81,12 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
-    const { data, error } = await supabase.rpc('get_home_challenges', {
-      p_user_id: user.id,
-    });
+    const { data, error } = await supabase.rpc(
+      'get_home_challenges',
+      {
+        p_user_id: user.id,
+      }
+    );
 
     if (error) {
       console.error('[HOME] rpc error', error);
@@ -104,8 +103,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
     load();
   }, [refreshKey]);
 
-  const active = items.filter((i) => !i.challenge_finished);
-  const completed = items.filter((i) => i.challenge_finished);
+  const active = items.filter(i => !i.challenge_finished);
+  const completed = items.filter(i => i.challenge_finished);
   const list = tab === 'active' ? active : completed;
 
   return (
@@ -127,7 +126,10 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </Header>
 
         <Tabs>
-          <Tab $active={tab === 'active'} onClick={() => setTab('active')}>
+          <Tab
+            $active={tab === 'active'}
+            onClick={() => setTab('active')}
+          >
             Активные
           </Tab>
           <Tab
@@ -149,7 +151,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
           ) : list.length === 0 ? (
             <EmptyText>Нет вызовов</EmptyText>
           ) : (
-            list.map((item) => {
+            list.map(item => {
               const progressValue = item.user_progress ?? 0;
               const goalValue = item.goal_value ?? 0;
 
@@ -157,9 +159,17 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                 item.has_goal && goalValue > 0
                   ? Math.min(
                       100,
-                      Math.round((progressValue / goalValue) * 100)
+                      Math.round(
+                        (progressValue / goalValue) * 100
+                      )
                     )
-                  : 0;
+                  : Math.min(
+                      100,
+                      Math.round(
+                        (progressValue / item.duration_days) *
+                          100
+                      )
+                    );
 
               const start = new Date(item.start_at);
               const today = new Date();
@@ -175,18 +185,11 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                 )
               );
 
-              const hasRating = false; // 🔖 заглушка
-
               return (
                 <Card key={item.participant_id}>
-                  {/* TITLE + RATING */}
+                  {/* TITLE */}
                   <CardTitleRow>
                     <CardTitle>{item.title}</CardTitle>
-                    {hasRating && (
-                      <span style={{ fontSize: 12, opacity: 0.6 }}>
-                        #rating
-                      </span>
-                    )}
                   </CardTitleRow>
 
                   {/* 👤 PARTICIPANTS */}
@@ -219,11 +222,15 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                   {/* PROGRESS */}
                   <ProgressWrapper>
                     <ProgressBar>
-                      <ProgressFill style={{ width: `${progressPercent}%` }} />
+                      <ProgressFill
+                        style={{ width: `${progressPercent}%` }}
+                      />
                     </ProgressBar>
 
                     <ProgressText>
-                      {progressValue} / {goalValue}
+                      {item.has_goal
+                        ? `${progressValue} / ${goalValue}`
+                        : `Выполнено: ${progressValue}`}
                     </ProgressText>
 
                     <ProgressText style={{ opacity: 0.45 }}>
@@ -231,19 +238,19 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                     </ProgressText>
                   </ProgressWrapper>
 
+                  {/* ❗ КНОПКУ НЕ ТРОГАЕМ */}
                   {!item.challenge_finished && (
                     <PrimaryButton
-  onClick={() =>
-    onNavigate(
-      'challenge-progress',
-      item.challenge_id,
-      item.participant_id
-    )
-  }
->
-  Перейти к отчёту
-</PrimaryButton>
-
+                      onClick={() =>
+                        onNavigate(
+                          'challenge-progress',
+                          item.challenge_id,
+                          item.participant_id
+                        )
+                      }
+                    >
+                      Перейти к отчёту
+                    </PrimaryButton>
                   )}
                 </Card>
               );
@@ -255,14 +262,26 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       {/* ===== BOTTOM NAV ===== */}
       <BottomNav>
         <NavItem $active>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M3 10.5L12 3l9 7.5" />
             <path d="M5 9.5V21h14V9.5" />
           </svg>
         </NavItem>
 
         <NavItem onClick={() => onNavigate('create')}>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <rect x="3" y="3" width="7" height="7" rx="1.5" />
             <rect x="14" y="3" width="7" height="7" rx="1.5" />
             <rect x="3" y="14" width="7" height="7" rx="1.5" />
@@ -271,7 +290,13 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </NavItem>
 
         <NavItem>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <line x1="6" y1="18" x2="6" y2="14" />
             <line x1="12" y1="18" x2="12" y2="10" />
             <line x1="18" y1="18" x2="18" y2="6" />
@@ -279,7 +304,13 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </NavItem>
 
         <NavItem>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <circle cx="12" cy="7" r="4" />
             <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
           </svg>
