@@ -9,6 +9,7 @@ import { Create } from '../screens/Create';
 import { CreateFlow } from '../screens/CreateFlow';
 import { CreateFlowFree } from '../screens/CreateFlowFree';
 import { ChallengeDetails } from '../screens/ChallengeDetails';
+import ChallengeProgress from '../screens/ChallengeProgress';
 
 /* === ЭКРАНЫ === */
 type Screen =
@@ -18,13 +19,18 @@ type Screen =
   | 'create-flow'
   | 'create-flow-free'
   | 'create-flow-paid'
-  | 'challenge-details';
+  | 'challenge-details'
+  | 'challenge-progress';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('splash');
 
   // выбранный вызов
   const [selectedChallengeId, setSelectedChallengeId] =
+    useState<string | null>(null);
+
+  // выбранный participant
+  const [selectedParticipantId, setSelectedParticipantId] =
     useState<string | null>(null);
 
   // 🔁 КЛЮЧ ОБНОВЛЕНИЯ HOME
@@ -35,9 +41,17 @@ function App() {
   }, []);
 
   /* === НАВИГАЦИЯ === */
-  const navigate = (next: Screen, challengeId?: string) => {
+  const navigate = (
+    next: Screen,
+    challengeId?: string,
+    participantId?: string
+  ) => {
     if (challengeId) {
       setSelectedChallengeId(challengeId);
+    }
+
+    if (participantId) {
+      setSelectedParticipantId(participantId);
     }
 
     setScreen(next);
@@ -45,15 +59,16 @@ function App() {
 
   /* === ЯВНОЕ ОБНОВЛЕНИЕ HOME === */
   const goHomeAndRefresh = () => {
-  console.log('[APP] goHomeAndRefresh');
-  setHomeRefreshKey((k) => {
-    const next = k + 1;
-    console.log('[APP] homeRefreshKey', next);
-    return next;
-  });
-  setScreen('home');
-};
+    console.log('[APP] goHomeAndRefresh');
 
+    setHomeRefreshKey((k) => {
+      const next = k + 1;
+      console.log('[APP] homeRefreshKey', next);
+      return next;
+    });
+
+    setScreen('home');
+  };
 
   return (
     <>
@@ -64,15 +79,14 @@ function App() {
       )}
 
       {screen === 'home' && (
-  <>
-    {console.log('[APP] render Home with refreshKey', homeRefreshKey)}
-    <Home
-      onNavigate={navigate}
-      refreshKey={homeRefreshKey}
-    />
-  </>
-)}
-
+        <>
+          {console.log('[APP] render Home with refreshKey', homeRefreshKey)}
+          <Home
+            onNavigate={navigate}
+            refreshKey={homeRefreshKey}
+          />
+        </>
+      )}
 
       {screen === 'create' && (
         <Create onNavigate={navigate} />
@@ -92,6 +106,16 @@ function App() {
           onNavigateHome={goHomeAndRefresh}
         />
       )}
+
+      {screen === 'challenge-progress' &&
+        selectedChallengeId &&
+        selectedParticipantId && (
+          <ChallengeProgress
+            challengeId={selectedChallengeId}
+            participantId={selectedParticipantId}
+            onBack={goHomeAndRefresh}
+          />
+        )}
 
       {screen === 'create-flow-paid' && (
         <div

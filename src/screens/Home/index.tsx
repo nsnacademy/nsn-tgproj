@@ -27,9 +27,17 @@ import {
 } from './styles';
 
 type HomeProps = {
-  onNavigate: (screen: 'home' | 'create') => void;
+  onNavigate: (
+    screen:
+      | 'home'
+      | 'create'
+      | 'challenge-progress',
+    challengeId?: string,
+    participantId?: string
+  ) => void;
   refreshKey: number;
 };
+
 
 type ChallengeItem = {
   participant_id: string;
@@ -224,7 +232,18 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                   </ProgressWrapper>
 
                   {!item.challenge_finished && (
-                    <PrimaryButton>Перейти к отчёту</PrimaryButton>
+                    <PrimaryButton
+  onClick={() =>
+    onNavigate(
+      'challenge-progress',
+      item.challenge_id,
+      item.participant_id
+    )
+  }
+>
+  Перейти к отчёту
+</PrimaryButton>
+
                   )}
                 </Card>
               );
