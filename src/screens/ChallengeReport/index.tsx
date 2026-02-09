@@ -32,43 +32,70 @@ export default function ChallengeReport({
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function submit() {
-    if (loading) return;
-    setLoading(true);
+ 
+   async function submit() {
+  if (loading) return;
+  setLoading(true);
 
-    const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
 
-    const payload =
-      reportMode === 'result'
-        ? {
-            challenge_id: challengeId, // ✅ ИСПОЛЬЗУЕМ
-            participant_id: participantId,
-            report_date: today,
-            value: Number(value),
-            report_type: 'result',
-            status: 'pending',
-          }
-        : {
-            challenge_id: challengeId, // ✅ ИСПОЛЬЗУЕМ
-            participant_id: participantId,
-            report_date: today,
-            is_done: true,
-            report_type: 'simple',
-            status: 'pending',
-          };
+  // 1️⃣ ищем отчёт за сегодня
+  const { data: existing } = await supabase
+    .from('reports')
+    .select('id')
+    .eq('participant_id', participantId)
+    .eq('challenge_id', challengeId)
+    .eq('report_date', today)
+    .maybeSingle();
 
-    const { error } = await supabase
+  const basePayload = {
+    challenge_id: challengeId,
+    participant_id: participantId,
+    report_date: today,
+    status: 'pending',
+    reviewed_by: null,
+    reviewed_at: null,
+    rejection_reason: null,
+  };
+
+  const payload =
+    reportMode === 'result'
+      ? {
+          ...basePayload,
+          value: Number(value),
+          report_type: 'result',
+        }
+      : {
+          ...basePayload,
+          is_done: true,
+          report_type: 'simple',
+        };
+
+  let error;
+
+  // 2️⃣ если отчёт есть — обновляем
+  if (existing) {
+    ({ error } = await supabase
       .from('reports')
-      .insert(payload);
-
-    if (error) {
-      alert(error.message);
-      setLoading(false);
-      return;
-    }
-
-    onBack();
+      .update(payload)
+      .eq('id', existing.id));
+  } 
+  // 3️⃣ если нет — создаём
+  else {
+    ({ error } = await supabase
+      .from('reports')
+      .insert(payload));
   }
+
+  if (error) {
+    alert(error.message);
+    setLoading(false);
+    return;
+  }
+
+  onBack();
+}
+
 
   return (
     <SafeArea>
