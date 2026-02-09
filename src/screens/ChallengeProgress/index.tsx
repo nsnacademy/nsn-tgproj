@@ -34,7 +34,6 @@ type Props = {
 
 type ChallengeData = {
   title: string;
-  description: string;
   rules: string | null;
 
   report_mode: 'simple' | 'result';
@@ -47,10 +46,14 @@ type ChallengeData = {
   limit_per_day: number | null;
 
   has_rating: boolean;
-  chat_link: string | null;
 
   duration_days: number;
   start_at: string;
+};
+
+type RatingRow = {
+  username: string;
+  value: number;
 };
 
 export default function ChallengeProgress({
@@ -68,9 +71,7 @@ export default function ChallengeProgress({
   const [totalValue, setTotalValue] = useState(0);
   const [participantsCount, setParticipantsCount] = useState(0);
 
-  const [rating, setRating] = useState<
-    { username: string; value: number }[]
-  >([]);
+  const [rating, setRating] = useState<RatingRow[]>([]);
 
   async function load() {
     setLoading(true);
@@ -78,10 +79,8 @@ export default function ChallengeProgress({
     /* === CHALLENGE === */
     const { data: challengeData } = await supabase
       .from('challenges')
-      .select(
-        `
+      .select(`
         title,
-        description,
         rules,
         report_mode,
         metric_name,
@@ -90,13 +89,13 @@ export default function ChallengeProgress({
         has_limit,
         limit_per_day,
         has_rating,
-        chat_link,
         duration_days,
         start_at
-      `
-      )
+      `)
       .eq('id', challengeId)
       .single();
+
+    if (!challengeData) return;
 
     setChallenge(challengeData);
 
@@ -127,7 +126,7 @@ export default function ChallengeProgress({
 
     setTodayDone(!!today?.is_done);
 
-    /* === TOTAL VALUE (for result mode) === */
+    /* === TOTAL VALUE === */
     const { data: sum } = await supabase
       .from('reports')
       .select('value')
@@ -139,30 +138,53 @@ export default function ChallengeProgress({
     setTotalValue(total);
 
     /* === CURRENT DAY === */
-    if (challengeData?.start_at) {
-      const start = new Date(challengeData.start_at);
-      const today = new Date();
-      const day =
-        Math.floor(
-          (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-        ) + 1;
+    const start = new Date(challengeData.start_at);
+    const todayDate = new Date();
+    const day =
+      Math.floor(
+        (todayDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+      ) + 1;
 
-      setCurrentDay(Math.max(1, day));
-    }
+    setCurrentDay(Math.max(1, day));
 
     /* === RATING === */
-    if (challengeData?.has_rating) {
-      const { data: ratingData } = await supabase.rpc(
-        'get_challenge_rating',
-        { p_challenge_id: challengeId }
-      );
+    if (challengeData.has_rating) {
+      const { data: ratingData } = await supabase
+        .from('participants')
+        .select(`
+          id,
+          profiles:profiles (
+            username
+          ),
+          reports (
+            value,
+            is_done
+          )
+        `)
+        .eq('challenge_id', challengeId);
 
-      setRating(
-        ratingData?.map((r: any) => ({
-          username: r.username,
-          value: r.total_value || r.done_days,
-        })) || []
-      );
+      if (ratingData) {
+        const mapped: RatingRow[] = ratingData.map((p: any) => {
+          const value =
+            challengeData.report_mode === 'result'
+              ? p.reports.reduce(
+                  (acc: number, r: any) => acc + Number(r.value || 0),
+                  0
+                )
+              : p.reports.filter((r: any) => r.is_done).length;
+
+          return {
+            username: p.profiles?.username || 'user',
+            value,
+          };
+        });
+
+        setRating(
+          mapped
+            .filter(r => r.value > 0)
+            .sort((a, b) => b.value - a.value)
+        );
+      }
     }
 
     setLoading(false);
@@ -189,7 +211,6 @@ export default function ChallengeProgress({
 
   return (
     <SafeArea>
-      {/* HEADER */}
       <Header>
         <BackButton onClick={onBack}>←</BackButton>
         <HeaderTitle>{challenge.title}</HeaderTitle>
@@ -205,8 +226,7 @@ export default function ChallengeProgress({
 
           {challenge.report_mode === 'result' ? (
             <ProgressMainText>
-              {totalValue} / {challenge.goal_value}{' '}
-              {challenge.metric_name}
+              {totalValue} / {challenge.goal_value} {challenge.metric_name}
             </ProgressMainText>
           ) : (
             <ProgressMainText>
@@ -246,13 +266,15 @@ export default function ChallengeProgress({
         </Section>
 
         {/* RATING */}
-        {challenge.has_rating && (
+        {challenge.has_rating && rating.length > 0 && (
           <Section>
             <SectionTitle>Рейтинг</SectionTitle>
             <RatingList>
               {rating.map((r, i) => (
                 <RatingItem key={i}>
-                  <span>{r.username}</span>
+                  <span>
+                    {i + 1}. {r.username}
+                  </span>
                   <span>{r.value}</span>
                 </RatingItem>
               ))}
@@ -261,7 +283,6 @@ export default function ChallengeProgress({
         )}
       </Content>
 
-      {/* ACTION */}
       <ActionBlock>
         {todayDone ? (
           <DisabledButton>Отчёт отправлен</DisabledButton>
