@@ -14,6 +14,7 @@ import {
   PrimaryButton,
 } from './styles';
 
+/* === PROPS === */
 type Props = {
   challengeId: string;
   participantId: string;
@@ -30,18 +31,16 @@ export default function ChallengeReport({
   onBack,
 }: Props) {
   const [value, setValue] = useState('');
+  const [checked, setChecked] = useState(false); // ← КЛЮЧЕВОЕ
   const [loading, setLoading] = useState(false);
 
+  /* === SUBMIT === */
   async function submit() {
     if (loading) return;
     setLoading(true);
 
     const today = new Date().toISOString().slice(0, 10);
 
-    /**
-     * БАЗОВЫЙ payload
-     * reviewed_* НЕ трогаем — это зона админки
-     */
     const basePayload = {
       challenge_id: challengeId,
       participant_id: participantId,
@@ -49,10 +48,6 @@ export default function ChallengeReport({
       status: 'pending' as const,
     };
 
-    /**
-     * SIMPLE — просто отметка
-     * RESULT — числовое значение
-     */
     const payload =
       reportMode === 'result'
         ? {
@@ -68,11 +63,6 @@ export default function ChallengeReport({
             value: null,
           };
 
-    /**
-     * upsert — чтобы:
-     * - не было duplicate key
-     * - можно было перезаписать отчёт за день
-     */
     const { error } = await supabase
       .from('reports')
       .upsert(payload, {
@@ -88,6 +78,12 @@ export default function ChallengeReport({
     onBack();
   }
 
+  /* === CONDITIONS FOR BUTTON === */
+  const canSubmit =
+    checked &&
+    (reportMode === 'simple' ||
+      (reportMode === 'result' && value.trim().length > 0));
+
   return (
     <SafeArea>
       <Header>
@@ -96,6 +92,7 @@ export default function ChallengeReport({
       </Header>
 
       <Content>
+        {/* RESULT INPUT */}
         {reportMode === 'result' && (
           <Field>
             <Label>Результат{metricName ? ` (${metricName})` : ''}</Label>
@@ -108,19 +105,45 @@ export default function ChallengeReport({
           </Field>
         )}
 
-        {reportMode === 'simple' && (
-          <Field>
-            <Label>Отметка выполнения</Label>
-            <div style={{ opacity: 0.6, fontSize: 14 }}>
-              Нажмите кнопку ниже, чтобы отметить выполнение
-            </div>
-          </Field>
-        )}
+        {/* CHECK MARK */}
+        <Field>
+          <Label>Отметка выполнения</Label>
+
+          <button
+            type="button"
+            onClick={() => setChecked(!checked)}
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              border: '2px solid #fff',
+              background: checked ? '#fff' : 'transparent',
+              color: checked ? '#000' : '#fff',
+              fontSize: 24,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            ✓
+          </button>
+
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 13,
+              opacity: 0.6,
+            }}
+          >
+            {checked
+              ? 'Отметка подтверждена'
+              : 'Нажмите, чтобы отметить выполнение'}
+          </div>
+        </Field>
       </Content>
 
       <Footer>
         <PrimaryButton
-          disabled={loading || (reportMode === 'result' && !value)}
+          disabled={!canSubmit || loading}
           onClick={submit}
         >
           {loading ? 'Отправка…' : 'Отправить отчёт'}
