@@ -75,16 +75,19 @@ type Props = {
   onOpenReport: (data: {
     challengeId: string;
     participantId: string;
-    reportMode: 'simple' | 'result';
-    metricName?: string | null;
   }) => void;
 };
+
 
 type ChallengeData = {
   title: string;
   rules: string | null;
   report_mode: 'simple' | 'result';
   metric_name: string | null;
+
+  has_proof: boolean;
+  proof_types: string[] | null;
+
   has_goal: boolean;
   goal_value: number | null;
   has_limit: boolean;
@@ -93,6 +96,7 @@ type ChallengeData = {
   duration_days: number;
   start_at: string;
 };
+
 
 type RatingRow = {
   place: number;
@@ -132,22 +136,25 @@ export default function ChallengeProgress({
     setLoading(true);
 
     const { data: challengeData } = await supabase
-      .from('challenges')
-      .select(`
-        title,
-        rules,
-        report_mode,
-        metric_name,
-        has_goal,
-        goal_value,
-        has_limit,
-        limit_per_day,
-        has_rating,
-        duration_days,
-        start_at
-      `)
-      .eq('id', challengeId)
-      .single();
+  .from('challenges')
+  .select(`
+    title,
+    rules,
+    report_mode,
+    metric_name,
+    has_proof,
+    proof_types,
+    has_goal,
+    goal_value,
+    has_limit,
+    limit_per_day,
+    has_rating,
+    duration_days,
+    start_at
+  `)
+  .eq('id', challengeId)
+  .single();
+
 
     if (!challengeData) {
       setLoading(false);
@@ -603,16 +610,15 @@ export default function ChallengeProgress({
       <ActionBlock>
         {todayStatus === 'none' ? (
           <PrimaryButton
-            onClick={() =>
-              onOpenReport({
-                challengeId,
-                participantId,
-                reportMode: challenge.report_mode,
-                metricName: challenge.metric_name,
-              })
-            }
-            $variant={challenge.report_mode}
-          >
+  onClick={() =>
+    onOpenReport({
+  challengeId,
+  participantId,
+})
+
+  }
+  $variant={challenge.report_mode}
+>
             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {challenge.report_mode === 'result' ? (
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">

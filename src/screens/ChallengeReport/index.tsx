@@ -22,23 +22,29 @@ import {
 type Props = {
   challengeId: string;
   participantId: string;
-  reportMode: 'simple' | 'result';
-  metricName?: string | null;
   onBack: () => void;
 };
 
 type TodayStatus = 'none' | 'pending' | 'approved';
 
+type ChallengeConfig = {
+  report_mode: 'simple' | 'result';
+  has_proof: boolean;
+  proof_types: string[] | null;
+  metric_name: string | null;
+};
+
 export default function ChallengeReport({
   challengeId,
   participantId,
-  reportMode,
-  metricName,
   onBack,
 }: Props) {
+  const [config, setConfig] = useState<ChallengeConfig | null>(null);
+
   const [value, setValue] = useState('');
-  const [checked, setChecked] = useState(false);
   const [text, setText] = useState('');
+  const [checked, setChecked] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [todayStatus, setTodayStatus] =
@@ -46,7 +52,22 @@ export default function ChallengeReport({
 
   const today = new Date().toISOString().slice(0, 10);
 
-  /* === LOAD TODAY REPORT STATUS === */
+  /* === LOAD CHALLENGE CONFIG === */
+  useEffect(() => {
+    async function loadConfig() {
+      const { data } = await supabase
+        .from('challenges')
+        .select('report_mode, has_proof, proof_types, metric_name')
+        .eq('id', challengeId)
+        .single();
+
+      if (data) setConfig(data);
+    }
+
+    loadConfig();
+  }, [challengeId]);
+
+  /* === LOAD TODAY STATUS === */
   useEffect(() => {
     async function loadTodayReport() {
       const { data } = await supabase
@@ -67,32 +88,36 @@ export default function ChallengeReport({
 
   /* === SUBMIT === */
   async function submit() {
-    if (loading || todayStatus !== 'none') return;
+    if (!config || loading || todayStatus !== 'none') return;
     setLoading(true);
 
-    const basePayload = {
+    const payload = {
       challenge_id: challengeId,
       participant_id: participantId,
       report_date: today,
       status: 'pending' as const,
-      text: text.trim().length > 0 ? text : null,
-      media: null, // ⛔ storage подключим следующим шагом
+      report_type: config.report_mode,
+      value:
+        config.report_mode === 'result'
+          ? Number(value)
+          : null,
+      is_done:
+        config.report_mode === 'simple'
+          ? true
+          : null,
+      text:
+        config.has_proof &&
+        config.proof_types?.includes('Текст') &&
+        text.trim().length > 0
+          ? text
+          : null,
+      media:
+        config.has_proof &&
+        config.proof_types?.includes('Фото/видео') &&
+        files.length > 0
+          ? [] // ⛔ storage подключим следующим шагом
+          : null,
     };
-
-    const payload =
-      reportMode === 'result'
-        ? {
-            ...basePayload,
-            report_type: 'result' as const,
-            value: Number(value),
-            is_done: null,
-          }
-        : {
-            ...basePayload,
-            report_type: 'simple' as const,
-            is_done: true,
-            value: null,
-          };
 
     const { error } = await supabase
       .from('reports')
@@ -108,11 +133,12 @@ export default function ChallengeReport({
     setLoading(false);
   }
 
+  if (!config) return null;
+
   const canSubmit =
-    todayStatus === 'none' &&
     checked &&
-    (reportMode === 'simple' ||
-      (reportMode === 'result' && value.trim().length > 0));
+    (config.report_mode === 'simple' ||
+      value.trim().length > 0);
 
   return (
     <SafeArea>
@@ -135,38 +161,53 @@ export default function ChallengeReport({
 
         {todayStatus === 'none' && (
           <>
-            {reportMode === 'result' && (
+            {config.report_mode === 'result' && (
               <Field>
                 <Label>
-                  Результат{metricName ? ` (${metricName})` : ''}
+                  Результат
+                  {config.metric_name
+                    ? ` (${config.metric_name})`
+                    : ''}
                 </Label>
                 <Input
                   type="number"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  placeholder="Введите значение"
                 />
               </Field>
             )}
 
-            <Field>
-              <Label>Комментарий</Label>
-              <Textarea
-                rows={3}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Комментарий к отчёту (опционально)"
-              />
-            </Field>
+            {config.has_proof &&
+              config.proof_types?.includes('Текст') && (
+                <Field>
+                  <Label>Комментарий</Label>
+                  <Textarea
+                    rows={3}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="Комментарий (опционально)"
+                  />
+                </Field>
+              )}
 
-            <Field>
-              <Label>Фото / видео</Label>
-              <FileInput
-                type="file"
-                multiple
-                accept="image/*,video/*"
-              />
-            </Field>
+            {config.has_proof &&
+              config.proof_types?.includes('Фото/видео') && (
+                <Field>
+                  <Label>Фото / видео</Label>
+                  <FileInput
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={(e) =>
+                      setFiles(
+                        e.target.files
+                          ? Array.from(e.target.files)
+                          : []
+                      )
+                    }
+                  />
+                </Field>
+              )}
 
             <Field>
               <Label>Отметка выполнения</Label>

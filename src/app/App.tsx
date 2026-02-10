@@ -35,12 +35,6 @@ function App() {
   const [selectedParticipantId, setSelectedParticipantId] =
     useState<string | null>(null);
 
-  // данные для отчёта
-  const [reportMode, setReportMode] =
-    useState<'simple' | 'result'>('simple');
-  const [metricName, setMetricName] =
-    useState<string | null>(null);
-
   // 🔁 КЛЮЧ ОБНОВЛЕНИЯ HOME
   const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
@@ -54,28 +48,18 @@ function App() {
     challengeId?: string,
     participantId?: string
   ) => {
-    if (challengeId) {
-      setSelectedChallengeId(challengeId);
-    }
-
-    if (participantId) {
-      setSelectedParticipantId(participantId);
-    }
-
+    if (challengeId) setSelectedChallengeId(challengeId);
+    if (participantId) setSelectedParticipantId(participantId);
     setScreen(next);
   };
 
-  /* === ОТКРЫТИЕ ЭКРАНА ОТЧЁТА === */
+  /* === ОТКРЫТИЕ ЭКРАНА ОТЧЁТА (ИЗ ChallengeProgress) === */
   const openReport = (data: {
     challengeId: string;
     participantId: string;
-    reportMode: 'simple' | 'result';
-    metricName?: string | null;
   }) => {
     setSelectedChallengeId(data.challengeId);
     setSelectedParticipantId(data.participantId);
-    setReportMode(data.reportMode);
-    setMetricName(data.metricName || null);
     setScreen('challenge-report');
   };
 
@@ -136,8 +120,6 @@ function App() {
           <ChallengeReport
             challengeId={selectedChallengeId}
             participantId={selectedParticipantId}
-            reportMode={reportMode}
-            metricName={metricName}
             onBack={() =>
               navigate(
                 'challenge-progress',
