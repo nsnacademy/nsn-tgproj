@@ -215,33 +215,54 @@ export const TodayStatus = styled.div`
   margin-top: 8px;
 `;
 
-export const StatusBadge = styled.div<{ $status: 'none' | 'pending' | 'approved' }>`
+export const StatusBadge = styled.div<{
+  $status: 'none' | 'pending' | 'approved' | 'rejected';
+}>`
   display: inline-block;
   font-size: 12px;
   padding: 6px 12px;
   border-radius: 12px;
+
   background: ${({ $status }) => {
-    switch($status) {
-      case 'approved': return 'rgba(76, 175, 80, 0.15)';
-      case 'pending': return 'rgba(255, 193, 7, 0.15)';
-      default: return 'rgba(255, 255, 255, 0.08)';
+    switch ($status) {
+      case 'approved':
+        return 'rgba(76, 175, 80, 0.15)';
+      case 'pending':
+        return 'rgba(255, 193, 7, 0.15)';
+      case 'rejected':
+        return 'rgba(255, 80, 80, 0.15)';
+      default:
+        return 'rgba(255, 255, 255, 0.08)';
     }
   }};
+
   color: ${({ $status }) => {
-    switch($status) {
-      case 'approved': return '#4CAF50';
-      case 'pending': return '#FFC107';
-      default: return 'rgba(255, 255, 255, 0.7)';
+    switch ($status) {
+      case 'approved':
+        return '#4CAF50';
+      case 'pending':
+        return '#FFC107';
+      case 'rejected':
+        return '#ff6b6b';
+      default:
+        return 'rgba(255, 255, 255, 0.7)';
     }
   }};
+
   border: 1px solid ${({ $status }) => {
-    switch($status) {
-      case 'approved': return 'rgba(76, 175, 80, 0.3)';
-      case 'pending': return 'rgba(255, 193, 7, 0.3)';
-      default: return 'rgba(255, 255, 255, 0.1)';
+    switch ($status) {
+      case 'approved':
+        return 'rgba(76, 175, 80, 0.3)';
+      case 'pending':
+        return 'rgba(255, 193, 7, 0.3)';
+      case 'rejected':
+        return 'rgba(255, 80, 80, 0.35)';
+      default:
+        return 'rgba(255, 255, 255, 0.1)';
     }
   }};
 `;
+
 
 /* ======================
    SECTIONS

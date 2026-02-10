@@ -126,7 +126,11 @@ export default function ChallengeProgress({
   const [valueToPrize, setValueToPrize] = useState<number | null>(null);
 
   const [todayStatus, setTodayStatus] =
-    useState<'none' | 'pending' | 'approved'>('none');
+  useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
+
+  const [rejectionReason, setRejectionReason] =
+  useState<string | null>(null);
+
 
   const [remainingDays, setRemainingDays] = useState(0);
   const [selectedPrize, setSelectedPrize] = useState<RatingRow | null>(null);
@@ -171,10 +175,11 @@ export default function ChallengeProgress({
     setParticipantsCount(count || 0);
 
     const { data: reports } = await supabase
-      .from('reports')
-      .select('value, is_done, report_date, status')
-      .eq('participant_id', participantId)
-      .eq('challenge_id', challengeId);
+  .from('reports')
+  .select('value, is_done, report_date, status, rejection_reason')
+  .eq('participant_id', participantId)
+  .eq('challenge_id', challengeId);
+
 
     const todayDate = new Date().toISOString().slice(0, 10);
     const todayReport = reports?.find(
@@ -182,12 +187,19 @@ export default function ChallengeProgress({
     );
 
     if (!todayReport) {
-      setTodayStatus('none');
-    } else if (todayReport.status === 'pending') {
-      setTodayStatus('pending');
-    } else if (todayReport.status === 'approved') {
-      setTodayStatus('approved');
-    }
+  setTodayStatus('none');
+  setRejectionReason(null);
+} else if (todayReport.status === 'pending') {
+  setTodayStatus('pending');
+  setRejectionReason(null);
+} else if (todayReport.status === 'approved') {
+  setTodayStatus('approved');
+  setRejectionReason(null);
+} else if (todayReport.status === 'rejected') {
+  setTodayStatus('rejected');
+  setRejectionReason(todayReport.rejection_reason || null);
+}
+
 
     const approvedReports =
       reports?.filter(r => r.status === 'approved') || [];
@@ -310,6 +322,7 @@ export default function ChallengeProgress({
 
   const getButtonText = () => {
     if (todayStatus === 'approved') return 'Уже выполнено сегодня';
+    if (todayStatus === 'rejected') return 'Отправить отчёт заново';
     if (challenge.report_mode === 'result') return 'Добавить результат';
     return 'Отметить день';
   };
@@ -445,6 +458,35 @@ export default function ChallengeProgress({
                       Сегодня выполнено
                     </span>
                   )}
+
+                  {todayStatus === 'rejected' && (
+  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="8" cy="8" r="7" />
+      <path d="M5 5l6 6M11 5l-6 6" />
+    </svg>
+    Отчёт отклонён
+  </span>
+)}
+
+                  {todayStatus === 'rejected' && rejectionReason && (
+  <div
+    style={{
+      marginTop: 10,
+      padding: 12,
+      borderRadius: 12,
+      background: 'rgba(255, 80, 80, 0.12)',
+      color: '#ff6b6b',
+      fontSize: 14,
+      lineHeight: 1.4,
+    }}
+  >
+    <strong>Причина отклонения:</strong><br />
+    {rejectionReason}
+  </div>
+)}
+
+
                 </StatusBadge>
               </TodayStatus>
             </ProgressSection>
@@ -608,7 +650,8 @@ export default function ChallengeProgress({
 
       {/* Кнопка действия */}
       <ActionBlock>
-        {todayStatus === 'none' ? (
+        {todayStatus === 'none' || todayStatus === 'rejected' ? (
+
           <PrimaryButton
   onClick={() =>
     onOpenReport({
