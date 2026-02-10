@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 import {
   SafeArea,
   Container,
@@ -14,46 +12,39 @@ import {
 
 import { BottomNav, NavItem } from '../Home/styles';
 
-
-type Screen = 'home' | 'create' | 'profile';
+type ProfileScreen = 'home' | 'create' | 'profile' | 'admin';
 
 type ProfileProps = {
-  screen: Screen;
-  onNavigate: (screen: Screen) => void;
+  screen: ProfileScreen;
+  onNavigate: (screen: ProfileScreen) => void;
 };
 
-export default function Profile({ screen, onNavigate }: ProfileProps) {
-  const [adminMode, setAdminMode] = useState(false);
 
+export default function Profile({ screen, onNavigate }: ProfileProps) {
   return (
     <SafeArea>
       <Container>
         <Title>Профиль</Title>
 
-        {/* 🔀 ТУМБЛЕР */}
         <Section>
           <ToggleRow>
             <ToggleLabel>Админ-режим</ToggleLabel>
 
             <Toggle
-              $active={adminMode}
-              onClick={() => setAdminMode(v => !v)}
+              $active={false}
+              onClick={() => onNavigate('admin')}
             >
-              <ToggleKnob $active={adminMode} />
+              <ToggleKnob $active />
             </Toggle>
           </ToggleRow>
 
           <Text>
-            {adminMode
-              ? 'Админ-панель (в разработке)'
-              : 'Включите админ-режим для модерации вызовов'}
+            Перейти в админ-панель для модерации вызовов
           </Text>
         </Section>
       </Container>
 
-      {/* ⬇️ ТОТ ЖЕ BottomNav */}
       <BottomNav>
-        {/* HOME */}
         <NavItem
           $active={screen === 'home'}
           onClick={() => onNavigate('home')}
@@ -64,7 +55,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           </svg>
         </NavItem>
 
-        {/* CREATE */}
         <NavItem
           $active={screen === 'create'}
           onClick={() => onNavigate('create')}
@@ -77,7 +67,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           </svg>
         </NavItem>
 
-        {/* STATS */}
         <NavItem $active={false}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="6" y1="18" x2="6" y2="14" />
@@ -86,7 +75,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           </svg>
         </NavItem>
 
-        {/* PROFILE */}
         <NavItem
           $active={screen === 'profile'}
           onClick={() => onNavigate('profile')}

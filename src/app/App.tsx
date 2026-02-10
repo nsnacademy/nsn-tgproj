@@ -12,9 +12,10 @@ import { ChallengeDetails } from '../screens/ChallengeDetails';
 import ChallengeProgress from '../screens/ChallengeProgress';
 import ChallengeReport from '../screens/ChallengeReport';
 import Profile from '../screens/Profile';
+import Admin from '../screens/Admin';
 
 /* === ЭКРАНЫ === */
-type Screen =
+export type Screen =
   | 'splash'
   | 'home'
   | 'create'
@@ -24,26 +25,23 @@ type Screen =
   | 'challenge-details'
   | 'challenge-progress'
   | 'challenge-report'
-  | 'profile';
+  | 'profile'
+  | 'admin';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('splash');
 
-  // выбранный вызов
   const [selectedChallengeId, setSelectedChallengeId] =
     useState<string | null>(null);
 
-  // выбранный participant
   const [selectedParticipantId, setSelectedParticipantId] =
     useState<string | null>(null);
 
-  // режим отчёта - ДОЛЖЕН БЫТЬ 'simple' | 'result'
-  const [reportMode, setReportMode] = useState<'simple' | 'result'>('simple');
+  const [reportMode, setReportMode] =
+    useState<'simple' | 'result'>('simple');
 
-  // название метрики для отчёта
-  const [metricName, setMetricName] = useState<string>('');
+  const [metricName, setMetricName] = useState('');
 
-  // 🔁 КЛЮЧ ОБНОВЛЕНИЯ HOME
   const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -61,7 +59,7 @@ function App() {
     setScreen(next);
   };
 
-  /* === ОТКРЫТИЕ ЭКРАНА ОТЧЁТА (ИЗ ChallengeProgress) === */
+  /* === ОТЧЁТ === */
   const openReport = (data: {
     challengeId: string;
     participantId: string;
@@ -75,9 +73,8 @@ function App() {
     setScreen('challenge-report');
   };
 
-  /* === ЯВНОЕ ОБНОВЛЕНИЕ HOME === */
   const goHomeAndRefresh = () => {
-    setHomeRefreshKey((k) => k + 1);
+    setHomeRefreshKey(k => k + 1);
     setScreen('home');
   };
 
@@ -97,9 +94,7 @@ function App() {
         />
       )}
 
-      {screen === 'create' && (
-        <Create onNavigate={navigate} />
-      )}
+      {screen === 'create' && <Create onNavigate={navigate} />}
 
       {screen === 'create-flow' && (
         <CreateFlow onNavigate={navigate} />
@@ -146,10 +141,11 @@ function App() {
         )}
 
       {screen === 'profile' && (
-        <Profile
-    screen={screen}
-    onNavigate={navigate}
-  />
+        <Profile screen={screen} onNavigate={navigate} />
+      )}
+
+      {screen === 'admin' && (
+        <Admin screen={screen} onNavigate={navigate} />
       )}
 
       {screen === 'create-flow-paid' && (
