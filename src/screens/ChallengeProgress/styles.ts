@@ -164,7 +164,7 @@ export const ProgressFill = styled.div`
 `;
 
 export const ProgressPercentage = styled.div`
-  position: absolute;
+  
   top: -24px;
   right: 0;
   font-size: 13px;
