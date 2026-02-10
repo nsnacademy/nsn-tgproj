@@ -39,7 +39,6 @@ export default function ChallengeReport({
   const [value, setValue] = useState('');
   const [checked, setChecked] = useState(false);
   const [text, setText] = useState('');
-  const [hasFiles, setHasFiles] = useState(false); // ✅ вместо files
   const [loading, setLoading] = useState(false);
 
   const [todayStatus, setTodayStatus] =
@@ -123,7 +122,6 @@ export default function ChallengeReport({
       </Header>
 
       <Content>
-        {/* === STATUS === */}
         {todayStatus !== 'none' && (
           <Field>
             <Label>Статус</Label>
@@ -135,7 +133,6 @@ export default function ChallengeReport({
           </Field>
         )}
 
-        {/* === FORM === */}
         {todayStatus === 'none' && (
           <>
             {reportMode === 'result' && (
@@ -168,9 +165,6 @@ export default function ChallengeReport({
                 type="file"
                 multiple
                 accept="image/*,video/*"
-                onChange={(e) =>
-                  setHasFiles(!!e.target.files && e.target.files.length > 0)
-                }
               />
             </Field>
 
