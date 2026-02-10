@@ -10,11 +10,13 @@ import {
   Field,
   Label,
   Input,
+  Textarea,
   Footer,
   PrimaryButton,
   CheckRow,
   CheckDot,
   CheckText,
+  FileInput,
 } from './styles';
 
 type Props = {
@@ -36,6 +38,8 @@ export default function ChallengeReport({
 }: Props) {
   const [value, setValue] = useState('');
   const [checked, setChecked] = useState(false);
+  const [text, setText] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [todayStatus, setTodayStatus] =
@@ -43,7 +47,6 @@ export default function ChallengeReport({
 
   const today = new Date().toISOString().slice(0, 10);
 
-  /* === LOAD TODAY REPORT STATUS === */
   useEffect(() => {
     async function loadTodayReport() {
       const { data } = await supabase
@@ -54,19 +57,14 @@ export default function ChallengeReport({
         .eq('report_date', today)
         .maybeSingle();
 
-      if (data?.status === 'pending') {
-        setTodayStatus('pending');
-      } else if (data?.status === 'approved') {
-        setTodayStatus('approved');
-      } else {
-        setTodayStatus('none');
-      }
+      if (data?.status === 'pending') setTodayStatus('pending');
+      else if (data?.status === 'approved') setTodayStatus('approved');
+      else setTodayStatus('none');
     }
 
     loadTodayReport();
   }, [challengeId, participantId, today]);
 
-  /* === SUBMIT === */
   async function submit() {
     if (loading || todayStatus !== 'none') return;
     setLoading(true);
@@ -76,6 +74,8 @@ export default function ChallengeReport({
       participant_id: participantId,
       report_date: today,
       status: 'pending' as const,
+      text: text.trim().length > 0 ? text : null,
+      media: null, // ⛔ storage подключим следующим шагом
     };
 
     const payload =
@@ -121,43 +121,53 @@ export default function ChallengeReport({
       </Header>
 
       <Content>
-        {/* === WAITING STATE === */}
-        {todayStatus === 'pending' && (
+        {todayStatus !== 'none' && (
           <Field>
             <Label>Статус</Label>
             <div style={{ opacity: 0.7 }}>
-              ⏳ Ожидает проверки
+              {todayStatus === 'pending'
+                ? '⏳ Ожидает проверки'
+                : '✅ Отчёт принят'}
             </div>
           </Field>
         )}
 
-        {/* === APPROVED STATE === */}
-        {todayStatus === 'approved' && (
-          <Field>
-            <Label>Статус</Label>
-            <div style={{ opacity: 0.7 }}>
-              ✅ Отчёт принят
-            </div>
-          </Field>
-        )}
-
-        {/* === FORM (ONLY IF NONE) === */}
         {todayStatus === 'none' && (
           <>
             {reportMode === 'result' && (
               <Field>
                 <Label>
-                  Результат
-                  {metricName ? ` (${metricName})` : ''}
+                  Результат{metricName ? ` (${metricName})` : ''}
                 </Label>
                 <Input
                   type="number"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  placeholder="Введите значение"
                 />
               </Field>
             )}
+
+            <Field>
+              <Label>Комментарий</Label>
+              <Textarea
+                rows={3}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Комментарий к отчёту (опционально)"
+              />
+            </Field>
+
+            <Field>
+              <Label>Фото / видео</Label>
+              <FileInput
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                onChange={(e) =>
+                  setFiles(e.target.files ? Array.from(e.target.files) : [])
+                }
+              />
+            </Field>
 
             <Field>
               <Label>Отметка выполнения</Label>

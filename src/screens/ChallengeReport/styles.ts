@@ -51,11 +51,23 @@ export const Input = styled.input`
   font-size: 16px;
 `;
 
+export const Textarea = styled.textarea`
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  resize: none;
+`;
+
+export const FileInput = styled.input`
+  width: 100%;
+  color: #fff;
+`;
+
 export const Footer = styled.div`
   padding: 20px;
 `;
-
-/* === CHECK ROW === */
 
 export const CheckRow = styled.div`
   display: flex;
@@ -70,7 +82,6 @@ export const CheckDot = styled.div<{ active: boolean }>`
   border-radius: 50%;
   border: 2px solid #fff;
   background: ${({ active }) => (active ? '#fff' : 'transparent')};
-  transition: all 0.15s ease;
 `;
 
 export const CheckText = styled.div<{ active: boolean }>`
@@ -78,9 +89,7 @@ export const CheckText = styled.div<{ active: boolean }>`
   opacity: ${({ active }) => (active ? 1 : 0.6)};
 `;
 
-/* === BUTTON === */
-
-export const PrimaryButton = styled.button`
+export const PrimaryButton = styled.button<{ disabled?: boolean }>`
   width: 100%;
   padding: 16px;
   border-radius: 14px;
