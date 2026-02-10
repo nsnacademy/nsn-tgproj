@@ -37,6 +37,12 @@ function App() {
   const [selectedParticipantId, setSelectedParticipantId] =
     useState<string | null>(null);
 
+  // режим отчёта - ДОЛЖЕН БЫТЬ 'simple' | 'result'
+  const [reportMode, setReportMode] = useState<'simple' | 'result'>('simple');
+
+  // название метрики для отчёта
+  const [metricName, setMetricName] = useState<string>('');
+
   // 🔁 КЛЮЧ ОБНОВЛЕНИЯ HOME
   const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
@@ -59,9 +65,13 @@ function App() {
   const openReport = (data: {
     challengeId: string;
     participantId: string;
+    reportMode?: 'simple' | 'result';
+    metricName?: string;
   }) => {
     setSelectedChallengeId(data.challengeId);
     setSelectedParticipantId(data.participantId);
+    if (data.reportMode) setReportMode(data.reportMode);
+    if (data.metricName) setMetricName(data.metricName);
     setScreen('challenge-report');
   };
 
@@ -81,11 +91,10 @@ function App() {
 
       {screen === 'home' && (
         <Home
-  screen={screen}
-  onNavigate={navigate}
-  refreshKey={homeRefreshKey}
-/>
-
+          screen={screen}
+          onNavigate={navigate}
+          refreshKey={homeRefreshKey}
+        />
       )}
 
       {screen === 'create' && (
@@ -124,6 +133,8 @@ function App() {
           <ChallengeReport
             challengeId={selectedChallengeId}
             participantId={selectedParticipantId}
+            reportMode={reportMode}
+            metricName={metricName}
             onBack={() =>
               navigate(
                 'challenge-progress',
