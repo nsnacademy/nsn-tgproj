@@ -27,12 +27,10 @@ export const FixedHeaderWrapper = styled.div`
   z-index: 1000;
 `;
 
-/* safe-area сверху (iOS / TG) */
 export const HeaderSpacer = styled.div`
   height: env(safe-area-inset-top, 0px);
 `;
 
-/* сам хедер */
 export const Header = styled.div`
   padding: 90px 20px 0;
 `;
@@ -54,7 +52,6 @@ export const StatusTitle = styled.div`
 export const Tabs = styled.div`
   display: flex;
   gap: 18px;
-
   padding: 14px 20px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 `;
@@ -73,13 +70,8 @@ export const Tab = styled.div<{ $active?: boolean }>`
 /* ======================
    SCROLL AREA
 ====================== */
-
-/**
- * Spacer под фиксированный header + tabs
- * (чтобы контент начинался НИЖЕ header)
- */
 export const HeaderOffset = styled.div`
-  height: 170px; /* header + tabs */
+  height: 170px;
   flex-shrink: 0;
 `;
 
@@ -87,8 +79,7 @@ export const HomeContainer = styled.div`
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-
-  padding: 20px 20px 120px; /* снизу место под BottomNav */
+  padding: 20px 20px 120px;
 
   scrollbar-width: none;
   &::-webkit-scrollbar {
@@ -96,9 +87,6 @@ export const HomeContainer = styled.div`
   }
 `;
 
-/* ======================
-   LIST
-====================== */
 export const CenterWrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -106,7 +94,7 @@ export const CenterWrapper = styled.div`
 `;
 
 /* ======================
-   EMPTY STATE
+   EMPTY
 ====================== */
 export const EmptyText = styled.div`
   margin-top: 60px;
@@ -122,12 +110,8 @@ export const Card = styled.div`
   background: rgba(255, 255, 255, 0.06);
   border-radius: 22px;
   padding: 18px 20px;
-
-  opacity: 1;
-  transform: none;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 `;
-
 
 export const CardTitleRow = styled.div`
   display: flex;
@@ -141,41 +125,29 @@ export const CardTitle = styled.div`
 `;
 
 export const CardRank = styled.div`
-  font-size: 13px;
+  font-size: 12px;
   opacity: 0.6;
 `;
 
-export const CardLabel = styled.div`
-  margin-top: 10px;
-  font-size: 11px;
-  opacity: 0.45;
-`;
-
-export const CardValue = styled.div`
-  font-size: 14px;
-  opacity: 0.85;
-`;
-
 /* ======================
-   PROGRESS
-====================== */
-/* ======================
-   PROGRESS
+   PROGRESS COMMON
 ====================== */
 export const ProgressWrapper = styled.div`
   margin-top: 14px;
 `;
 
+/* ===== RESULT MODE (LINE) ===== */
 export const ProgressBar = styled.div`
-  height: 8px;
+  height: 10px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
 `;
 
 export const ProgressFill = styled.div`
   height: 100%;
   background: #fff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
 `;
 
 export const ProgressText = styled.div`
@@ -184,32 +156,32 @@ export const ProgressText = styled.div`
   opacity: 0.65;
 `;
 
-/* ===== DOTS PROGRESS (for days) ===== */
+/* ===== SIMPLE MODE (DAYS / DOTS) ===== */
 
 export const DotsProgress = styled.div`
   display: flex;
   gap: 6px;
-  margin-top: 6px;
-  flex-wrap: wrap;
+  margin-top: 8px;
+  overflow: hidden;
 `;
 
 export const DayDot = styled.div<{ $done?: boolean }>`
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
 
   background: ${({ $done }) =>
-    $done ? '#fff' : 'rgba(255,255,255,0.25)'};
+    $done ? '#fff' : 'rgba(255,255,255,0.18)'};
 
-  transition: background 0.2s ease;
+  box-shadow: ${({ $done }) =>
+    $done ? '0 0 4px rgba(255,255,255,0.7)' : 'none'};
 `;
 
 export const DotsLabel = styled.div`
   margin-top: 6px;
   font-size: 13px;
-  opacity: 0.65;
+  opacity: 0.6;
 `;
-
 
 /* ======================
    BUTTON
@@ -224,7 +196,6 @@ export const PrimaryButton = styled.button`
   background: #fff;
   color: #000;
   font-weight: 500;
-
   cursor: pointer;
 `;
 
@@ -246,15 +217,6 @@ export const BottomNav = styled.div<{ $hidden?: boolean }>`
   justify-content: space-around;
 
   z-index: 1000;
-
-  transition:
-    transform 0.25s ease,
-    opacity 0.2s ease;
-
-  transform: ${({ $hidden }) =>
-    $hidden ? 'translateY(120%)' : 'translateY(0)'};
-
-  opacity: ${({ $hidden }) => ($hidden ? 0 : 1)};
 `;
 
 export const NavItem = styled.div<{ $active?: boolean }>`
@@ -266,15 +228,6 @@ export const NavItem = styled.div<{ $active?: boolean }>`
   justify-content: center;
 
   cursor: pointer;
-  user-select: none;
-
   color: ${({ $active }) =>
     $active ? '#fff' : 'rgba(255,255,255,0.65)'};
-
-  svg {
-    width: 28px;
-    height: 28px;
-    transform: scale(${({ $active }) => ($active ? 1.3 : 1)});
-    transition: transform 0.2s ease;
-  }
 `;
