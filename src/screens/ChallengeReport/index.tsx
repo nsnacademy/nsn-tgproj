@@ -49,12 +49,15 @@ import {
 type Props = {
   challengeId: string;
   participantId: string;
+  
   reportMode: 'simple' | 'result';
   metricName?: string | null;
   onBack: () => void;
 };
 
-type TodayStatus = 'none' | 'pending' | 'approved';
+
+type TodayStatus = 'none' | 'pending' | 'approved' | 'rejected';
+
 
 type ChallengeConfig = {
   report_mode: 'simple' | 'result';
@@ -68,13 +71,17 @@ type FileWithPreview = {
   preview: string;
 };
 
+
 export default function ChallengeReport({
   challengeId,
   participantId,
+ // ✅ ДОБАВИТЬ
   reportMode,
   metricName,
   onBack,
 }: Props) {
+
+
   const [config, setConfig] = useState<ChallengeConfig | null>(null);
   const [value, setValue] = useState('');
   const [text, setText] = useState('');
@@ -83,6 +90,8 @@ export default function ChallengeReport({
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [todayStatus, setTodayStatus] = useState<TodayStatus>('none');
+const [todayReportId, setTodayReportId] = useState<string | null>(null);
+
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -115,15 +124,22 @@ export default function ChallengeReport({
     async function loadTodayReport() {
       const { data } = await supabase
         .from('reports')
-        .select('status')
+        .select('id, status')
+
         .eq('challenge_id', challengeId)
         .eq('participant_id', participantId)
         .eq('report_date', todayDate)
         .maybeSingle();
 
-      if (data?.status === 'pending') setTodayStatus('pending');
-      else if (data?.status === 'approved') setTodayStatus('approved');
-      else setTodayStatus('none');
+      if (!data) {
+  setTodayStatus('none');
+  setTodayReportId(null);
+} else {
+  setTodayStatus(data.status);
+  setTodayReportId(data.id);
+}
+
+
     }
 
     loadTodayReport();
@@ -150,7 +166,12 @@ export default function ChallengeReport({
 
   /* === SUBMIT === */
   async function submit() {
-  if (!config || loading || todayStatus !== 'none') return;
+  if (
+  !config ||
+  loading ||
+  (todayStatus !== 'none' && todayStatus !== 'rejected')
+) return;
+
 
   if (reportMode === 'result' && !value.trim()) {
     alert('Пожалуйста, укажите результат');
@@ -201,15 +222,35 @@ export default function ChallengeReport({
 };
 
 
-  const { error } = await supabase
-    .from('reports')
-    .insert(payload);
+  let error;
 
-  if (error) {
-    alert(error.message);
-    setLoading(false);
-    return;
-  }
+if (todayReportId) {
+  ({ error } = await supabase
+    .from('reports')
+    .update({
+      ...payload,
+      status: 'pending',
+      rejection_reason: null,
+      reviewed_at: null,
+      reviewed_by: null,
+    })
+    .eq('id', todayReportId));
+} else {
+  ({ error } = await supabase
+    .from('reports')
+    .insert(payload));
+}
+
+
+if (error) {
+  alert(error.message);
+  setLoading(false);
+  return;
+}
+
+
+
+  
 
   files.forEach(f => URL.revokeObjectURL(f.preview));
 
@@ -271,24 +312,37 @@ export default function ChallengeReport({
           {todayStatus !== 'none' && (
             <Section style={{ marginTop: '16px' }}>
               <StatusBadge $status={todayStatus}>
-                {todayStatus === 'pending' ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="8" cy="8" r="7" />
-                      <path d="M8 4v4l2 2" />
-                    </svg>
-                    Ожидает проверки
-                  </span>
-                ) : (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="8" cy="8" r="7" />
-                      <path d="M6 9l2 2 4-4" />
-                    </svg>
-                    Отчёт принят
-                  </span>
-                )}
-              </StatusBadge>
+  {todayStatus === 'pending' && (
+    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="8" cy="8" r="7" />
+        <path d="M8 4v4l2 2" />
+      </svg>
+      Ожидает проверки
+    </span>
+  )}
+
+  {todayStatus === 'approved' && (
+    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="8" cy="8" r="7" />
+        <path d="M6 9l2 2 4-4" />
+      </svg>
+      Отчёт принят
+    </span>
+  )}
+
+  {todayStatus === 'rejected' && (
+    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="8" cy="8" r="7" />
+        <path d="M5 5l6 6M11 5l-6 6" />
+      </svg>
+      Отчёт отклонён
+    </span>
+  )}
+</StatusBadge>
+
               
               {submitted && (
                 <SuccessMessage>
@@ -300,7 +354,8 @@ export default function ChallengeReport({
         </ReportCard>
 
         {/* Форма отчета */}
-        {todayStatus === 'none' && (
+        {(todayStatus === 'none' || todayStatus === 'rejected') && (
+
           <>
             {/* Тип отчета */}
             <Section>
@@ -457,7 +512,8 @@ export default function ChallengeReport({
       </Content>
 
       <Footer>
-        {todayStatus === 'none' ? (
+        {todayStatus === 'none' || todayStatus === 'rejected' ? (
+
           <PrimaryButton
             disabled={!canSubmit || loading}
             onClick={submit}

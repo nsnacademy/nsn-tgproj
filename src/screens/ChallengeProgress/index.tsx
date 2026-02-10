@@ -73,9 +73,11 @@ type Props = {
   participantId: string;
   onBack: () => void;
   onOpenReport: (data: {
-    challengeId: string;
-    participantId: string;
-  }) => void;
+  challengeId: string;
+  participantId: string;
+  reportId: string | null;
+}) => void;
+
 };
 
 
@@ -127,6 +129,9 @@ export default function ChallengeProgress({
 
   const [todayStatus, setTodayStatus] =
   useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
+  const [todayReportId, setTodayReportId] =
+  useState<string | null>(null);
+
 
   const [rejectionReason, setRejectionReason] =
   useState<string | null>(null);
@@ -176,17 +181,20 @@ export default function ChallengeProgress({
 
     const { data: reports } = await supabase
   .from('reports')
-  .select('value, is_done, report_date, status, rejection_reason')
+  .select('id, value, is_done, report_date, status, rejection_reason')
   .eq('participant_id', participantId)
   .eq('challenge_id', challengeId);
 
 
+
     const todayDate = new Date().toISOString().slice(0, 10);
     const todayReport = reports?.find(
-      r => r.report_date === todayDate
-    );
+  r => r.report_date === todayDate
+);
 
-    if (!todayReport) {
+setTodayReportId(todayReport?.id ?? null);
+
+if (!todayReport) {
   setTodayStatus('none');
   setRejectionReason(null);
 } else if (todayReport.status === 'pending') {
@@ -199,6 +207,7 @@ export default function ChallengeProgress({
   setTodayStatus('rejected');
   setRejectionReason(todayReport.rejection_reason || null);
 }
+
 
 
     const approvedReports =
@@ -430,65 +439,66 @@ export default function ChallengeProgress({
               <ProgressText>{getProgressText()}</ProgressText>
               
               <TodayStatus>
-                <StatusBadge $status={todayStatus}>
-                  {todayStatus === 'none' && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="8" cy="8" r="7" />
-                        <path d="M8 4v4l2 2" />
-                      </svg>
-                      Сегодня не отмечено
-                    </span>
-                  )}
-                  {todayStatus === 'pending' && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="8" cy="8" r="7" />
-                        <path d="M8 4v4l2 2" />
-                      </svg>
-                      Ожидает проверки
-                    </span>
-                  )}
-                  {todayStatus === 'approved' && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="8" cy="8" r="7" />
-                        <path d="M6 9l2 2 4-4" />
-                      </svg>
-                      Сегодня выполнено
-                    </span>
-                  )}
+  <StatusBadge $status={todayStatus}>
+    {todayStatus === 'none' && (
+      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="8" cy="8" r="7" />
+          <path d="M8 4v4l2 2" />
+        </svg>
+        Сегодня не отмечено
+      </span>
+    )}
 
-                  {todayStatus === 'rejected' && (
-  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="8" cy="8" r="7" />
-      <path d="M5 5l6 6M11 5l-6 6" />
-    </svg>
-    Отчёт отклонён
-  </span>
-)}
+    {todayStatus === 'pending' && (
+      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="8" cy="8" r="7" />
+          <path d="M8 4v4l2 2" />
+        </svg>
+        Ожидает проверки
+      </span>
+    )}
 
-                  {todayStatus === 'rejected' && rejectionReason && (
-  <div
-    style={{
-      marginTop: 10,
-      padding: 12,
-      borderRadius: 12,
-      background: 'rgba(255, 80, 80, 0.12)',
-      color: '#ff6b6b',
-      fontSize: 14,
-      lineHeight: 1.4,
-    }}
-  >
-    <strong>Причина отклонения:</strong><br />
-    {rejectionReason}
-  </div>
-)}
+    {todayStatus === 'approved' && (
+      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="8" cy="8" r="7" />
+          <path d="M6 9l2 2 4-4" />
+        </svg>
+        Сегодня выполнено
+      </span>
+    )}
 
+    {todayStatus === 'rejected' && (
+      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="8" cy="8" r="7" />
+          <path d="M5 5l6 6M11 5l-6 6" />
+        </svg>
+        Отчёт отклонён
+      </span>
+    )}
+  </StatusBadge>
 
-                </StatusBadge>
-              </TodayStatus>
+  {todayStatus === 'rejected' && rejectionReason && (
+    <div
+      style={{
+        marginTop: 10,
+        padding: 12,
+        borderRadius: 12,
+        background: 'rgba(255, 80, 80, 0.12)',
+        color: '#ff6b6b',
+        fontSize: 14,
+        lineHeight: 1.4,
+      }}
+    >
+      <strong>Причина отклонения:</strong><br />
+      {rejectionReason}
+    </div>
+  )}
+</TodayStatus>
+
             </ProgressSection>
           </ProgressInfo>
         </ProgressCard>
@@ -657,7 +667,9 @@ export default function ChallengeProgress({
     onOpenReport({
   challengeId,
   participantId,
+  reportId: todayReportId, // 👈 ВАЖНО
 })
+
 
   }
   $variant={challenge.report_mode}
