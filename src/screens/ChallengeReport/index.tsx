@@ -166,10 +166,7 @@ export default function ChallengeReport({
 
   // ⚠️ ПОКА БЕЗ STORAGE — НЕ ПЫТАЕМСЯ ЗАГРУЖАТЬ ФАЙЛЫ
   // просто сохраняем имена как заглушку (или null)
-  const mediaUrls =
-    files.length > 0
-      ? files.map(f => f.file.name) // позже заменим на реальные URL
-      : null;
+  
 
   const payload = {
   challenge_id: challengeId,
