@@ -46,3 +46,18 @@ export async function getCurrentUser() {
 
   return data;
 }
+
+export async function checkIsCreator(userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('challenges')
+    .select('id')
+    .eq('creator_id', userId)
+    .limit(1);
+
+  if (error) {
+    console.error('[checkIsCreator] error', error);
+    return false;
+  }
+
+  return (data?.length ?? 0) > 0;
+}

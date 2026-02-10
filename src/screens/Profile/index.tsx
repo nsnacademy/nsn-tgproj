@@ -11,7 +11,10 @@ import {
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
-import { getCurrentUser } from '../../shared/lib/supabase';
+import {
+  getCurrentUser,
+  checkIsCreator,
+} from '../../shared/lib/supabase';
 
 type ProfileScreen = 'home' | 'create' | 'profile' | 'admin';
 
@@ -24,24 +27,36 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   const [adminMode, setAdminMode] = useState(false);
   const [locked, setLocked] = useState(false);
 
-  // 🔍 ШАГ 5.2 — ПРОВЕРКА ТЕКУЩЕГО USER
+  // 🔍 ШАГ 6 — ПРОВЕРКА: является ли пользователь создателем вызова
+  const [isCreator, setIsCreator] = useState<boolean | null>(null);
+
   useEffect(() => {
-    async function checkUser() {
+    async function checkAccess() {
       const user = await getCurrentUser();
       console.log('[PROFILE] current user:', user);
+
+      if (!user) {
+        setIsCreator(false);
+        console.log('[PROFILE] is creator: false (no user)');
+        return;
+      }
+
+      const creator = await checkIsCreator(user.id);
+      console.log('[PROFILE] is creator:', creator);
+
+      setIsCreator(creator);
     }
 
-    checkUser();
+    checkAccess();
   }, []);
 
   const onToggleAdmin = () => {
     if (locked) return;
 
-    // 1️⃣ визуально включаем
+    // ⚠️ ПОКА НЕ БЛОКИРУЕМ — только проверяем факт
     setAdminMode(true);
     setLocked(true);
 
-    // 2️⃣ даём анимации отработать
     setTimeout(() => {
       onNavigate('admin');
       setLocked(false);
@@ -65,6 +80,11 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
 
         <Text>
           Включите админ-режим для модерации вызовов
+        </Text>
+
+        {/* 🧪 ВРЕМЕННО: МОЖНО УБРАТЬ ПОСЛЕ ПРОВЕРКИ */}
+        <Text style={{ marginTop: 12, fontSize: 12, opacity: 0.6 }}>
+          isCreator: {String(isCreator)}
         </Text>
       </Container>
 
