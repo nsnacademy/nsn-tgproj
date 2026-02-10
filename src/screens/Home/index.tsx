@@ -46,8 +46,9 @@ type ChallengeItem = {
 
   has_goal: boolean;
   goal_value: number | null;
-  user_progress: number | null;
+  report_mode: 'simple' | 'result';
 
+  user_progress: number | null;
   participants_count: number;
 
   user_completed: boolean;
@@ -78,7 +79,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       .single();
 
     if (!user) {
-      console.warn('[HOME] no user in db');
+      console.warn('[HOME] no user');
       setItems([]);
       setLoading(false);
       return;
@@ -96,7 +97,48 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
     }
 
     console.log('[HOME] raw rpc data', data);
-    setItems(data ?? []);
+
+    // 🔥 FALLBACK: считаем прогресс из reports (approved)
+    const enriched = await Promise.all(
+      (data ?? []).map(async (item: ChallengeItem) => {
+        if (item.user_progress && item.user_progress > 0) {
+          return item;
+        }
+
+        const { data: reports } = await supabase
+          .from('reports')
+          .select('value, is_done')
+          .eq('participant_id', item.participant_id)
+          .eq('challenge_id', item.challenge_id)
+          .eq('status', 'approved');
+
+        let calculatedProgress = 0;
+
+        if (item.report_mode === 'result') {
+          calculatedProgress =
+            reports?.reduce(
+              (acc, r) => acc + Number(r.value || 0),
+              0
+            ) ?? 0;
+        } else {
+          calculatedProgress =
+            reports?.filter(r => r.is_done).length ?? 0;
+        }
+
+        console.log('[HOME] progress recalculated', {
+          title: item.title,
+          report_mode: item.report_mode,
+          calculatedProgress,
+        });
+
+        return {
+          ...item,
+          user_progress: calculatedProgress,
+        };
+      })
+    );
+
+    setItems(enriched);
     setLoading(false);
     console.log('=== HOME LOAD END ===');
   }
@@ -146,8 +188,6 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
             <EmptyText>Нет вызовов</EmptyText>
           ) : (
             list.map(item => {
-              console.log('[HOME] item', item);
-
               const progressValue = item.user_progress ?? 0;
               const goalValue = item.goal_value ?? 0;
 
@@ -172,13 +212,6 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                       100,
                       Math.round((progressValue / item.duration_days) * 100)
                     );
-
-              console.log('[HOME] progress calc', {
-                progressValue,
-                goalValue,
-                progressPercent,
-                currentDay,
-              });
 
               return (
                 <Card key={item.participant_id}>
@@ -223,49 +256,37 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       </HomeContainer>
 
       <BottomNav>
-                    {/* HOME */}
-                    <NavItem $active>
-                      <svg width="24" height="24" fill="none"
-                        stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 10.5L12 3l9 7.5" />
-                        <path d="M5 9.5V21h14V9.5" />
-                      </svg>
-                    </NavItem>
-            
-                    {/* CREATE */}
-                    <NavItem onClick={() => onNavigate('create')}>
-                      <svg width="24" height="24" fill="none"
-                        stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                        <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                        <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                        <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                      </svg>
-                    </NavItem>
-            
-                    {/* SIGNAL */}
-                    <NavItem>
-                      <svg width="24" height="24" fill="none"
-                        stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round">
-                        <line x1="6" y1="18" x2="6" y2="14" />
-                        <line x1="12" y1="18" x2="12" y2="10" />
-                        <line x1="18" y1="18" x2="18" y2="6" />
-                      </svg>
-                    </NavItem>
-            
-                    {/* PROFILE */}
-                    <NavItem>
-                      <svg width="24" height="24" fill="none"
-                        stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="7" r="4" />
-                        <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-                      </svg>
-                    </NavItem>
-                  </BottomNav>
+        <NavItem $active>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 10.5L12 3l9 7.5" />
+            <path d="M5 9.5V21h14V9.5" />
+          </svg>
+        </NavItem>
+
+        <NavItem onClick={() => onNavigate('create')}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+        </NavItem>
+
+        <NavItem>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="6" y1="18" x2="6" y2="14" />
+            <line x1="12" y1="18" x2="12" y2="10" />
+            <line x1="18" y1="18" x2="18" y2="6" />
+          </svg>
+        </NavItem>
+
+        <NavItem>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="7" r="4" />
+            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+          </svg>
+        </NavItem>
+      </BottomNav>
     </SafeArea>
   );
 }
