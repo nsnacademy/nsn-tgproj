@@ -57,13 +57,13 @@ export const LoadingState = styled.div`
    HEADER
 ====================== */
 export const Header = styled.div`
-  padding: 70px 20px 16px;
+  padding: 100px 20px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
   background: #000;
   position: sticky;
-  top: 0;
+  top: 15;
   z-index: 100;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 `;
@@ -170,7 +170,7 @@ export const StatLabel = styled.div`
   font-size: 11px;
   opacity: 0.5;
   margin-top: 4px;
-  text-transform: uppercase;
+  
   letter-spacing: 0.5px;
 `;
 
