@@ -49,6 +49,23 @@ import {
   StatusBadge,
   ChallengeRules,
   RulesContent,
+  PrizeOverlay,
+  PrizeCard,
+  PrizeHeader,
+  PrizeTitle,
+  PrizeClose,
+  PrizeContent,
+  PrizeIcon,
+  PrizeInfo,
+  PrizeName,
+  PrizeDescription,
+  PrizePlace,
+  PrizePlaceBadge,
+  PrizeUser,
+  PrizeStats,
+  PrizeStat,
+  PrizeStatValue,
+  PrizeStatLabel,
 } from './styles';
 
 type Props = {
@@ -82,6 +99,7 @@ type RatingRow = {
   username: string;
   value: number;
   prize_title?: string | null;
+  prize_description?: string | null;
 };
 
 export default function ChallengeProgress({
@@ -107,6 +125,8 @@ export default function ChallengeProgress({
     useState<'none' | 'pending' | 'approved'>('none');
 
   const [remainingDays, setRemainingDays] = useState(0);
+  const [selectedPrize, setSelectedPrize] = useState<RatingRow | null>(null);
+  const [showPrize, setShowPrize] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -216,6 +236,16 @@ export default function ChallengeProgress({
     load();
   }, []);
 
+  const handlePrizeClick = (user: RatingRow) => {
+    setSelectedPrize(user);
+    setShowPrize(true);
+  };
+
+  const closePrize = () => {
+    setShowPrize(false);
+    setTimeout(() => setSelectedPrize(null), 300);
+  };
+
   if (loading) {
     return (
       <SafeArea>
@@ -282,6 +312,35 @@ export default function ChallengeProgress({
       return `${totalValue} из ${challenge.goal_value} ${challenge.metric_name || ''}`;
     }
     return `${doneDays} из ${challenge.duration_days} дней`;
+  };
+
+  const getPrizeIcon = (place: number) => {
+    switch(place) {
+      case 1: return (
+        <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="24" cy="24" r="22" stroke="#FFD700" />
+          <path d="M12 24l8 8 12-16" stroke="#FFD700" />
+        </svg>
+      );
+      case 2: return (
+        <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="24" cy="24" r="22" stroke="#C0C0C0" />
+          <path d="M12 24l8 8 12-16" stroke="#C0C0C0" />
+        </svg>
+      );
+      case 3: return (
+        <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="24" cy="24" r="22" stroke="#CD7F32" />
+          <path d="M12 24l8 8 12-16" stroke="#CD7F32" />
+        </svg>
+      );
+      default: return (
+        <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="24" cy="24" r="22" />
+          <path d="M12 24l8 8 12-16" />
+        </svg>
+      );
+    }
   };
 
   return (
@@ -494,7 +553,12 @@ export default function ChallengeProgress({
 
               <RatingList>
                 {rating.slice(0, 5).map(r => (
-                  <RatingItem key={r.place} $highlight={r.place === myPlace}>
+                  <RatingItem 
+                    key={r.place} 
+                    $highlight={r.place === myPlace}
+                    onClick={() => handlePrizeClick(r)}
+                    $clickable={!!r.prize_title}
+                  >
                     <RatingPlace>
                       <PlaceBadge $place={r.place}>
                         {r.place}
@@ -521,6 +585,11 @@ export default function ChallengeProgress({
                     
                     <RatingValue>
                       {r.value} {challenge.metric_name || ''}
+                      {r.prize_title && (
+                        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '6px', opacity: 0.5 }}>
+                          <path d="M6 3v6M3 6h6" />
+                        </svg>
+                      )}
                     </RatingValue>
                   </RatingItem>
                 ))}
@@ -582,6 +651,67 @@ export default function ChallengeProgress({
           </DisabledButton>
         )}
       </ActionBlock>
+
+      {/* Оверлей с наградой */}
+      {showPrize && selectedPrize && (
+        <PrizeOverlay $show={showPrize} onClick={closePrize}>
+          <PrizeCard onClick={(e) => e.stopPropagation()}>
+            <PrizeHeader>
+              <PrizeTitle>Награда</PrizeTitle>
+              <PrizeClose onClick={closePrize}>
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </PrizeClose>
+            </PrizeHeader>
+            
+            <PrizeContent>
+              <PrizeIcon>
+                {getPrizeIcon(selectedPrize.place)}
+              </PrizeIcon>
+              
+              <PrizeInfo>
+                <PrizePlace>
+                  <PrizePlaceBadge $place={selectedPrize.place}>
+                    Место #{selectedPrize.place}
+                  </PrizePlaceBadge>
+                </PrizePlace>
+                
+                <PrizeUser>{selectedPrize.username}</PrizeUser>
+                
+                <PrizeName>
+                  {selectedPrize.prize_title || `Награда за ${selectedPrize.place} место`}
+                </PrizeName>
+                
+                <PrizeDescription>
+                  {selectedPrize.prize_description || `Поздравляем с ${selectedPrize.place} местом в рейтинге!`}
+                </PrizeDescription>
+                
+                <PrizeStats>
+                  <PrizeStat>
+                    <PrizeStatValue>{selectedPrize.value}</PrizeStatValue>
+                    <PrizeStatLabel>Результат</PrizeStatLabel>
+                  </PrizeStat>
+                  
+                  <PrizeStat>
+                    <PrizeStatValue>#{selectedPrize.place}</PrizeStatValue>
+                    <PrizeStatLabel>Место</PrizeStatLabel>
+                  </PrizeStat>
+                  
+                  <PrizeStat>
+                    <PrizeStatValue>
+                      {selectedPrize.place === 1 ? '🥇' : 
+                       selectedPrize.place === 2 ? '🥈' : 
+                       selectedPrize.place === 3 ? '🥉' : '🏅'}
+                    </PrizeStatValue>
+                    <PrizeStatLabel>Тип награды</PrizeStatLabel>
+                  </PrizeStat>
+                </PrizeStats>
+              </PrizeInfo>
+            </PrizeContent>
+          </PrizeCard>
+        </PrizeOverlay>
+      )}
     </SafeArea>
   );
 }
