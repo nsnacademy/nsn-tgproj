@@ -36,14 +36,22 @@ import {
   ChallengeTypeBadge,
 } from './styles';
 
+type Screen =
+  | 'home'
+  | 'create'
+  | 'challenge-progress'
+  | 'profile';
+
 type HomeProps = {
+  screen: Screen;
   onNavigate: (
-    screen: 'home' | 'create' | 'challenge-progress',
+    screen: Screen,
     challengeId?: string,
     participantId?: string
   ) => void;
   refreshKey: number;
 };
+
 
 type ChallengeItem = {
   participant_id: string;
@@ -65,7 +73,8 @@ type ChallengeItem = {
   rating_place?: number | null;
 };
 
-export function Home({ onNavigate, refreshKey }: HomeProps) {
+export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
+
   const [tab, setTab] = useState<'active' | 'completed'>('active');
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
@@ -295,38 +304,55 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
-      <BottomNav>
-        <NavItem $active>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 10.5L12 3l9 7.5" />
-            <path d="M5 9.5V21h14V9.5" />
-          </svg>
-        </NavItem>
+     <BottomNav>
+  {/* HOME */}
+  <NavItem
+    $active={screen === 'home'}
+    onClick={() => onNavigate('home')}
+  >
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 10.5L12 3l9 7.5" />
+      <path d="M5 9.5V21h14V9.5" />
+    </svg>
+  </NavItem>
 
-        <NavItem onClick={() => onNavigate('create')}>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-          </svg>
-        </NavItem>
+  {/* CREATE */}
+  <NavItem
+    $active={screen === 'create'}
+    onClick={() => onNavigate('create')}
+  >
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </svg>
+  </NavItem>
 
-        <NavItem>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="6" y1="18" x2="6" y2="14" />
-            <line x1="12" y1="18" x2="12" y2="10" />
-            <line x1="18" y1="18" x2="18" y2="6" />
-          </svg>
-        </NavItem>
+  {/* STATS (ПОКА НЕТ ЭКРАНА) */}
+  <NavItem
+    $active={false}
+    onClick={() => {}}
+  >
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+      <line x1="6" y1="18" x2="6" y2="14" />
+      <line x1="12" y1="18" x2="12" y2="10" />
+      <line x1="18" y1="18" x2="18" y2="6" />
+    </svg>
+  </NavItem>
 
-        <NavItem>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="7" r="4" />
-            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-          </svg>
-        </NavItem>
-      </BottomNav>
+  {/* PROFILE */}
+  <NavItem
+    $active={screen === 'profile'}
+    onClick={() => onNavigate('profile')}
+  >
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="7" r="4" />
+      <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+    </svg>
+  </NavItem>
+</BottomNav>
+
     </SafeArea>
   );
 }

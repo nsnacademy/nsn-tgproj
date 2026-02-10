@@ -11,6 +11,7 @@ import { CreateFlowFree } from '../screens/CreateFlowFree';
 import { ChallengeDetails } from '../screens/ChallengeDetails';
 import ChallengeProgress from '../screens/ChallengeProgress';
 import ChallengeReport from '../screens/ChallengeReport';
+import Profile from '../screens/Profile';
 
 /* === ЭКРАНЫ === */
 type Screen =
@@ -22,7 +23,8 @@ type Screen =
   | 'create-flow-paid'
   | 'challenge-details'
   | 'challenge-progress'
-  | 'challenge-report';
+  | 'challenge-report'
+  | 'profile';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -79,9 +81,11 @@ function App() {
 
       {screen === 'home' && (
         <Home
-          onNavigate={navigate}
-          refreshKey={homeRefreshKey}
-        />
+  screen={screen}
+  onNavigate={navigate}
+  refreshKey={homeRefreshKey}
+/>
+
       )}
 
       {screen === 'create' && (
@@ -129,6 +133,10 @@ function App() {
             }
           />
         )}
+
+      {screen === 'profile' && (
+        <Profile />
+      )}
 
       {screen === 'create-flow-paid' && (
         <div
