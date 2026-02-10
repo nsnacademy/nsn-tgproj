@@ -150,18 +150,21 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
               const goalValue = Number(item.goal_value ?? 0);
 
               const start = new Date(item.start_at);
-              const today = new Date();
+const today = new Date();
 
-              const currentDay = Math.min(
-                item.duration_days,
-                Math.max(
-                  1,
-                  Math.floor(
-                    (today.getTime() - start.getTime()) /
-                      (1000 * 60 * 60 * 24)
-                  ) + 1
-                )
-              );
+start.setHours(0, 0, 0, 0);
+today.setHours(0, 0, 0, 0);
+
+const diffDays = Math.floor(
+  (today.getTime() - start.getTime()) /
+    (1000 * 60 * 60 * 24)
+);
+
+const currentDay = Math.min(
+  item.duration_days,
+  Math.max(1, diffDays + 1)
+);
+
 
               let progressPercent = 0;
               let progressLabel = '';

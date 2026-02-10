@@ -148,14 +148,24 @@ export default function ChallengeProgress({
     setTotalValue(total);
 
     const start = new Date(challengeData.start_at);
-    const now = new Date();
-    const day =
-      Math.floor(
-        (now.getTime() - start.getTime()) /
-          (1000 * 60 * 60 * 24)
-      ) + 1;
+const today = new Date();
 
-    setCurrentDay(Math.max(1, day));
+// обнуляем время — считаем по календарю
+start.setHours(0, 0, 0, 0);
+today.setHours(0, 0, 0, 0);
+
+const diffDays = Math.floor(
+  (today.getTime() - start.getTime()) /
+    (1000 * 60 * 60 * 24)
+);
+
+const calculatedDay = Math.min(
+  challengeData.duration_days,
+  Math.max(1, diffDays + 1)
+);
+
+setCurrentDay(calculatedDay);
+
 
     if (challengeData.has_rating) {
       const { data, error } = await supabase.rpc(
