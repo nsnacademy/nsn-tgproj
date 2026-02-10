@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import {
   SafeArea,
   Container,
@@ -19,8 +21,24 @@ type ProfileProps = {
   onNavigate: (screen: ProfileScreen) => void;
 };
 
-
 export default function Profile({ screen, onNavigate }: ProfileProps) {
+  const [adminMode, setAdminMode] = useState(false);
+  const [locked, setLocked] = useState(false);
+
+  const onToggleAdmin = () => {
+    if (locked) return;
+
+    // 1️⃣ визуально переключаем
+    setAdminMode(true);
+    setLocked(true);
+
+    // 2️⃣ даём анимации отработать
+    setTimeout(() => {
+      onNavigate('admin');
+      setLocked(false);
+    }, 250); // 👈 ВАЖНО: совпадает с transition в styles
+  };
+
   return (
     <SafeArea>
       <Container>
@@ -31,19 +49,20 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             <ToggleLabel>Админ-режим</ToggleLabel>
 
             <Toggle
-              $active={false}
-              onClick={() => onNavigate('admin')}
+              $active={adminMode}
+              onClick={onToggleAdmin}
             >
-              <ToggleKnob $active />
+              <ToggleKnob $active={adminMode} />
             </Toggle>
           </ToggleRow>
 
           <Text>
-            Перейти в админ-панель для модерации вызовов
+            Включите админ-режим для модерации вызовов
           </Text>
         </Section>
       </Container>
 
+      {/* ⬇️ НИЖНЯЯ НАВИГАЦИЯ — БЕЗ ИЗМЕНЕНИЙ */}
       <BottomNav>
         <NavItem
           $active={screen === 'home'}
