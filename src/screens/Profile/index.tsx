@@ -5,11 +5,9 @@ import {
   Container,
   Title,
   Text,
-  ToggleRow,
-  ToggleLabel,
   Toggle,
   ToggleKnob,
-  Section,
+  HeaderRow,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -28,7 +26,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   const onToggleAdmin = () => {
     if (locked) return;
 
-    // 1️⃣ визуально переключаем
+    // 1️⃣ визуально включаем
     setAdminMode(true);
     setLocked(true);
 
@@ -36,33 +34,30 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
     setTimeout(() => {
       onNavigate('admin');
       setLocked(false);
-    }, 250); // 👈 ВАЖНО: совпадает с transition в styles
+    }, 250);
   };
 
   return (
     <SafeArea>
       <Container>
-        <Title>Профиль</Title>
+        {/* 🔝 HEADER */}
+        <HeaderRow>
+          <Title>Профиль</Title>
 
-        <Section>
-          <ToggleRow>
-            <ToggleLabel>Админ-режим</ToggleLabel>
+          <Toggle
+            $active={adminMode}
+            onClick={onToggleAdmin}
+          >
+            <ToggleKnob $active={adminMode} />
+          </Toggle>
+        </HeaderRow>
 
-            <Toggle
-              $active={adminMode}
-              onClick={onToggleAdmin}
-            >
-              <ToggleKnob $active={adminMode} />
-            </Toggle>
-          </ToggleRow>
-
-          <Text>
-            Включите админ-режим для модерации вызовов
-          </Text>
-        </Section>
+        <Text>
+          Включите админ-режим для модерации вызовов
+        </Text>
       </Container>
 
-      {/* ⬇️ НИЖНЯЯ НАВИГАЦИЯ — БЕЗ ИЗМЕНЕНИЙ */}
+      {/* ⬇️ НИЖНЯЯ НАВИГАЦИЯ */}
       <BottomNav>
         <NavItem
           $active={screen === 'home'}
