@@ -172,37 +172,37 @@ export default function ChallengeReport({
       : null;
 
   const payload = {
-    challenge_id: challengeId,
-    participant_id: participantId,
-    report_date: todayDate,
-    status: 'pending',
-    report_type: config.report_mode,
+  challenge_id: challengeId,
+  participant_id: participantId,
+  report_date: todayDate,
+  status: 'pending',
+  report_type: config.report_mode,
 
-    value:
-      config.report_mode === 'result'
-        ? Number(value)
-        : null,
+  value: config.report_mode === 'result'
+    ? Number(value)
+    : null,
 
-    is_done:
-      config.report_mode === 'simple'
-        ? true
-        : null,
+  is_done: config.report_mode === 'simple'
+    ? true
+    : null,
 
-    // ✅ ПРАВИЛЬНЫЕ ИМЕНА КОЛОНОК
-    proof_text:
-      config.has_proof &&
-      config.proof_types?.includes('Текст') &&
-      text.trim().length > 0
-        ? text
-        : null,
+  // ✅ ТЕКСТОВОЕ ДОКАЗАТЕЛЬСТВО
+  proof_text:
+    config.has_proof &&
+    config.proof_types?.includes('Текст') &&
+    text.trim().length > 0
+      ? text
+      : null,
 
-    proof_media_urls:
-      config.has_proof &&
-      config.proof_types?.includes('Фото/видео') &&
-      mediaUrls
-        ? mediaUrls
-        : null,
-  };
+  // ✅ ФОТО / ВИДЕО
+  proof_media_urls:
+    config.has_proof &&
+    config.proof_types?.includes('Фото/видео') &&
+    files.length > 0
+      ? files.map(f => f.file.name) // позже заменим на upload в storage
+      : null,
+};
+
 
   const { error } = await supabase
     .from('reports')
