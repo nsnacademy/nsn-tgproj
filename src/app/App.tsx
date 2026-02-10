@@ -15,7 +15,7 @@ import Profile from '../screens/Profile';
 import Admin from '../screens/Admin';
 
 /* === ЭКРАНЫ === */
-export type Screen =
+type Screen =
   | 'splash'
   | 'home'
   | 'create'
@@ -26,7 +26,8 @@ export type Screen =
   | 'challenge-progress'
   | 'challenge-report'
   | 'profile'
-  | 'admin';
+  | 'admin'
+  | 'admin-challenge';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -94,7 +95,9 @@ function App() {
         />
       )}
 
-      {screen === 'create' && <Create onNavigate={navigate} />}
+      {screen === 'create' && (
+        <Create onNavigate={navigate} />
+      )}
 
       {screen === 'create-flow' && (
         <CreateFlow onNavigate={navigate} />
@@ -141,11 +144,35 @@ function App() {
         )}
 
       {screen === 'profile' && (
-        <Profile screen={screen} onNavigate={navigate} />
+        <Profile
+          screen={screen}
+          onNavigate={navigate}
+        />
       )}
 
       {screen === 'admin' && (
-        <Admin screen={screen} onNavigate={navigate} />
+        <Admin
+          screen={screen}
+          onNavigate={navigate}
+        />
+      )}
+
+      {/* 🔧 ВРЕМЕННАЯ ЗАГЛУШКА */}
+      {screen === 'admin-challenge' && selectedChallengeId && (
+        <div
+          style={{
+            minHeight: '100vh',
+            background: '#000',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 18,
+          }}
+        >
+          AdminChallenge<br />
+          challengeId: {selectedChallengeId}
+        </div>
       )}
 
       {screen === 'create-flow-paid' && (
