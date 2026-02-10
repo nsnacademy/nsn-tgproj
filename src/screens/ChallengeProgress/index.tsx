@@ -6,24 +6,49 @@ import {
   Header,
   BackButton,
   HeaderTitle,
-  RatingTag,
+  HeaderRight,
+  RatingBadge,
   Content,
-  ProgressBlock,
+  ProgressCard,
+  ProgressInfo,
+  ProgressStats,
+  StatItem,
+  StatValue,
+  StatLabel,
+  ProgressSection,
+  ProgressBarWrapper,
   ProgressBar,
   ProgressFill,
-  ProgressMainText,
-  ProgressSubText,
+  ProgressText,
+  ProgressPercentage,
   Section,
+  SectionHeader,
   SectionTitle,
+  SectionSubtitle,
   ConditionList,
   ConditionItem,
-  ParticipantsRow,
-  ParticipantIcon,
+  ParticipantsSection,
+  ParticipantCount,
+  ParticipantAvatars,
+  Avatar,
+  RatingSection,
+  RatingHeader,
+  RatingTitle,
+  RatingSubtitle,
   RatingList,
   RatingItem,
+  RatingPlace,
+  PlaceBadge,
+  RatingUser,
+  RatingValue,
   ActionBlock,
   PrimaryButton,
   DisabledButton,
+  LoadingState,
+  TodayStatus,
+  StatusBadge,
+  ChallengeRules,
+  RulesContent,
 } from './styles';
 
 type Props = {
@@ -80,6 +105,8 @@ export default function ChallengeProgress({
 
   const [todayStatus, setTodayStatus] =
     useState<'none' | 'pending' | 'approved'>('none');
+
+  const [remainingDays, setRemainingDays] = useState(0);
 
   async function load() {
     setLoading(true);
@@ -148,24 +175,23 @@ export default function ChallengeProgress({
     setTotalValue(total);
 
     const start = new Date(challengeData.start_at);
-const today = new Date();
+    const today = new Date();
 
-// обнуляем время — считаем по календарю
-start.setHours(0, 0, 0, 0);
-today.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
 
-const diffDays = Math.floor(
-  (today.getTime() - start.getTime()) /
-    (1000 * 60 * 60 * 24)
-);
+    const diffDays = Math.floor(
+      (today.getTime() - start.getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
 
-const calculatedDay = Math.min(
-  challengeData.duration_days,
-  Math.max(1, diffDays + 1)
-);
+    const calculatedDay = Math.min(
+      challengeData.duration_days,
+      Math.max(1, diffDays + 1)
+    );
 
-setCurrentDay(calculatedDay);
-
+    setCurrentDay(calculatedDay);
+    setRemainingDays(Math.max(0, challengeData.duration_days - calculatedDay));
 
     if (challengeData.has_rating) {
       const { data, error } = await supabase.rpc(
@@ -190,7 +216,33 @@ setCurrentDay(calculatedDay);
     load();
   }, []);
 
-  if (loading || !challenge) return <SafeArea />;
+  if (loading) {
+    return (
+      <SafeArea>
+        <Header>
+          <BackButton onClick={onBack}>←</BackButton>
+          <HeaderTitle>Загрузка...</HeaderTitle>
+        </Header>
+        <Content>
+          <LoadingState>Загрузка данных...</LoadingState>
+        </Content>
+      </SafeArea>
+    );
+  }
+
+  if (!challenge) {
+    return (
+      <SafeArea>
+        <Header>
+          <BackButton onClick={onBack}>←</BackButton>
+          <HeaderTitle>Вызов не найден</HeaderTitle>
+        </Header>
+        <Content>
+          <LoadingState>Вызов не найден</LoadingState>
+        </Content>
+      </SafeArea>
+    );
+  }
 
   const progressPercent =
     challenge.report_mode === 'result' && challenge.has_goal
@@ -207,92 +259,206 @@ setCurrentDay(calculatedDay);
           )
         );
 
+  const challengeType = challenge.report_mode === 'result' 
+    ? 'Целевой вызов' 
+    : 'Ежедневный вызов';
+
+  const getButtonText = () => {
+    if (todayStatus === 'approved') return 'Уже выполнено сегодня';
+    if (challenge.report_mode === 'result') return 'Добавить результат';
+    return 'Отметить день';
+  };
+
+  const getProgressText = () => {
+    if (challenge.report_mode === 'result') {
+      return `${totalValue} из ${challenge.goal_value} ${challenge.metric_name || ''}`;
+    }
+    return `${doneDays} из ${challenge.duration_days} дней`;
+  };
+
   return (
     <SafeArea>
-      <Header>
-        <BackButton onClick={onBack}>←</BackButton>
-        <HeaderTitle>{challenge.title}</HeaderTitle>
-        {challenge.has_rating && <RatingTag>#rating</RatingTag>}
-      </Header>
+       <Header>
+      <BackButton onClick={onBack}>
+        <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </BackButton>
+      <HeaderTitle>{challenge.title}</HeaderTitle>
+      <HeaderRight>
+        {challenge.has_rating && (
+          <RatingBadge $highlight={!!myPlace && myPlace <= 3}>
+  {myPlace ? `#${myPlace}` : 'Рейтинг'}
+</RatingBadge>
+
+        )}
+      </HeaderRight>
+    </Header>
 
       <Content>
-        <ProgressBlock>
-          <ProgressBar>
-            <ProgressFill style={{ width: `${progressPercent}%` }} />
-          </ProgressBar>
+        {/* Прогресс-карточка */}
+        <ProgressCard>
+          <ProgressInfo>
+            <ProgressStats>
+              <StatItem>
+                <StatValue>{currentDay}</StatValue>
+                <StatLabel>Текущий день</StatLabel>
+              </StatItem>
+              
+              <StatItem>
+                <StatValue>
+                  {challenge.report_mode === 'result' 
+                    ? challenge.has_goal 
+                      ? challenge.goal_value 
+                      : '—'
+                    : challenge.duration_days}
+                </StatValue>
+                <StatLabel>
+                  {challenge.report_mode === 'result' 
+                    ? 'Цель' 
+                    : 'Всего дней'}
+                </StatLabel>
+              </StatItem>
+              
+              <StatItem>
+                <StatValue>{remainingDays}</StatValue>
+                <StatLabel>Осталось дней</StatLabel>
+              </StatItem>
+            </ProgressStats>
 
-          {challenge.report_mode === 'result' ? (
-            <ProgressMainText>
-              {totalValue} / {challenge.goal_value}{' '}
-              {challenge.metric_name}
-            </ProgressMainText>
-          ) : (
-            <ProgressMainText>
-              Выполнено дней: {doneDays} из{' '}
-              {challenge.duration_days}
-            </ProgressMainText>
-          )}
+            <ProgressSection>
+              <ProgressBarWrapper>
+                <ProgressBar>
+                  <ProgressFill 
+                    style={{ 
+                      width: `${progressPercent}%`,
+                      background: progressPercent === 100 
+                        ? 'linear-gradient(90deg, #4CAF50, #45a049)' 
+                        : 'linear-gradient(90deg, #fff, rgba(255,255,255,0.9))'
+                    }} 
+                  />
+                </ProgressBar>
+                <ProgressPercentage>{progressPercent}%</ProgressPercentage>
+              </ProgressBarWrapper>
+              
+              <ProgressText>{getProgressText()}</ProgressText>
+              
+              <TodayStatus>
+                <StatusBadge $status={todayStatus}>
+                  {todayStatus === 'none' && '💭 Сегодня не отмечено'}
+                  {todayStatus === 'pending' && '⏳ Ожидает проверки'}
+                  {todayStatus === 'approved' && '✅ Сегодня выполнено'}
+                </StatusBadge>
+              </TodayStatus>
+            </ProgressSection>
+          </ProgressInfo>
+        </ProgressCard>
 
-          <ProgressSubText>
-            День {currentDay} из {challenge.duration_days}
-          </ProgressSubText>
-        </ProgressBlock>
-
+        {/* Правила и условия */}
         {(challenge.rules || challenge.has_limit) && (
           <Section>
-            <SectionTitle>Условия</SectionTitle>
-            <ConditionList>
+            <SectionHeader>
+              <SectionTitle>Правила вызова</SectionTitle>
+              <SectionSubtitle>{challengeType}</SectionSubtitle>
+            </SectionHeader>
+            
+            <ChallengeRules>
               {challenge.rules && (
-                <ConditionItem>{challenge.rules}</ConditionItem>
+                <RulesContent>{challenge.rules}</RulesContent>
               )}
-              {challenge.has_limit && (
+              
+              <ConditionList>
+                {challenge.has_limit && (
+                  <ConditionItem>
+                    <span>📊</span>
+                    Не более {challenge.limit_per_day} отчёта в день
+                  </ConditionItem>
+                )}
+                {challenge.report_mode === 'result' && challenge.has_goal && (
+                  <ConditionItem>
+                    <span>🎯</span>
+                    Цель: {challenge.goal_value} {challenge.metric_name}
+                  </ConditionItem>
+                )}
                 <ConditionItem>
-                  Не более {challenge.limit_per_day} отчёта в день
+                  <span>📅</span>
+                  Длительность: {challenge.duration_days} дней
                 </ConditionItem>
-              )}
-            </ConditionList>
+              </ConditionList>
+            </ChallengeRules>
           </Section>
         )}
 
+        {/* Участники */}
         <Section>
-          <SectionTitle>Участие</SectionTitle>
-          <ParticipantsRow>
-            <ParticipantIcon>👤</ParticipantIcon>
-            {participantsCount}
-          </ParticipantsRow>
+          <SectionHeader>
+            <SectionTitle>Участники</SectionTitle>
+            <SectionSubtitle>{participantsCount} человек</SectionSubtitle>
+          </SectionHeader>
+          
+          <ParticipantsSection>
+            <ParticipantAvatars>
+              {Array.from({ length: Math.min(5, participantsCount) }).map((_, i) => (
+                <Avatar key={i} style={{ marginLeft: i > 0 ? '-8px' : '0' }}>
+                  👤
+                </Avatar>
+              ))}
+            </ParticipantAvatars>
+            <ParticipantCount>
+              {participantsCount} участников
+            </ParticipantCount>
+          </ParticipantsSection>
         </Section>
 
+        {/* Рейтинг */}
         {challenge.has_rating && rating.length > 0 && (
           <Section>
-            <SectionTitle>Рейтинг</SectionTitle>
-            <RatingList>
-              {rating.map(r => (
-                <RatingItem key={r.place}>
-                  <span>
-                    {r.place}. {r.username}
-                    {r.prize_title && ' 🏆'}
+            <RatingSection>
+              <RatingHeader>
+                <div>
+                  <RatingTitle>Рейтинг участников</RatingTitle>
+                  {myPlace && (
+                    <RatingSubtitle>
+                      Ваше место: <strong>#{myPlace}</strong>
+                    </RatingSubtitle>
+                  )}
+                </div>
+                {valueToPrize !== null && valueToPrize > 0 && (
+                  <span style={{ fontSize: '12px', opacity: 0.7 }}>
+                    До приза: +{valueToPrize}
                   </span>
-                  <span>{r.value}</span>
-                </RatingItem>
-              ))}
-            </RatingList>
+                )}
+              </RatingHeader>
+
+              <RatingList>
+                {rating.slice(0, 5).map(r => (
+                  <RatingItem key={r.place} $highlight={r.place === myPlace}>
+                    <RatingPlace>
+                      <PlaceBadge $place={r.place}>
+                        {r.place}
+                        {r.prize_title && ' 🏆'}
+                      </PlaceBadge>
+                    </RatingPlace>
+                    
+                    <RatingUser>
+                      {r.username}
+                      {r.place === myPlace && <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.6 }}>Вы</span>}
+                    </RatingUser>
+                    
+                    <RatingValue>
+                      {r.value} {challenge.metric_name || ''}
+                    </RatingValue>
+                  </RatingItem>
+                ))}
+              </RatingList>
+            </RatingSection>
           </Section>
         )}
-
-        {challenge.has_rating &&
-          myPlace &&
-          valueToPrize !== null && (
-            <Section>
-              <ProgressSubText>
-                ⬇️ До призового места: {valueToPrize}{' '}
-                {challenge.metric_name}
-              </ProgressSubText>
-            </Section>
-          )}
       </Content>
 
+      {/* Кнопка действия */}
       <ActionBlock>
-        {todayStatus === 'none' && (
+        {todayStatus === 'none' ? (
           <PrimaryButton
             onClick={() =>
               onOpenReport({
@@ -302,17 +468,23 @@ setCurrentDay(calculatedDay);
                 metricName: challenge.metric_name,
               })
             }
+            $variant={challenge.report_mode}
           >
-            Перейти к отчёту
+            <span style={{ fontSize: '18px', marginRight: '8px' }}>
+              {challenge.report_mode === 'result' ? '📊' : '✅'}
+            </span>
+            {getButtonText()}
           </PrimaryButton>
-        )}
-
-        {todayStatus === 'pending' && (
-          <DisabledButton>⏳ Ожидает проверки</DisabledButton>
-        )}
-
-        {todayStatus === 'approved' && (
-          <DisabledButton>✅ Выполнено</DisabledButton>
+        ) : todayStatus === 'pending' ? (
+          <DisabledButton>
+            <span style={{ fontSize: '18px', marginRight: '8px' }}>⏳</span>
+            Ожидает проверки
+          </DisabledButton>
+        ) : (
+          <DisabledButton>
+            <span style={{ fontSize: '18px', marginRight: '8px' }}>✅</span>
+            Сегодня выполнено
+          </DisabledButton>
         )}
       </ActionBlock>
     </SafeArea>
