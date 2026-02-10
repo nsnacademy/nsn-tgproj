@@ -146,7 +146,10 @@ function App() {
         )}
 
       {screen === 'profile' && (
-        <Profile />
+        <Profile
+    screen={screen}
+    onNavigate={navigate}
+  />
       )}
 
       {screen === 'create-flow-paid' && (
