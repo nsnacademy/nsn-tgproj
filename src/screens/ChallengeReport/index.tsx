@@ -39,7 +39,7 @@ export default function ChallengeReport({
   const [value, setValue] = useState('');
   const [checked, setChecked] = useState(false);
   const [text, setText] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
+  const [hasFiles, setHasFiles] = useState(false); // ✅ вместо files
   const [loading, setLoading] = useState(false);
 
   const [todayStatus, setTodayStatus] =
@@ -47,6 +47,7 @@ export default function ChallengeReport({
 
   const today = new Date().toISOString().slice(0, 10);
 
+  /* === LOAD TODAY REPORT STATUS === */
   useEffect(() => {
     async function loadTodayReport() {
       const { data } = await supabase
@@ -65,6 +66,7 @@ export default function ChallengeReport({
     loadTodayReport();
   }, [challengeId, participantId, today]);
 
+  /* === SUBMIT === */
   async function submit() {
     if (loading || todayStatus !== 'none') return;
     setLoading(true);
@@ -121,6 +123,7 @@ export default function ChallengeReport({
       </Header>
 
       <Content>
+        {/* === STATUS === */}
         {todayStatus !== 'none' && (
           <Field>
             <Label>Статус</Label>
@@ -132,6 +135,7 @@ export default function ChallengeReport({
           </Field>
         )}
 
+        {/* === FORM === */}
         {todayStatus === 'none' && (
           <>
             {reportMode === 'result' && (
@@ -143,6 +147,7 @@ export default function ChallengeReport({
                   type="number"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
+                  placeholder="Введите значение"
                 />
               </Field>
             )}
@@ -164,7 +169,7 @@ export default function ChallengeReport({
                 multiple
                 accept="image/*,video/*"
                 onChange={(e) =>
-                  setFiles(e.target.files ? Array.from(e.target.files) : [])
+                  setHasFiles(!!e.target.files && e.target.files.length > 0)
                 }
               />
             </Field>
