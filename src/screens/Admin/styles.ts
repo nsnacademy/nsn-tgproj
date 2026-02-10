@@ -23,3 +23,10 @@ export const Text = styled.p`
   font-size: 14px;
   color: rgba(255,255,255,0.7);
 `;
+
+export const HeaderRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+`;
