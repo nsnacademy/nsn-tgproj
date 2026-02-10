@@ -150,63 +150,81 @@ export default function ChallengeReport({
 
   /* === SUBMIT === */
   async function submit() {
-    if (!config || loading || todayStatus !== 'none') return;
-    
-    // Валидация
-    if (reportMode === 'result' && !value.trim()) {
-      alert('Пожалуйста, укажите результат');
-      return;
-    }
-    
-    if (!checked) {
-      alert('Пожалуйста, подтвердите выполнение');
-      return;
-    }
-    
-    setLoading(true);
+  if (!config || loading || todayStatus !== 'none') return;
 
-    const payload = {
-      challenge_id: challengeId,
-      participant_id: participantId,
-      report_date: todayDate,
-      status: 'pending' as const,
-      report_type: config.report_mode,
-      value: config.report_mode === 'result' ? Number(value) : null,
-      is_done: config.report_mode === 'simple' ? true : null,
-      text: config.has_proof && 
-            config.proof_types?.includes('Текст') && 
-            text.trim().length > 0
-            ? text
-            : null,
-      media: config.has_proof &&
-             config.proof_types?.includes('Фото/видео') &&
-             files.length > 0
-            ? files.map(f => f.file.name)
-            : null,
-    };
-
-    const { error } = await supabase
-      .from('reports')
-      .insert(payload);
-
-    if (error) {
-      alert(error.message);
-      setLoading(false);
-      return;
-    }
-
-    // Очистить preview URLs
-    files.forEach(file => URL.revokeObjectURL(file.preview));
-    
-    setTodayStatus('pending');
-    setSubmitted(true);
-    setLoading(false);
-    
-    // Автоматически вернуться назад через 2 секунды
-    setTimeout(() => {
-      onBack();
-    }, 2000);
+  if (reportMode === 'result' && !value.trim()) {
+    alert('Пожалуйста, укажите результат');
+    return;
   }
+
+  if (!checked) {
+    alert('Пожалуйста, подтвердите выполнение');
+    return;
+  }
+
+  setLoading(true);
+
+  // ⚠️ ПОКА БЕЗ STORAGE — НЕ ПЫТАЕМСЯ ЗАГРУЖАТЬ ФАЙЛЫ
+  // просто сохраняем имена как заглушку (или null)
+  const mediaUrls =
+    files.length > 0
+      ? files.map(f => f.file.name) // позже заменим на реальные URL
+      : null;
+
+  const payload = {
+    challenge_id: challengeId,
+    participant_id: participantId,
+    report_date: todayDate,
+    status: 'pending',
+    report_type: config.report_mode,
+
+    value:
+      config.report_mode === 'result'
+        ? Number(value)
+        : null,
+
+    is_done:
+      config.report_mode === 'simple'
+        ? true
+        : null,
+
+    // ✅ ПРАВИЛЬНЫЕ ИМЕНА КОЛОНОК
+    proof_text:
+      config.has_proof &&
+      config.proof_types?.includes('Текст') &&
+      text.trim().length > 0
+        ? text
+        : null,
+
+    proof_media_urls:
+      config.has_proof &&
+      config.proof_types?.includes('Фото/видео') &&
+      mediaUrls
+        ? mediaUrls
+        : null,
+  };
+
+  const { error } = await supabase
+    .from('reports')
+    .insert(payload);
+
+  if (error) {
+    alert(error.message);
+    setLoading(false);
+    return;
+  }
+
+  files.forEach(f => URL.revokeObjectURL(f.preview));
+
+  setTodayStatus('pending');
+  setSubmitted(true);
+  setLoading(false);
+
+  setTimeout(() => {
+    onBack();
+  }, 2000);
+}
+
 
   if (!config) {
     return (
