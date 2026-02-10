@@ -24,6 +24,11 @@ import {
   PrimaryButton,
   BottomNav,
   NavItem,
+
+  // 🆕 stripes
+  StripesBar,
+  Stripe,
+  StripesLabel,
 } from './styles';
 
 type HomeProps = {
@@ -49,11 +54,9 @@ type ChallengeItem = {
   user_progress: number | null;
 
   participants_count: number;
-
   user_completed: boolean;
   challenge_finished: boolean;
 
-  // 🆕 позиция в рейтинге (если есть)
   rating_place?: number | null;
 };
 
@@ -63,12 +66,10 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
   const [items, setItems] = useState<ChallengeItem[]>([]);
 
   async function load() {
-    console.log('=== HOME LOAD START ===');
     setLoading(true);
 
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (!tgUser) {
-      console.warn('[HOME] no tgUser');
       setItems([]);
       setLoading(false);
       return;
@@ -81,7 +82,6 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       .single();
 
     if (!user) {
-      console.warn('[HOME] no user in db');
       setItems([]);
       setLoading(false);
       return;
@@ -98,10 +98,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
-    console.log('[HOME] raw rpc data', data);
     setItems(data ?? []);
     setLoading(false);
-    console.log('=== HOME LOAD END ===');
   }
 
   useEffect(() => {
@@ -154,7 +152,6 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
               const start = new Date(item.start_at);
               const today = new Date();
-
               start.setHours(0, 0, 0, 0);
               today.setHours(0, 0, 0, 0);
 
@@ -168,52 +165,56 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                 Math.max(1, diffDays + 1)
               );
 
-              let progressPercent = 0;
-              let progressLabel = '';
-
-              if (item.has_goal && goalValue > 0) {
-                progressPercent = Math.min(
-                  100,
-                  Math.round((progressValue / goalValue) * 100)
-                );
-                progressLabel = `${progressValue} / ${goalValue}`;
-              } else {
-                progressPercent = Math.min(
-                  100,
-                  Math.round(
-                    (progressValue / item.duration_days) * 100
-                  )
-                );
-                progressLabel = `Выполнено: ${progressValue}`;
-              }
+              const progressPercent =
+                item.has_goal && goalValue > 0
+                  ? Math.min(
+                      100,
+                      Math.round((progressValue / goalValue) * 100)
+                    )
+                  : 0;
 
               return (
                 <Card key={item.participant_id}>
-                  {/* TITLE + RATING PLACE */}
-                  <CardTitleRow style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  {/* TITLE + RANK */}
+                  <CardTitleRow>
                     <CardTitle>{item.title}</CardTitle>
-
                     {typeof item.rating_place === 'number' && (
-                      <span
-                        style={{
-                          fontSize: 12,
-                          opacity: 0.6,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
+                      <span style={{ fontSize: 12, opacity: 0.6 }}>
                         #{item.rating_place}
                       </span>
                     )}
                   </CardTitleRow>
 
                   <ProgressWrapper>
-                    <ProgressBar>
-                      <ProgressFill
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </ProgressBar>
+                    {/* ===== RESULT MODE ===== */}
+                    {item.has_goal ? (
+                      <>
+                        <ProgressBar>
+                          <ProgressFill
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </ProgressBar>
 
-                    <ProgressText>{progressLabel}</ProgressText>
+                        <ProgressText>
+                          {progressValue} / {goalValue}
+                        </ProgressText>
+                      </>
+                    ) : (
+                      /* ===== SIMPLE MODE (STRIPES) ===== */
+                      <>
+                        <StripesBar>
+                          {Array.from({
+                            length: item.duration_days,
+                          }).map((_, i) => (
+                            <Stripe key={i} $done={i < progressValue} />
+                          ))}
+                        </StripesBar>
+
+                        <StripesLabel>
+                          Выполнено: {progressValue} из {item.duration_days}
+                        </StripesLabel>
+                      </>
+                    )}
 
                     <ProgressText style={{ opacity: 0.45 }}>
                       День {currentDay} из {item.duration_days}
