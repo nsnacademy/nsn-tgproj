@@ -46,9 +46,8 @@ type ChallengeItem = {
 
   has_goal: boolean;
   goal_value: number | null;
-  report_mode: 'simple' | 'result';
-
   user_progress: number | null;
+
   participants_count: number;
 
   user_completed: boolean;
@@ -79,7 +78,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
       .single();
 
     if (!user) {
-      console.warn('[HOME] no user');
+      console.warn('[HOME] no user in db');
       setItems([]);
       setLoading(false);
       return;
@@ -97,48 +96,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
     }
 
     console.log('[HOME] raw rpc data', data);
-
-    // 🔥 FALLBACK: считаем прогресс из reports (approved)
-    const enriched = await Promise.all(
-      (data ?? []).map(async (item: ChallengeItem) => {
-        if (item.user_progress && item.user_progress > 0) {
-          return item;
-        }
-
-        const { data: reports } = await supabase
-          .from('reports')
-          .select('value, is_done')
-          .eq('participant_id', item.participant_id)
-          .eq('challenge_id', item.challenge_id)
-          .eq('status', 'approved');
-
-        let calculatedProgress = 0;
-
-        if (item.report_mode === 'result') {
-          calculatedProgress =
-            reports?.reduce(
-              (acc, r) => acc + Number(r.value || 0),
-              0
-            ) ?? 0;
-        } else {
-          calculatedProgress =
-            reports?.filter(r => r.is_done).length ?? 0;
-        }
-
-        console.log('[HOME] progress recalculated', {
-          title: item.title,
-          report_mode: item.report_mode,
-          calculatedProgress,
-        });
-
-        return {
-          ...item,
-          user_progress: calculatedProgress,
-        };
-      })
-    );
-
-    setItems(enriched);
+    setItems(data ?? []);
     setLoading(false);
     console.log('=== HOME LOAD END ===');
   }
@@ -188,8 +146,8 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
             <EmptyText>Нет вызовов</EmptyText>
           ) : (
             list.map(item => {
-              const progressValue = item.user_progress ?? 0;
-              const goalValue = item.goal_value ?? 0;
+              const progressValue = Number(item.user_progress ?? 0);
+              const goalValue = Number(item.goal_value ?? 0);
 
               const start = new Date(item.start_at);
               const today = new Date();
@@ -205,13 +163,35 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                 )
               );
 
-              const progressPercent =
-                item.has_goal && goalValue > 0
-                  ? Math.min(100, Math.round((progressValue / goalValue) * 100))
-                  : Math.min(
-                      100,
-                      Math.round((progressValue / item.duration_days) * 100)
-                    );
+              let progressPercent = 0;
+              let progressLabel = '';
+
+              if (item.has_goal && goalValue > 0) {
+                // RESULT MODE
+                progressPercent = Math.min(
+                  100,
+                  Math.round((progressValue / goalValue) * 100)
+                );
+                progressLabel = `${progressValue} / ${goalValue}`;
+              } else {
+                // SIMPLE MODE
+                progressPercent = Math.min(
+                  100,
+                  Math.round(
+                    (progressValue / item.duration_days) * 100
+                  )
+                );
+                progressLabel = `Выполнено: ${progressValue}`;
+              }
+
+              console.log('[HOME] progress normalized', {
+                title: item.title,
+                has_goal: item.has_goal,
+                progressValue,
+                goalValue,
+                progressPercent,
+                currentDay,
+              });
 
               return (
                 <Card key={item.participant_id}>
@@ -221,14 +201,12 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
                   <ProgressWrapper>
                     <ProgressBar>
-                      <ProgressFill style={{ width: `${progressPercent}%` }} />
+                      <ProgressFill
+                        style={{ width: `${progressPercent}%` }}
+                      />
                     </ProgressBar>
 
-                    <ProgressText>
-                      {item.has_goal
-                        ? `${progressValue} / ${goalValue}`
-                        : `Выполнено: ${progressValue}`}
-                    </ProgressText>
+                    <ProgressText>{progressLabel}</ProgressText>
 
                     <ProgressText style={{ opacity: 0.45 }}>
                       День {currentDay} из {item.duration_days}
