@@ -14,17 +14,6 @@ const slideUp = keyframes`
   }
 `;
 
-const slideDown = keyframes`
-  from {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-`;
-
 const fadeIn = keyframes`
   from {
     opacity: 0;
