@@ -24,11 +24,6 @@ import {
   PrimaryButton,
   BottomNav,
   NavItem,
-
-  // 🆕 stripes
-  StripesBar,
-  Stripe,
-  StripesLabel,
 } from './styles';
 
 type HomeProps = {
@@ -165,13 +160,13 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                 Math.max(1, diffDays + 1)
               );
 
-              const progressPercent =
-                item.has_goal && goalValue > 0
-                  ? Math.min(
-                      100,
-                      Math.round((progressValue / goalValue) * 100)
-                    )
-                  : 0;
+              // 🔥 ЕДИНЫЙ ПРОЦЕНТ
+              const progressPercent = item.has_goal && goalValue > 0
+                ? Math.min(100, Math.round((progressValue / goalValue) * 100))
+                : Math.min(
+                    100,
+                    Math.round((progressValue / item.duration_days) * 100)
+                  );
 
               return (
                 <Card key={item.participant_id}>
@@ -186,35 +181,15 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                   </CardTitleRow>
 
                   <ProgressWrapper>
-                    {/* ===== RESULT MODE ===== */}
-                    {item.has_goal ? (
-                      <>
-                        <ProgressBar>
-                          <ProgressFill
-                            style={{ width: `${progressPercent}%` }}
-                          />
-                        </ProgressBar>
+                    <ProgressBar>
+                      <ProgressFill style={{ width: `${progressPercent}%` }} />
+                    </ProgressBar>
 
-                        <ProgressText>
-                          {progressValue} / {goalValue}
-                        </ProgressText>
-                      </>
-                    ) : (
-                      /* ===== SIMPLE MODE (STRIPES) ===== */
-                      <>
-                        <StripesBar>
-                          {Array.from({
-                            length: item.duration_days,
-                          }).map((_, i) => (
-                            <Stripe key={i} $done={i < progressValue} />
-                          ))}
-                        </StripesBar>
-
-                        <StripesLabel>
-                          Выполнено: {progressValue} из {item.duration_days}
-                        </StripesLabel>
-                      </>
-                    )}
+                    <ProgressText>
+                      {item.has_goal
+                        ? `${progressValue} / ${goalValue}`
+                        : `Выполнено: ${progressValue} из ${item.duration_days}`}
+                    </ProgressText>
 
                     <ProgressText style={{ opacity: 0.45 }}>
                       День {currentDay} из {item.duration_days}
