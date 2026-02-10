@@ -52,6 +52,9 @@ type ChallengeItem = {
 
   user_completed: boolean;
   challenge_finished: boolean;
+
+  // 🆕 позиция в рейтинге (если есть)
+  rating_place?: number | null;
 };
 
 export function Home({ onNavigate, refreshKey }: HomeProps) {
@@ -150,34 +153,31 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
               const goalValue = Number(item.goal_value ?? 0);
 
               const start = new Date(item.start_at);
-const today = new Date();
+              const today = new Date();
 
-start.setHours(0, 0, 0, 0);
-today.setHours(0, 0, 0, 0);
+              start.setHours(0, 0, 0, 0);
+              today.setHours(0, 0, 0, 0);
 
-const diffDays = Math.floor(
-  (today.getTime() - start.getTime()) /
-    (1000 * 60 * 60 * 24)
-);
+              const diffDays = Math.floor(
+                (today.getTime() - start.getTime()) /
+                  (1000 * 60 * 60 * 24)
+              );
 
-const currentDay = Math.min(
-  item.duration_days,
-  Math.max(1, diffDays + 1)
-);
-
+              const currentDay = Math.min(
+                item.duration_days,
+                Math.max(1, diffDays + 1)
+              );
 
               let progressPercent = 0;
               let progressLabel = '';
 
               if (item.has_goal && goalValue > 0) {
-                // RESULT MODE
                 progressPercent = Math.min(
                   100,
                   Math.round((progressValue / goalValue) * 100)
                 );
                 progressLabel = `${progressValue} / ${goalValue}`;
               } else {
-                // SIMPLE MODE
                 progressPercent = Math.min(
                   100,
                   Math.round(
@@ -187,19 +187,23 @@ const currentDay = Math.min(
                 progressLabel = `Выполнено: ${progressValue}`;
               }
 
-              console.log('[HOME] progress normalized', {
-                title: item.title,
-                has_goal: item.has_goal,
-                progressValue,
-                goalValue,
-                progressPercent,
-                currentDay,
-              });
-
               return (
                 <Card key={item.participant_id}>
-                  <CardTitleRow>
+                  {/* TITLE + RATING PLACE */}
+                  <CardTitleRow style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <CardTitle>{item.title}</CardTitle>
+
+                    {typeof item.rating_place === 'number' && (
+                      <span
+                        style={{
+                          fontSize: 12,
+                          opacity: 0.6,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        #{item.rating_place}
+                      </span>
+                    )}
                   </CardTitleRow>
 
                   <ProgressWrapper>
