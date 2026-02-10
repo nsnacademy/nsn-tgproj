@@ -25,10 +25,10 @@ import {
   BottomNav,
   NavItem,
 
-  // 🆕 stripes
-  StripesBar,
-  Stripe,
-  StripesLabel,
+  // 🆕 dots
+  DotsProgress,
+  DayDot,
+  DotsLabel,
 } from './styles';
 
 type HomeProps = {
@@ -54,6 +54,7 @@ type ChallengeItem = {
   user_progress: number | null;
 
   participants_count: number;
+
   user_completed: boolean;
   challenge_finished: boolean;
 
@@ -152,6 +153,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
 
               const start = new Date(item.start_at);
               const today = new Date();
+
               start.setHours(0, 0, 0, 0);
               today.setHours(0, 0, 0, 0);
 
@@ -171,7 +173,12 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                       100,
                       Math.round((progressValue / goalValue) * 100)
                     )
-                  : 0;
+                  : Math.min(
+                      100,
+                      Math.round(
+                        (progressValue / item.duration_days) * 100
+                      )
+                    );
 
               return (
                 <Card key={item.participant_id}>
@@ -186,7 +193,7 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                   </CardTitleRow>
 
                   <ProgressWrapper>
-                    {/* ===== RESULT MODE ===== */}
+                    {/* ===== RESULT MODE → LINE ===== */}
                     {item.has_goal ? (
                       <>
                         <ProgressBar>
@@ -200,19 +207,23 @@ export function Home({ onNavigate, refreshKey }: HomeProps) {
                         </ProgressText>
                       </>
                     ) : (
-                      /* ===== SIMPLE MODE (STRIPES) ===== */
+                      /* ===== SIMPLE MODE → DOTS ===== */
                       <>
-                        <StripesBar>
+                        <DotsProgress>
                           {Array.from({
                             length: item.duration_days,
                           }).map((_, i) => (
-                            <Stripe key={i} $done={i < progressValue} />
+                            <DayDot
+                              key={i}
+                              $done={i < progressValue}
+                            />
                           ))}
-                        </StripesBar>
+                        </DotsProgress>
 
-                        <StripesLabel>
-                          Выполнено: {progressValue} из {item.duration_days}
-                        </StripesLabel>
+                        <DotsLabel>
+                          Выполнено: {progressValue} из{' '}
+                          {item.duration_days}
+                        </DotsLabel>
                       </>
                     )}
 
