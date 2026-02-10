@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   SafeArea,
@@ -11,6 +11,7 @@ import {
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
+import { getCurrentUser } from '../../shared/lib/supabase';
 
 type ProfileScreen = 'home' | 'create' | 'profile' | 'admin';
 
@@ -22,6 +23,16 @@ type ProfileProps = {
 export default function Profile({ screen, onNavigate }: ProfileProps) {
   const [adminMode, setAdminMode] = useState(false);
   const [locked, setLocked] = useState(false);
+
+  // 🔍 ШАГ 5.2 — ПРОВЕРКА ТЕКУЩЕГО USER
+  useEffect(() => {
+    async function checkUser() {
+      const user = await getCurrentUser();
+      console.log('[PROFILE] current user:', user);
+    }
+
+    checkUser();
+  }, []);
 
   const onToggleAdmin = () => {
     if (locked) return;

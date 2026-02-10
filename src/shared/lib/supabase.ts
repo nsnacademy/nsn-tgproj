@@ -25,3 +25,24 @@ export async function saveTelegramUser() {
     console.error('Supabase error:', error);
   }
 }
+
+export async function getCurrentUser() {
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+
+  if (!tgUser) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, telegram_id')
+    .eq('telegram_id', tgUser.id)
+    .single();
+
+  if (error) {
+    console.error('[getCurrentUser] error', error);
+    return null;
+  }
+
+  return data;
+}
