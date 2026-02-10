@@ -26,8 +26,6 @@ type ProfileProps = {
 export default function Profile({ screen, onNavigate }: ProfileProps) {
   const [adminMode, setAdminMode] = useState(false);
   const [locked, setLocked] = useState(false);
-
-  // 🔍 ШАГ 6 — ПРОВЕРКА: является ли пользователь создателем вызова
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -37,7 +35,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
 
       if (!user) {
         setIsCreator(false);
-        console.log('[PROFILE] is creator: false (no user)');
         return;
       }
 
@@ -52,8 +49,8 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
 
   const onToggleAdmin = () => {
     if (locked) return;
+    if (!isCreator) return;
 
-    // ⚠️ ПОКА НЕ БЛОКИРУЕМ — только проверяем факт
     setAdminMode(true);
     setLocked(true);
 
@@ -63,32 +60,33 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
     }, 250);
   };
 
+  const disabled = isCreator === false;
+
   return (
     <SafeArea>
       <Container>
-        {/* 🔝 HEADER */}
         <HeaderRow>
           <Title>Профиль</Title>
 
           <Toggle
             $active={adminMode}
             onClick={onToggleAdmin}
+            style={{
+              opacity: disabled ? 0.4 : 1,
+              pointerEvents: disabled ? 'none' : 'auto',
+            }}
           >
             <ToggleKnob $active={adminMode} />
           </Toggle>
         </HeaderRow>
 
         <Text>
-          Включите админ-режим для модерации вызовов
-        </Text>
-
-        {/* 🧪 ВРЕМЕННО: МОЖНО УБРАТЬ ПОСЛЕ ПРОВЕРКИ */}
-        <Text style={{ marginTop: 12, fontSize: 12, opacity: 0.6 }}>
-          isCreator: {String(isCreator)}
+          {disabled
+            ? 'Админ-режим доступен только создателю вызова'
+            : 'Включите админ-режим для модерации вызовов'}
         </Text>
       </Container>
 
-      {/* ⬇️ НИЖНЯЯ НАВИГАЦИЯ */}
       <BottomNav>
         <NavItem
           $active={screen === 'home'}
