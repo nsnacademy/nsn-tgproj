@@ -118,16 +118,25 @@ export const EmptyText = styled.div`
 /* ======================
    CARD
 ====================== */
-export const Card = styled.div`
-  background: rgba(255, 255, 255, 0.06);
+export const Card = styled.div<{ $focused?: boolean }>`
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 22px;
   padding: 18px 20px;
 
-  opacity: 1;
-  transform: none;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-`;
+  transform-origin: center;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.28s ease,
+    box-shadow 0.28s ease;
 
+  transform: ${({ $focused }) =>
+    $focused ? 'scale(1.06)' : 'scale(0.92)'};
+
+  opacity: ${({ $focused }) => ($focused ? 1 : 0.45)};
+
+  box-shadow: ${({ $focused }) =>
+    $focused ? '0 24px 60px rgba(0,0,0,0.65)' : 'none'};
+`;
 
 export const CardTitleRow = styled.div`
   display: flex;
@@ -159,9 +168,6 @@ export const CardValue = styled.div`
 /* ======================
    PROGRESS
 ====================== */
-/* ======================
-   PROGRESS
-====================== */
 export const ProgressWrapper = styled.div`
   margin-top: 14px;
 `;
@@ -183,33 +189,6 @@ export const ProgressText = styled.div`
   font-size: 13px;
   opacity: 0.65;
 `;
-
-/* ===== DOTS PROGRESS (for days) ===== */
-
-export const DotsProgress = styled.div`
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-`;
-
-export const DayDot = styled.div<{ $done?: boolean }>`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-
-  background: ${({ $done }) =>
-    $done ? '#fff' : 'rgba(255,255,255,0.25)'};
-
-  transition: background 0.2s ease;
-`;
-
-export const DotsLabel = styled.div`
-  margin-top: 6px;
-  font-size: 13px;
-  opacity: 0.65;
-`;
-
 
 /* ======================
    BUTTON
