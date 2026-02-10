@@ -41,6 +41,9 @@ import {
   DisabledButton,
   LoadingState,
   StatusBadge,
+  SuccessMessage,
+  TodayDate,
+  DateLabel,
 } from './styles';
 
 type Props = {
@@ -243,25 +246,12 @@ export default function ChallengeReport({
       <Content>
         {/* Статус дня */}
         <ReportCard>
-          {/* Используем обычные div вместо отсутствующих компонентов */}
-          <div style={{ 
-            marginBottom: '16px', 
-            padding: '12px 16px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '12px'
-          }}>
-            <div style={{ 
-              fontSize: '12px', 
-              fontWeight: '500', 
-              opacity: '0.7',
-              marginBottom: '4px'
-            }}>
-              Дата отчёта
-            </div>
+          <TodayDate>
+            <DateLabel>Дата отчёта</DateLabel>
             <div style={{ fontSize: '16px', fontWeight: '600', opacity: '0.95' }}>
               {formattedDate}
             </div>
-          </div>
+          </TodayDate>
           
           {todayStatus !== 'none' && (
             <Section style={{ marginTop: '16px' }}>
@@ -286,17 +276,9 @@ export default function ChallengeReport({
               </StatusBadge>
               
               {submitted && (
-                <div style={{
-                  marginTop: '12px',
-                  padding: '12px 16px',
-                  background: 'rgba(46, 204, 113, 0.1)',
-                  border: '1px solid rgba(46, 204, 113, 0.2)',
-                  borderRadius: '8px',
-                  color: '#2ecc71',
-                  fontSize: '14px'
-                }}>
+                <SuccessMessage>
                   ✅ Отчёт успешно отправлен! Возвращаемся назад...
-                </div>
+                </SuccessMessage>
               )}
             </Section>
           )}
@@ -325,13 +307,12 @@ export default function ChallengeReport({
                     {metricName && <MetricLabel> ({metricName})</MetricLabel>}
                   </InputLabel>
                   <InputWrapper>
-                    {/* Убираем $hasValue пропс, если он не определен в стилях */}
                     <Input
                       type="number"
                       value={value}
                       onChange={(e) => setValue(e.target.value)}
                       placeholder="0"
-                      // Убрали: $hasValue={value.length > 0}
+                      $hasValue={value.length > 0}
                     />
                     {metricName && (
                       <div style={{ 
@@ -462,11 +443,10 @@ export default function ChallengeReport({
 
       <Footer>
         {todayStatus === 'none' ? (
-          // Убираем $variant пропс, если он не определен в стилях
           <PrimaryButton
             disabled={!canSubmit || loading}
             onClick={submit}
-            // Убрали: $variant={config.report_mode}
+            $variant={config.report_mode}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {loading ? (
