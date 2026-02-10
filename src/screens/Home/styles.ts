@@ -159,6 +159,9 @@ export const CardValue = styled.div`
 /* ======================
    PROGRESS
 ====================== */
+/* ======================
+   PROGRESS
+====================== */
 export const ProgressWrapper = styled.div`
   margin-top: 14px;
 `;
@@ -180,6 +183,33 @@ export const ProgressText = styled.div`
   font-size: 13px;
   opacity: 0.65;
 `;
+
+/* ===== DOTS PROGRESS (for days) ===== */
+
+export const DotsProgress = styled.div`
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+`;
+
+export const DayDot = styled.div<{ $done?: boolean }>`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+
+  background: ${({ $done }) =>
+    $done ? '#fff' : 'rgba(255,255,255,0.25)'};
+
+  transition: background 0.2s ease;
+`;
+
+export const DotsLabel = styled.div`
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.65;
+`;
+
 
 /* ======================
    BUTTON
