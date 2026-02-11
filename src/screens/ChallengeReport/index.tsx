@@ -200,10 +200,12 @@ if (files.length > 0) {
   const filePath = `reports/${challengeId}/${participantId}/${reportDate}/${file.file.name}`;
 
   const { error: uploadError } = await supabase.storage
-    .from('report-media')
-    .upload(filePath, file.file, {
-      upsert: true,
-    });
+  .from('report-media')
+  .upload(filePath, file.file, {
+    upsert: true,
+    contentType: file.file.type, // 🔥 ВАЖНО
+  });
+
 
   if (uploadError) {
     alert('Ошибка загрузки файла: ' + uploadError.message);
