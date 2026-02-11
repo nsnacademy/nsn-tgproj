@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 export const SafeArea = styled.div`
   min-height: 100vh;
-  padding: 20px;
+  padding: 100px 20px;
   max-width: 420px;
   margin: 0 auto;
   background: #000;
