@@ -65,6 +65,8 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [dayIndex, setDayIndex] = useState(0);
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
+
 
   // 👉 состояние для отклонения
   const [rejectingReportId, setRejectingReportId] =
@@ -119,10 +121,37 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       .eq('challenge_id', challengeId)
       .eq('report_date', reportDate)
       .returns<Report[]>()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
   console.log('[ADMIN] reports raw', JSON.stringify(data, null, 2));
   setReports(data ?? []);
+
+  if (!data) return;
+
+  const urls: Record<string, string> = {};
+
+  for (const report of data) {
+    if (!report.proof_media_urls) continue;
+
+    for (const path of report.proof_media_urls) {
+      const { data: signed, error } = await supabase.storage
+  .from('report-media')
+  .createSignedUrl(path, 60 * 60);
+
+if (error) {
+  console.error('[SIGNED URL ERROR]', error);
+  continue;
+}
+
+
+      if (signed?.signedUrl) {
+        urls[path] = signed.signedUrl;
+      }
+    }
+  }
+
+  setMediaUrls(urls);
 });
+
 
       
 
@@ -263,7 +292,6 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       : `${r.value ?? 0} ${challenge.metric_name ?? ''}`}
   </Value>
 
-  {/* ✅ МЕДИА ДОКАЗАТЕЛЬСТВА */}
   {r.proof_media_urls && r.proof_media_urls.length > 0 && (
   <>
     <Label>Медиа доказательства</Label>
@@ -277,11 +305,8 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       }}
     >
       {r.proof_media_urls.map((path, i) => {
-        const { data } = supabase.storage
-          .from('report-media')
-          .getPublicUrl(path);
-
-        const url = data.publicUrl;
+        const url = mediaUrls[path];
+        if (!url) return null;
 
         const isVideo =
           path.toLowerCase().endsWith('.mp4') ||
@@ -315,6 +340,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
     </div>
   </>
 )}
+
 
 
 
