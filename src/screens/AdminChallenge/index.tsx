@@ -6,6 +6,7 @@ import {
   Header,
   BackButton,
   Title,
+  Meta,
   DaySwitcher,
   NavButton,
   DayInfo,
@@ -16,11 +17,14 @@ import {
   ReportHeader,
   UserBlock,
   Avatar,
+  UserText,
   Username,
+  SubmittedAt,
   StatusBadge,
   ReportBody,
   Label,
   Value,
+  Reason,
   Actions,
   ApproveButton,
   RejectButton,
@@ -49,7 +53,6 @@ type Report = {
   proof_text: string | null;
   rejection_reason: string | null;
   participant: {
-    id: string;
     user: {
       username: string | null;
     };
@@ -63,42 +66,25 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
   /* === LOAD CHALLENGE === */
   useEffect(() => {
-    async function loadChallenge() {
-      const { data, error } = await supabase
-        .from('challenges')
-        .select(`
-          title,
-          report_mode,
-          metric_name,
-          start_at,
-          duration_days
-        `)
-        .eq('id', challengeId)
-        .single();
-
-      if (error) {
-        console.error('[ADMIN] load challenge error', error);
-        return;
-      }
-
-      setChallenge(data);
-    }
-
-    loadChallenge();
+    supabase
+      .from('challenges')
+      .select('title, report_mode, metric_name, start_at, duration_days')
+      .eq('id', challengeId)
+      .single()
+      .then(({ data }) => {
+        if (data) setChallenge(data);
+      });
   }, [challengeId]);
 
-  /* === LOAD REPORTS FOR DAY === */
+  /* === LOAD REPORTS === */
   useEffect(() => {
-  if (!challenge) return;
+    if (!challenge) return;
 
-  const currentChallenge = challenge; // 🔥 ФИКС ТИПОВ
-
-  async function loadReports() {
-    const date = new Date(currentChallenge.start_at);
+    const date = new Date(challenge.start_at);
     date.setDate(date.getDate() + dayIndex);
     const reportDate = date.toISOString().slice(0, 10);
 
-    const { data, error } = await supabase
+    supabase
       .from('reports')
       .select(`
         id,
@@ -109,59 +95,44 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
         proof_text,
         rejection_reason,
         participant:participants (
-          id,
           user:users ( username )
         )
       `)
       .eq('challenge_id', challengeId)
       .eq('report_date', reportDate)
-      .returns<Report[]>();
-
-    if (error) {
-      console.error('[ADMIN] load reports error', error);
-      setReports([]);
-      return;
-    }
-
-    setReports(data ?? []);
-  }
-
-  loadReports();
-}, [challenge, dayIndex, challengeId]);
-
+      .returns<Report[]>()
+      .then(({ data }) => setReports(data ?? []));
+  }, [challenge, dayIndex, challengeId]);
 
   if (!challenge) return null;
 
   const currentDate = new Date(challenge.start_at);
   currentDate.setDate(currentDate.getDate() + dayIndex);
 
-  /* === ACTIONS === */
-  const updateReportStatus = async (
+  const updateStatus = async (
     reportId: string,
     status: 'approved' | 'rejected'
   ) => {
-    const { error } = await supabase
-      .from('reports')
-      .update({ status })
-      .eq('id', reportId);
-
-    if (error) {
-      console.error('[ADMIN] update report error', error);
-      return;
-    }
-
-    setReports(prev =>
-      prev.map(r =>
-        r.id === reportId ? { ...r, status } : r
+    await supabase.from('reports').update({ status }).eq('id', reportId);
+    setReports(r =>
+      r.map(item =>
+        item.id === reportId ? { ...item, status } : item
       )
     );
   };
 
   return (
     <SafeArea>
+      {/* HEADER */}
       <Header>
         <BackButton onClick={onBack}>←</BackButton>
-        <Title>{challenge.title}</Title>
+        <div>
+          <Title>{challenge.title}</Title>
+          <Meta>
+            <span>Ежедневный вызов</span>
+            <span>{challenge.duration_days} дней</span>
+          </Meta>
+        </div>
       </Header>
 
       {/* DAY SWITCHER */}
@@ -195,62 +166,50 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
         {reports.length === 0 ? (
           <EmptyState>Отчётов за этот день нет</EmptyState>
         ) : (
-          reports.map(report => (
-            <ReportCard key={report.id}>
+          reports.map(r => (
+            <ReportCard key={r.id} $status={r.status}>
               <ReportHeader>
                 <UserBlock>
                   <Avatar />
-                  <Username>
-                    @{report.participant.user.username ?? 'user'}
-                  </Username>
+                  <UserText>
+                    <Username>
+                      @{r.participant.user.username ?? 'user'}
+                    </Username>
+                    <SubmittedAt>
+                      Отправлено: {r.report_date}
+                    </SubmittedAt>
+                  </UserText>
                 </UserBlock>
 
-                <StatusBadge $status={report.status}>
-                  {report.status}
+                <StatusBadge $status={r.status}>
+                  {r.status.toUpperCase()}
                 </StatusBadge>
               </ReportHeader>
 
               <ReportBody>
-                <Label>Отчёт</Label>
-
+                <Label>Отчёт пользователя</Label>
                 <Value>
                   {challenge.report_mode === 'simple'
-                    ? report.is_done
-                      ? 'Выполнено'
+                    ? r.is_done
+                      ? 'Отметил выполнение дня'
                       : '—'
-                    : `${report.value ?? 0} ${challenge.metric_name ?? ''}`}
+                    : `${r.value ?? 0} ${challenge.metric_name ?? ''}`}
                 </Value>
 
-                {report.proof_text && (
+                {r.rejection_reason && (
                   <>
-                    <Label>Комментарий</Label>
-                    <Value>{report.proof_text}</Value>
-                  </>
-                )}
-
-                {report.rejection_reason && (
-                  <>
-                    <Label>Причина отказа</Label>
-                    <Value>{report.rejection_reason}</Value>
+                    <Label>Причина отклонения</Label>
+                    <Reason>{r.rejection_reason}</Reason>
                   </>
                 )}
               </ReportBody>
 
-              {report.status === 'pending' && (
+              {r.status === 'pending' && (
                 <Actions>
-                  <ApproveButton
-                    onClick={() =>
-                      updateReportStatus(report.id, 'approved')
-                    }
-                  >
+                  <ApproveButton onClick={() => updateStatus(r.id, 'approved')}>
                     Засчитать
                   </ApproveButton>
-
-                  <RejectButton
-                    onClick={() =>
-                      updateReportStatus(report.id, 'rejected')
-                    }
-                  >
+                  <RejectButton onClick={() => updateStatus(r.id, 'rejected')}>
                     Отклонить
                   </RejectButton>
                 </Actions>
