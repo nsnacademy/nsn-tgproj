@@ -158,6 +158,7 @@ export const Label = styled.div`
 
 export const Value = styled.div`
   font-size: 14px;
+  margin-bottom: 12px;
 `;
 
 export const Reason = styled.div`
