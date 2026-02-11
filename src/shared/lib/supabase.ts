@@ -61,3 +61,26 @@ export async function checkIsCreator(userId: string): Promise<boolean> {
 
   return (data?.length ?? 0) > 0;
 }
+
+
+async function uploadFiles(reportId: string) {
+  const uploaded: { type: 'image' | 'video'; url: string }[] = [];
+
+  for (const file of files) {
+    const ext = file.name.split('.').pop();
+    const path = `reports/${reportId}/${crypto.randomUUID()}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from('reports')
+      .upload(path, file);
+
+    if (error) throw error;
+
+    uploaded.push({
+      type: file.type.startsWith('video') ? 'video' : 'image',
+      url: path,
+    });
+  }
+
+  return uploaded;
+}

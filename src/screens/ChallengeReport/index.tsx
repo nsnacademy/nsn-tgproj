@@ -192,6 +192,29 @@ const [todayReportId, setTodayReportId] = useState<string | null>(null);
 
   setLoading(true);
 
+let uploadedMedia: string[] = [];
+
+if (files.length > 0) {
+  const file = files[0]; // ⬅️ ПОКА ТОЛЬКО ОДИН ФАЙЛ
+
+  const filePath = `reports/${challengeId}/${participantId}/${reportDate}/${file.file.name}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('report-media')
+    .upload(filePath, file.file, {
+      upsert: true,
+    });
+
+  if (uploadError) {
+    alert('Ошибка загрузки файла: ' + uploadError.message);
+    setLoading(false);
+    return;
+  }
+
+  uploadedMedia.push(filePath);
+}
+
+
   // ⚠️ ПОКА БЕЗ STORAGE — НЕ ПЫТАЕМСЯ ЗАГРУЖАТЬ ФАЙЛЫ
   // просто сохраняем имена как заглушку (или null)
   
@@ -222,11 +245,10 @@ const [todayReportId, setTodayReportId] = useState<string | null>(null);
 
   // ✅ ФОТО / ВИДЕО
   proof_media_urls:
-    config.has_proof &&
-    config.proof_types?.includes('Фото/видео') &&
-    files.length > 0
-      ? files.map(f => f.file.name) // позже заменим на upload в storage
-      : null,
+  uploadedMedia.length > 0
+    ? uploadedMedia
+    : null,
+
 };
 
 
