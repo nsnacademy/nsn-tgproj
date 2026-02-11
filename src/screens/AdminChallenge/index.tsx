@@ -31,6 +31,8 @@ import {
   RejectButton,
   EmptyState,
   CommentBox,
+  ScrollContent,
+  FixedTop,
 } from './styles';
 
 type Props = {
@@ -219,8 +221,9 @@ if (error) {
   };
 
   return (
-    <SafeArea>
-      {/* HEADER */}
+  <SafeArea>
+    {/* FIXED HEADER + DAY SWITCHER */}
+    <FixedTop>
       <Header>
         <BackButton onClick={onBack}>←</BackButton>
         <div>
@@ -232,7 +235,6 @@ if (error) {
         </div>
       </Header>
 
-      {/* DAY SWITCHER */}
       <DaySwitcher>
         <NavButton
           disabled={dayIndex === 0}
@@ -257,8 +259,10 @@ if (error) {
           →
         </NavButton>
       </DaySwitcher>
+    </FixedTop>
 
-      {/* CONTENT */}
+    {/* SCROLLABLE CONTENT */}
+    <ScrollContent>
       <Content>
         {reports.length === 0 ? (
           <EmptyState>Отчётов за этот день нет</EmptyState>
@@ -284,90 +288,83 @@ if (error) {
               </ReportHeader>
 
               <ReportBody>
-  <Label>Отчёт пользователя</Label>
+                <Label>Отчёт пользователя</Label>
 
-<Value>
-  {challenge.report_mode === 'simple'
-    ? r.is_done
-      ? 'Отметил выполнение дня'
-      : '—'
-    : `${r.value ?? 0} ${challenge.metric_name ?? ''}`}
-</Value>
+                <Value>
+                  {challenge.report_mode === 'simple'
+                    ? r.is_done
+                      ? 'Отметил выполнение дня'
+                      : '—'
+                    : `${r.value ?? 0} ${challenge.metric_name ?? ''}`}
+                </Value>
 
-{/* 📝 КОММЕНТАРИЙ ПОЛЬЗОВАТЕЛЯ */}
-{r.proof_text && r.proof_text.trim() && (
-  <>
-    <Label>Комментарий</Label>
-    <CommentBox>
-      {r.proof_text}
-    </CommentBox>
-  </>
-)}
+                {/* 📝 КОММЕНТАРИЙ */}
+                {r.proof_text && r.proof_text.trim() && (
+                  <>
+                    <Label>Комментарий</Label>
+                    <CommentBox>{r.proof_text}</CommentBox>
+                  </>
+                )}
 
-{/* 📸 МЕДИА ДОКАЗАТЕЛЬСТВА */}
-{r.proof_media_urls && r.proof_media_urls.length > 0 && (
-  <>
-    <Label>Медиа доказательства</Label>
+                {/* 📸 МЕДИА */}
+                {r.proof_media_urls && r.proof_media_urls.length > 0 && (
+                  <>
+                    <Label>Медиа доказательства</Label>
 
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-        gap: 12,
-        marginTop: 10,
-      }}
-    >
-      {r.proof_media_urls.map((path, i) => {
-        const url = mediaUrls[path];
-        if (!url) return null;
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns:
+                          'repeat(auto-fill, minmax(120px, 1fr))',
+                        gap: 12,
+                        marginTop: 10,
+                      }}
+                    >
+                      {r.proof_media_urls.map((path, i) => {
+                        const url = mediaUrls[path];
+                        if (!url) return null;
 
-        const isVideo =
-          path.toLowerCase().endsWith('.mp4') ||
-          path.toLowerCase().endsWith('.mov') ||
-          path.toLowerCase().endsWith('.webm');
+                        const isVideo =
+                          path.toLowerCase().endsWith('.mp4') ||
+                          path.toLowerCase().endsWith('.mov') ||
+                          path.toLowerCase().endsWith('.webm');
 
-        return isVideo ? (
-          <video
-            key={i}
-            src={url}
-            controls
-            style={{
-              width: '100%',
-              borderRadius: 12,
-              background: '#000',
-            }}
-          />
-        ) : (
-          <img
-            key={i}
-            src={url}
-            alt="proof"
-            style={{
-              width: '100%',
-              borderRadius: 12,
-              objectFit: 'cover',
-            }}
-          />
-        );
-      })}
-    </div>
-  </>
-)}
+                        return isVideo ? (
+                          <video
+                            key={i}
+                            src={url}
+                            controls
+                            style={{
+                              width: '100%',
+                              borderRadius: 12,
+                              background: '#000',
+                            }}
+                          />
+                        ) : (
+                          <img
+                            key={i}
+                            src={url}
+                            alt="proof"
+                            style={{
+                              width: '100%',
+                              borderRadius: 12,
+                              objectFit: 'cover',
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
 
-
-
-
-      
-
-  {/* ❌ ПРИЧИНА ОТКЛОНЕНИЯ */}
-  {r.rejection_reason && (
-    <>
-      <Label>Причина отклонения</Label>
-      <Reason>{r.rejection_reason}</Reason>
-    </>
-  )}
-</ReportBody>
-
+                {/* ❌ ПРИЧИНА ОТКЛОНЕНИЯ */}
+                {r.rejection_reason && (
+                  <>
+                    <Label>Причина отклонения</Label>
+                    <Reason>{r.rejection_reason}</Reason>
+                  </>
+                )}
+              </ReportBody>
 
               {/* ACTIONS */}
               {r.status === 'pending' && (
@@ -375,9 +372,7 @@ if (error) {
                   {rejectingReportId !== r.id ? (
                     <Actions>
                       <ApproveButton
-                        onClick={() =>
-                          updateStatus(r.id, 'approved')
-                        }
+                        onClick={() => updateStatus(r.id, 'approved')}
                       >
                         Засчитать
                       </ApproveButton>
@@ -445,6 +440,8 @@ if (error) {
           ))
         )}
       </Content>
-    </SafeArea>
-  );
+    </ScrollContent>
+  </SafeArea>
+);
+
 }

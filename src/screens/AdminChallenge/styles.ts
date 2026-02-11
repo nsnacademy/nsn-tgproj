@@ -210,3 +210,22 @@ export const CommentBox = styled.div`
   white-space: pre-wrap;
 `;
 
+
+export const FixedTop = styled.div`
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 420px;
+  background: #000;
+  z-index: 10;
+  padding: 20px 20px 12px;
+`;
+
+export const ScrollContent = styled.div`
+  margin-top: 160px; /* высота header + day switcher */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
