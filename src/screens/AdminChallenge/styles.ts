@@ -213,15 +213,24 @@ export const CommentBox = styled.div`
 
 export const FixedTop = styled.div`
   position: fixed;
-  top: 100px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   max-width: 420px;
+
   background: #000;
-  z-index: 10;
-  padding: 20px 20px 12px;
+  z-index: 20;
+
+  /* закрывает всё что под ним */
+  padding-top: 100px;
+  padding-bottom: 12px;
+  padding-left: 20px;
+  padding-right: 20px;
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
 `;
+
 
 export const ScrollContent = styled.div`
   margin-top: 160px; /* высота header + day switcher */
