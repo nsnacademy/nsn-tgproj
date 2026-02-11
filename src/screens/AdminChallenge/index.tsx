@@ -60,6 +60,7 @@ type Report = {
   };
 };
 
+
 export default function AdminChallenge({ challengeId, onBack }: Props) {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
@@ -119,9 +120,10 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       .eq('report_date', reportDate)
       .returns<Report[]>()
       .then(({ data, error }) => {
-        console.log('[ADMIN] reports response', { data, error });
-        setReports(data ?? []);
-      });
+  console.log('[ADMIN] reports raw', JSON.stringify(data, null, 2));
+  setReports(data ?? []);
+});
+
   }, [challenge, dayIndex, challengeId]);
 
   if (!challenge) return null;
