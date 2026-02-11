@@ -147,6 +147,7 @@ export const StatusBadge = styled.div<{ $status: string }>`
 /* BODY */
 export const ReportBody = styled.div`
   margin-top: 14px;
+  margin-bottom: 12px;
 `;
 
 export const Label = styled.div`
@@ -198,6 +199,7 @@ export const EmptyState = styled.div`
 
 export const CommentBox = styled.div`
   margin-top: 8px;
+  margin-bottom: 16px;
   padding: 10px 12px;
   background: rgba(255,255,255,0.06);
   border-radius: 10px;
