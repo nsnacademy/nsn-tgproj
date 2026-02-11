@@ -187,10 +187,19 @@ export default function ChallengeProgress({
 
 
 
-    const todayDate = new Date().toISOString().slice(0, 10);
-    const todayReport = reports?.find(
-  r => r.report_date === todayDate
+    const currentDayDate = new Date(challengeData.start_at);
+currentDayDate.setDate(
+  currentDayDate.getDate() + (currentDay - 1)
 );
+
+const currentReportDate = currentDayDate
+  .toISOString()
+  .slice(0, 10);
+
+const todayReport = reports?.find(
+  r => r.report_date === currentReportDate
+);
+
 
 setTodayReportId(todayReport?.id ?? null);
 
