@@ -64,6 +64,11 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   const [reports, setReports] = useState<Report[]>([]);
   const [dayIndex, setDayIndex] = useState(0);
 
+  // 👉 состояние для отклонения
+  const [rejectingReportId, setRejectingReportId] =
+    useState<string | null>(null);
+  const [rejectionText, setRejectionText] = useState('');
+
   /* === LOAD CHALLENGE === */
   useEffect(() => {
     console.log('[ADMIN] load challenge', challengeId);
@@ -121,55 +126,58 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   const currentDate = new Date(challenge.start_at);
   currentDate.setDate(currentDate.getDate() + dayIndex);
 
-  /* === UPDATE STATUS (DEBUG) === */
+  /* === UPDATE STATUS === */
   const updateStatus = async (
-  reportId: string,
-  status: 'approved' | 'rejected',
-  rejectionReason?: string
-) => {
-  console.log('[ADMIN] updateStatus CLICK', {
-    reportId,
-    status,
-    rejectionReason,
-  });
+    reportId: string,
+    status: 'approved' | 'rejected',
+    rejectionReason?: string
+  ) => {
+    console.log('[ADMIN] updateStatus CLICK', {
+      reportId,
+      status,
+      rejectionReason,
+    });
 
-  const payload =
-    status === 'rejected'
-      ? {
-          status,
-          rejection_reason:
-            rejectionReason?.trim() || 'Отклонено администратором',
-        }
-      : {
-          status,
-          rejection_reason: null,
-        };
+    const payload =
+      status === 'rejected'
+        ? {
+            status,
+            rejection_reason: rejectionReason?.trim(),
+          }
+        : {
+            status,
+            rejection_reason: null,
+          };
 
-  const { data, error } = await supabase
-    .from('reports')
-    .update(payload)
-    .eq('id', reportId)
-    .select();
+    const { data, error } = await supabase
+      .from('reports')
+      .update(payload)
+      .eq('id', reportId)
+      .select();
 
-  console.log('[ADMIN] updateStatus RESULT', {
-    data,
-    error,
-  });
+    console.log('[ADMIN] updateStatus RESULT', { data, error });
 
-  if (error) {
-    console.error('[ADMIN] updateStatus ERROR', error);
-    return;
-  }
+    if (error) {
+      console.error('[ADMIN] updateStatus ERROR', error);
+      return;
+    }
 
-  setReports(prev =>
-    prev.map(r =>
-      r.id === reportId
-        ? { ...r, status, rejection_reason: payload.rejection_reason ?? null }
-        : r
-    )
-  );
-};
+    setReports(prev =>
+      prev.map(r =>
+        r.id === reportId
+          ? {
+              ...r,
+              status,
+              rejection_reason: payload.rejection_reason ?? null,
+            }
+          : r
+      )
+    );
 
+    // закрываем режим отклонения
+    setRejectingReportId(null);
+    setRejectionText('');
+  };
 
   return (
     <SafeArea>
@@ -189,10 +197,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       <DaySwitcher>
         <NavButton
           disabled={dayIndex === 0}
-          onClick={() => {
-            console.log('[ADMIN] dayIndex -1');
-            setDayIndex(d => d - 1);
-          }}
+          onClick={() => setDayIndex(d => d - 1)}
         >
           ←
         </NavButton>
@@ -208,10 +213,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
         <NavButton
           disabled={dayIndex + 1 >= challenge.duration_days}
-          onClick={() => {
-            console.log('[ADMIN] dayIndex +1');
-            setDayIndex(d => d + 1);
-          }}
+          onClick={() => setDayIndex(d => d + 1)}
         >
           →
         </NavButton>
@@ -260,27 +262,77 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
                 )}
               </ReportBody>
 
+              {/* ACTIONS */}
               {r.status === 'pending' && (
-                <Actions>
-                  <ApproveButton
-                    onClick={() => updateStatus(r.id, 'approved')}
-                  >
-                    Засчитать
-                  </ApproveButton>
+                <>
+                  {rejectingReportId !== r.id ? (
+                    <Actions>
+                      <ApproveButton
+                        onClick={() =>
+                          updateStatus(r.id, 'approved')
+                        }
+                      >
+                        Засчитать
+                      </ApproveButton>
 
-                  <RejectButton
-  onClick={() =>
-    updateStatus(
-      r.id,
-      'rejected',
-      'Недостаточно доказательств'
-    )
-  }
->
-  Отклонить
-</RejectButton>
+                      <RejectButton
+                        onClick={() => {
+                          setRejectingReportId(r.id);
+                          setRejectionText('');
+                        }}
+                      >
+                        Отклонить
+                      </RejectButton>
+                    </Actions>
+                  ) : (
+                    <div style={{ marginTop: 12 }}>
+                      <Label>Причина отклонения</Label>
 
-                </Actions>
+                      <textarea
+                        value={rejectionText}
+                        onChange={e =>
+                          setRejectionText(e.target.value)
+                        }
+                        placeholder="Опишите причину отклонения"
+                        style={{
+                          width: '100%',
+                          minHeight: 80,
+                          padding: 12,
+                          borderRadius: 12,
+                          background: '#111',
+                          color: '#fff',
+                          border:
+                            '1px solid rgba(255,255,255,0.15)',
+                          resize: 'none',
+                        }}
+                      />
+
+                      <Actions style={{ marginTop: 10 }}>
+                        <ApproveButton
+                          disabled={!rejectionText.trim()}
+                          onClick={() =>
+                            updateStatus(
+                              r.id,
+                              'rejected',
+                              rejectionText
+                            )
+                          }
+                        >
+                          Подтвердить
+                        </ApproveButton>
+
+                        <RejectButton
+                          onClick={() => {
+                            setRejectingReportId(null);
+                            setRejectionText('');
+                          }}
+                        >
+                          Отмена
+                        </RejectButton>
+                      </Actions>
+                    </div>
+                  )}
+                </>
               )}
             </ReportCard>
           ))
