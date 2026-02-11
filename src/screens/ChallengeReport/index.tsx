@@ -191,21 +191,24 @@ const [todayReportId, setTodayReportId] = useState<string | null>(null);
   }
 
   setLoading(true);
-
 let uploadedMedia: string[] = [];
 
 if (files.length > 0) {
-  const file = files[0]; // ⬅️ ПОКА ТОЛЬКО ОДИН ФАЙЛ
+  const file = files[0]; // ⬅️ пока один файл
 
-  const filePath = `reports/${challengeId}/${participantId}/${reportDate}/${file.file.name}`;
+  // ✅ безопасное имя файла
+  const ext = file.file.name.split('.').pop()?.toLowerCase() || 'bin';
+  const safeFileName = `${Date.now()}.${ext}`;
+
+  // ✅ безопасный путь (ТОЛЬКО ASCII)
+  const filePath = `reports/${challengeId}/${participantId}/${reportDate}/${safeFileName}`;
 
   const { error: uploadError } = await supabase.storage
-  .from('report-media')
-  .upload(filePath, file.file, {
-    upsert: true,
-    contentType: file.file.type, // 🔥 ВАЖНО
-  });
-
+    .from('report-media')
+    .upload(filePath, file.file, {
+      upsert: true,
+      contentType: file.file.type, // важно для preview
+    });
 
   if (uploadError) {
     alert('Ошибка загрузки файла: ' + uploadError.message);
@@ -215,6 +218,7 @@ if (files.length > 0) {
 
   uploadedMedia.push(filePath);
 }
+
 
 
   // ⚠️ ПОКА БЕЗ STORAGE — НЕ ПЫТАЕМСЯ ЗАГРУЖАТЬ ФАЙЛЫ
