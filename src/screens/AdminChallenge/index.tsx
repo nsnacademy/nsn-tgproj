@@ -119,7 +119,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       .eq('challenge_id', challengeId)
       .eq('report_date', reportDate)
       .returns<Report[]>()
-      .then(({ data, error }) => {
+      .then(({ data }) => {
   console.log('[ADMIN] reports raw', JSON.stringify(data, null, 2));
   setReports(data ?? []);
 });
