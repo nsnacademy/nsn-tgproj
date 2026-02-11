@@ -213,7 +213,7 @@ export const CommentBox = styled.div`
 
 export const FixedTop = styled.div`
   position: fixed;
-  top: 0;
+  top: 100px;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
