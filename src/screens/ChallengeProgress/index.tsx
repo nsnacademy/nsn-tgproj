@@ -73,12 +73,14 @@ type Props = {
   participantId: string;
   onBack: () => void;
   onOpenReport: (data: {
-  challengeId: string;
-  participantId: string;
-  reportId: string | null;
-}) => void;
-
+    challengeId: string;
+    participantId: string;
+    reportDate: string;
+    reportMode: 'simple' | 'result';
+    metricName: string | null;
+  }) => void;
 };
+
 
 
 type ChallengeData = {
@@ -129,6 +131,9 @@ export default function ChallengeProgress({
 
   const [todayStatus, setTodayStatus] =
   useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
+
+  const [reportDate, setReportDate] = useState<string>(''); // ✅ ДОБАВИТЬ
+
   const [todayReportId, setTodayReportId] =
   useState<string | null>(null);
 
@@ -228,6 +233,9 @@ reportDayDate.setDate(
 const reportDate = reportDayDate
   .toISOString()
   .slice(0, 10);
+
+  setReportDate(reportDate); // ✅ ВАЖНО
+
 
 const todayReport = reports?.find(
   r => r.report_date === reportDate
@@ -680,33 +688,51 @@ if (!todayReport) {
         {todayStatus === 'none' || todayStatus === 'rejected' ? (
 
           <PrimaryButton
+  $variant={challenge.report_mode}
   onClick={() =>
     onOpenReport({
   challengeId,
   participantId,
-  reportId: todayReportId, // 👈 ВАЖНО
+  reportDate,
+  reportMode: challenge.report_mode,
+  metricName: challenge.metric_name,
 })
 
-
   }
-  $variant={challenge.report_mode}
 >
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {challenge.report_mode === 'result' ? (
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="14" height="14" rx="2" />
-                  <line x1="8" y1="3" x2="8" y2="17" />
-                  <line x1="3" y1="8" x2="17" y2="8" />
-                </svg>
-              ) : (
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="10" cy="10" r="8" />
-                  <path d="M6 10l3 3 5-5" />
-                </svg>
-              )}
-              {getButtonText()}
-            </span>
-          </PrimaryButton>
+  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    {challenge.report_mode === 'result' ? (
+      <>
+        <svg
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <rect x="3" y="3" width="14" height="14" rx="2" />
+          <line x1="8" y1="3" x2="8" y2="17" />
+        </svg>
+        Добавить результат
+      </>
+    ) : (
+      <>
+        <svg
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <circle cx="10" cy="10" r="8" />
+          <path d="M6 10l2 2 4-4" />
+        </svg>
+        Отметить выполнение
+      </>
+    )}
+  </span>
+</PrimaryButton>
+
         ) : todayStatus === 'pending' ? (
           <DisabledButton>
             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

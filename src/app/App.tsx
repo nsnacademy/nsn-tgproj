@@ -39,6 +39,9 @@ function App() {
   const [selectedParticipantId, setSelectedParticipantId] =
     useState<string | null>(null);
 
+  const [reportDate, setReportDate] =
+    useState<string | null>(null);
+
   const [reportMode, setReportMode] =
     useState<'simple' | 'result'>('simple');
 
@@ -64,18 +67,26 @@ function App() {
       setSelectedParticipantId(participantId);
     }
 
+    // ⬅️ при выходе из отчёта — чистим дату
+    if (next !== 'challenge-report') {
+      setReportDate(null);
+    }
+
     setScreen(next);
   };
 
-  /* === ОТЧЁТ === */
+  /* === ОТКРЫТЬ ОТЧЁТ === */
   const openReport = (data: {
-    challengeId: string;
-    participantId: string;
-    reportMode?: 'simple' | 'result';
-    metricName?: string;
-  }) => {
+  challengeId: string;
+  participantId: string;
+  reportDate: string;
+  reportMode: 'simple' | 'result';
+  metricName: string | null;
+}) => {
+
     setSelectedChallengeId(data.challengeId);
     setSelectedParticipantId(data.participantId);
+    setReportDate(data.reportDate);
 
     if (data.reportMode) setReportMode(data.reportMode);
     if (data.metricName) setMetricName(data.metricName);
@@ -134,12 +145,15 @@ function App() {
           />
         )}
 
+      {/* ✅ ВАЖНО: reportDate ОБЯЗАТЕЛЕН */}
       {screen === 'challenge-report' &&
         selectedChallengeId &&
-        selectedParticipantId && (
+        selectedParticipantId &&
+        reportDate && (
           <ChallengeReport
             challengeId={selectedChallengeId}
             participantId={selectedParticipantId}
+            reportDate={reportDate}
             reportMode={reportMode}
             metricName={metricName}
             onBack={() =>

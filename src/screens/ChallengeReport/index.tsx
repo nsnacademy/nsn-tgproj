@@ -49,11 +49,15 @@ import {
 type Props = {
   challengeId: string;
   participantId: string;
-  
+
   reportMode: 'simple' | 'result';
   metricName?: string | null;
+
+  reportDate: string; // ✅ ВАЖНО
+
   onBack: () => void;
 };
+
 
 
 type TodayStatus = 'none' | 'pending' | 'approved' | 'rejected';
@@ -75,11 +79,12 @@ type FileWithPreview = {
 export default function ChallengeReport({
   challengeId,
   participantId,
- // ✅ ДОБАВИТЬ
   reportMode,
   metricName,
+  reportDate, // ✅
   onBack,
 }: Props) {
+
 
 
   const [config, setConfig] = useState<ChallengeConfig | null>(null);
@@ -95,14 +100,14 @@ const [todayReportId, setTodayReportId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const today = new Date();
-  const todayDate = today.toISOString().slice(0, 10);
-  const formattedDate = today.toLocaleDateString('ru-RU', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  
+  const formattedDate = new Date(reportDate).toLocaleDateString('ru-RU', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+});
+
 
   /* === LOAD CHALLENGE CONFIG === */
   useEffect(() => {
@@ -128,7 +133,8 @@ const [todayReportId, setTodayReportId] = useState<string | null>(null);
 
         .eq('challenge_id', challengeId)
         .eq('participant_id', participantId)
-        .eq('report_date', todayDate)
+        .eq('report_date', reportDate)
+
         .maybeSingle();
 
       if (!data) {
@@ -143,7 +149,8 @@ const [todayReportId, setTodayReportId] = useState<string | null>(null);
     }
 
     loadTodayReport();
-  }, [challengeId, participantId, todayDate]);
+  }, [challengeId, participantId, reportDate]);
+
 
   /* === FILE HANDLING === */
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,7 +199,8 @@ const [todayReportId, setTodayReportId] = useState<string | null>(null);
   const payload = {
   challenge_id: challengeId,
   participant_id: participantId,
-  report_date: todayDate,
+  report_date: reportDate,
+
   status: 'pending',
   report_type: config.report_mode,
 
@@ -312,6 +320,7 @@ if (error) {
           {todayStatus !== 'none' && (
             <Section style={{ marginTop: '16px' }}>
               <StatusBadge $status={todayStatus}>
+
   {todayStatus === 'pending' && (
     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
       <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
