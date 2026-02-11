@@ -5,6 +5,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+/* === TELEGRAM USER === */
 export async function saveTelegramUser() {
   const webApp = window.Telegram?.WebApp;
   const user = webApp?.initDataUnsafe?.user;
@@ -15,23 +16,20 @@ export async function saveTelegramUser() {
     .from('users')
     .upsert(
       {
-        telegram_id: user.id, // <-- ЧИСЛО
+        telegram_id: user.id,
         username: user.username ?? null,
       },
       { onConflict: 'telegram_id' }
     );
 
   if (error) {
-    console.error('Supabase error:', error);
+    console.error('[saveTelegramUser]', error);
   }
 }
 
 export async function getCurrentUser() {
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-
-  if (!tgUser) {
-    return null;
-  }
+  if (!tgUser) return null;
 
   const { data, error } = await supabase
     .from('users')
@@ -40,7 +38,7 @@ export async function getCurrentUser() {
     .single();
 
   if (error) {
-    console.error('[getCurrentUser] error', error);
+    console.error('[getCurrentUser]', error);
     return null;
   }
 
@@ -55,32 +53,9 @@ export async function checkIsCreator(userId: string): Promise<boolean> {
     .limit(1);
 
   if (error) {
-    console.error('[checkIsCreator] error', error);
+    console.error('[checkIsCreator]', error);
     return false;
   }
 
   return (data?.length ?? 0) > 0;
-}
-
-
-async function uploadFiles(reportId: string) {
-  const uploaded: { type: 'image' | 'video'; url: string }[] = [];
-
-  for (const file of files) {
-    const ext = file.name.split('.').pop();
-    const path = `reports/${reportId}/${crypto.randomUUID()}.${ext}`;
-
-    const { error } = await supabase.storage
-      .from('reports')
-      .upload(path, file);
-
-    if (error) throw error;
-
-    uploaded.push({
-      type: file.type.startsWith('video') ? 'video' : 'image',
-      url: path,
-    });
-  }
-
-  return uploaded;
 }
