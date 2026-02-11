@@ -292,6 +292,16 @@ if (error) {
       : `${r.value ?? 0} ${challenge.metric_name ?? ''}`}
   </Value>
 
+  {/* 📝 ТЕКСТ ОТЧЁТА */}
+  {r.proof_text && r.proof_text.trim() && (
+    <>
+      <Label>Комментарий</Label>
+      <Value style={{ opacity: 0.85 }}>
+        {r.proof_text}
+      </Value>
+    </>
+  )}
+
   {r.proof_media_urls && r.proof_media_urls.length > 0 && (
   <>
     <Label>Медиа доказательства</Label>
