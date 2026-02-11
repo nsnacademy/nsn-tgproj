@@ -124,6 +124,9 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   setReports(data ?? []);
 });
 
+      
+
+
   }, [challenge, dayIndex, challengeId]);
 
   if (!challenge) return null;
@@ -262,55 +265,60 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
   {/* ✅ МЕДИА ДОКАЗАТЕЛЬСТВА */}
   {r.proof_media_urls && r.proof_media_urls.length > 0 && (
-    <>
-      <Label>Медиа доказательства</Label>
+  <>
+    <Label>Медиа доказательства</Label>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-          gap: 12,
-          marginTop: 8,
-        }}
-      >
-        {r.proof_media_urls.map((path, i) => {
-          const { data } = supabase.storage
-            .from('report-media')
-            .getPublicUrl(path);
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+        gap: 12,
+        marginTop: 8,
+      }}
+    >
+      {r.proof_media_urls.map((path, i) => {
+        const { data } = supabase.storage
+          .from('report-media')
+          .getPublicUrl(path);
 
-          const url = data.publicUrl;
-          const isVideo =
-            path.endsWith('.mp4') ||
-            path.endsWith('.mov') ||
-            path.endsWith('.webm');
+        const url = data.publicUrl;
 
-          return isVideo ? (
-            <video
-              key={i}
-              src={url}
-              controls
-              style={{
-                width: '100%',
-                borderRadius: 10,
-                background: '#000',
-              }}
-            />
-          ) : (
-            <img
-              key={i}
-              src={url}
-              alt="proof"
-              style={{
-                width: '100%',
-                borderRadius: 10,
-                objectFit: 'cover',
-              }}
-            />
-          );
-        })}
-      </div>
-    </>
-  )}
+        const isVideo =
+          path.toLowerCase().endsWith('.mp4') ||
+          path.toLowerCase().endsWith('.mov') ||
+          path.toLowerCase().endsWith('.webm');
+
+        return isVideo ? (
+          <video
+            key={i}
+            src={url}
+            controls
+            style={{
+              width: '100%',
+              borderRadius: 10,
+              background: '#000',
+            }}
+          />
+        ) : (
+          <img
+            key={i}
+            src={url}
+            alt="proof"
+            style={{
+              width: '100%',
+              borderRadius: 10,
+              objectFit: 'cover',
+            }}
+          />
+        );
+      })}
+    </div>
+  </>
+)}
+
+
+
+      
 
   {/* ❌ ПРИЧИНА ОТКЛОНЕНИЯ */}
   {r.rejection_reason && (
