@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
+
 import {
   SafeArea,
   Header,
@@ -35,8 +36,6 @@ type Challenge = {
   title: string;
   report_mode: 'simple' | 'result';
   metric_name: string | null;
-  has_proof: boolean;
-  proof_types: string[] | null;
   start_at: string;
   duration_days: number;
 };
@@ -48,12 +47,11 @@ type Report = {
   value: number | null;
   is_done: boolean | null;
   proof_text: string | null;
-  proof_media_urls: string[] | null;
   rejection_reason: string | null;
   participant: {
     id: string;
     user: {
-      username: string;
+      username: string | null;
     };
   };
 };
@@ -65,33 +63,42 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
   /* === LOAD CHALLENGE === */
   useEffect(() => {
-    supabase
-      .from('challenges')
-      .select(`
-        title,
-        report_mode,
-        metric_name,
-        has_proof,
-        proof_types,
-        start_at,
-        duration_days
-      `)
-      .eq('id', challengeId)
-      .single()
-      .then(({ data }) => {
-        if (data) setChallenge(data);
-      });
+    async function loadChallenge() {
+      const { data, error } = await supabase
+        .from('challenges')
+        .select(`
+          title,
+          report_mode,
+          metric_name,
+          start_at,
+          duration_days
+        `)
+        .eq('id', challengeId)
+        .single();
+
+      if (error) {
+        console.error('[ADMIN] load challenge error', error);
+        return;
+      }
+
+      setChallenge(data);
+    }
+
+    loadChallenge();
   }, [challengeId]);
 
   /* === LOAD REPORTS FOR DAY === */
   useEffect(() => {
-    if (!challenge) return;
+  if (!challenge) return;
 
-    const date = new Date(challenge.start_at);
+  const currentChallenge = challenge; // 🔥 ФИКС ТИПОВ
+
+  async function loadReports() {
+    const date = new Date(currentChallenge.start_at);
     date.setDate(date.getDate() + dayIndex);
     const reportDate = date.toISOString().slice(0, 10);
 
-    supabase
+    const { data, error } = await supabase
       .from('reports')
       .select(`
         id,
@@ -100,7 +107,6 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
         value,
         is_done,
         proof_text,
-        proof_media_urls,
         rejection_reason,
         participant:participants (
           id,
@@ -109,12 +115,20 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       `)
       .eq('challenge_id', challengeId)
       .eq('report_date', reportDate)
-      .returns<Report[]>() // ✅ КЛЮЧЕВО
-      .then(({ data }) => {
-        setReports(data ?? []);
-      });
+      .returns<Report[]>();
 
-  }, [challenge, dayIndex, challengeId]);
+    if (error) {
+      console.error('[ADMIN] load reports error', error);
+      setReports([]);
+      return;
+    }
+
+    setReports(data ?? []);
+  }
+
+  loadReports();
+}, [challenge, dayIndex, challengeId]);
+
 
   if (!challenge) return null;
 
@@ -122,14 +136,19 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   currentDate.setDate(currentDate.getDate() + dayIndex);
 
   /* === ACTIONS === */
-  const updateReport = async (
+  const updateReportStatus = async (
     reportId: string,
     status: 'approved' | 'rejected'
   ) => {
-    await supabase
+    const { error } = await supabase
       .from('reports')
       .update({ status })
       .eq('id', reportId);
+
+    if (error) {
+      console.error('[ADMIN] update report error', error);
+      return;
+    }
 
     setReports(prev =>
       prev.map(r =>
@@ -145,6 +164,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
         <Title>{challenge.title}</Title>
       </Header>
 
+      {/* DAY SWITCHER */}
       <DaySwitcher>
         <NavButton
           disabled={dayIndex === 0}
@@ -170,47 +190,67 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
         </NavButton>
       </DaySwitcher>
 
+      {/* CONTENT */}
       <Content>
         {reports.length === 0 ? (
           <EmptyState>Отчётов за этот день нет</EmptyState>
         ) : (
-          reports.map(r => (
-            <ReportCard key={r.id}>
+          reports.map(report => (
+            <ReportCard key={report.id}>
               <ReportHeader>
                 <UserBlock>
                   <Avatar />
-                  <Username>@{r.participant.user.username}</Username>
+                  <Username>
+                    @{report.participant.user.username ?? 'user'}
+                  </Username>
                 </UserBlock>
 
-                <StatusBadge $status={r.status}>
-                  {r.status.toUpperCase()}
+                <StatusBadge $status={report.status}>
+                  {report.status}
                 </StatusBadge>
               </ReportHeader>
 
               <ReportBody>
                 <Label>Отчёт</Label>
+
                 <Value>
                   {challenge.report_mode === 'simple'
-                    ? r.is_done
-                      ? 'Отметил выполнение'
+                    ? report.is_done
+                      ? 'Выполнено'
                       : '—'
-                    : `${r.value} ${challenge.metric_name ?? ''}`}
+                    : `${report.value ?? 0} ${challenge.metric_name ?? ''}`}
                 </Value>
 
-                {r.proof_text && (
+                {report.proof_text && (
                   <>
                     <Label>Комментарий</Label>
-                    <Value>{r.proof_text}</Value>
+                    <Value>{report.proof_text}</Value>
+                  </>
+                )}
+
+                {report.rejection_reason && (
+                  <>
+                    <Label>Причина отказа</Label>
+                    <Value>{report.rejection_reason}</Value>
                   </>
                 )}
               </ReportBody>
 
-              {r.status === 'pending' && (
+              {report.status === 'pending' && (
                 <Actions>
-                  <ApproveButton onClick={() => updateReport(r.id, 'approved')}>
+                  <ApproveButton
+                    onClick={() =>
+                      updateReportStatus(report.id, 'approved')
+                    }
+                  >
                     Засчитать
                   </ApproveButton>
-                  <RejectButton onClick={() => updateReport(r.id, 'rejected')}>
+
+                  <RejectButton
+                    onClick={() =>
+                      updateReportStatus(report.id, 'rejected')
+                    }
+                  >
                     Отклонить
                   </RejectButton>
                 </Actions>
