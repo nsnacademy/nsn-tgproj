@@ -187,35 +187,7 @@ export default function ChallengeProgress({
 
 
 
-    const currentDayDate = new Date(challengeData.start_at);
-currentDayDate.setDate(
-  currentDayDate.getDate() + (currentDay - 1)
-);
-
-const currentReportDate = currentDayDate
-  .toISOString()
-  .slice(0, 10);
-
-const todayReport = reports?.find(
-  r => r.report_date === currentReportDate
-);
-
-
-setTodayReportId(todayReport?.id ?? null);
-
-if (!todayReport) {
-  setTodayStatus('none');
-  setRejectionReason(null);
-} else if (todayReport.status === 'pending') {
-  setTodayStatus('pending');
-  setRejectionReason(null);
-} else if (todayReport.status === 'approved') {
-  setTodayStatus('approved');
-  setRejectionReason(null);
-} else if (todayReport.status === 'rejected') {
-  setTodayStatus('rejected');
-  setRejectionReason(todayReport.rejection_reason || null);
-}
+    
 
 
 
@@ -246,6 +218,41 @@ if (!todayReport) {
       challengeData.duration_days,
       Math.max(1, diffDays + 1)
     );
+
+    // ⬇️ ВАЖНО: используем calculatedDay, а НЕ currentDay
+const reportDayDate = new Date(challengeData.start_at);
+reportDayDate.setDate(
+  reportDayDate.getDate() + (calculatedDay - 1)
+);
+
+const reportDate = reportDayDate
+  .toISOString()
+  .slice(0, 10);
+
+const todayReport = reports?.find(
+  r => r.report_date === reportDate
+);
+
+console.log('[PROGRESS] calculatedDay:', calculatedDay);
+console.log('[PROGRESS] reportDate:', reportDate);
+console.log('[PROGRESS] todayReport:', todayReport);
+
+setTodayReportId(todayReport?.id ?? null);
+
+if (!todayReport) {
+  setTodayStatus('none');
+  setRejectionReason(null);
+} else if (todayReport.status === 'pending') {
+  setTodayStatus('pending');
+  setRejectionReason(null);
+} else if (todayReport.status === 'approved') {
+  setTodayStatus('approved');
+  setRejectionReason(null);
+} else if (todayReport.status === 'rejected') {
+  setTodayStatus('rejected');
+  setRejectionReason(todayReport.rejection_reason || null);
+}
+
 
     setCurrentDay(calculatedDay);
     setRemainingDays(Math.max(0, challengeData.duration_days - calculatedDay));
