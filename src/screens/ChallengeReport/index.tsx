@@ -194,20 +194,15 @@ const [todayReportId, setTodayReportId] = useState<string | null>(null);
 let uploadedMedia: string[] = [];
 
 if (files.length > 0) {
-  const file = files[0]; // ⬅️ пока один файл
+  const file = files[0];
 
-  // ✅ безопасное имя файла
-  const ext = file.file.name.split('.').pop()?.toLowerCase() || 'bin';
-  const safeFileName = `${Date.now()}.${ext}`;
-
-  // ✅ безопасный путь (ТОЛЬКО ASCII)
-  const filePath = `reports/${challengeId}/${participantId}/${reportDate}/${safeFileName}`;
+  const filePath = `reports/${challengeId}/${participantId}/${reportDate}/${file.file.name}`;
 
   const { error: uploadError } = await supabase.storage
     .from('report-media')
     .upload(filePath, file.file, {
       upsert: true,
-      contentType: file.file.type, // важно для preview
+      contentType: file.file.type,
     });
 
   if (uploadError) {
