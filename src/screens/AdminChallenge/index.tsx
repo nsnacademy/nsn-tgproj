@@ -123,37 +123,53 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
   /* === UPDATE STATUS (DEBUG) === */
   const updateStatus = async (
-    reportId: string,
-    status: 'approved' | 'rejected'
-  ) => {
-    console.log('[ADMIN] updateStatus CLICK', {
-      reportId,
-      status,
-    });
+  reportId: string,
+  status: 'approved' | 'rejected',
+  rejectionReason?: string
+) => {
+  console.log('[ADMIN] updateStatus CLICK', {
+    reportId,
+    status,
+    rejectionReason,
+  });
 
-    const { data, error } = await supabase
-      .from('reports')
-      .update({ status })
-      .eq('id', reportId)
-      .select();
+  const payload =
+    status === 'rejected'
+      ? {
+          status,
+          rejection_reason:
+            rejectionReason?.trim() || 'Отклонено администратором',
+        }
+      : {
+          status,
+          rejection_reason: null,
+        };
 
-    console.log('[ADMIN] updateStatus RESULT', {
-      data,
-      error,
-    });
+  const { data, error } = await supabase
+    .from('reports')
+    .update(payload)
+    .eq('id', reportId)
+    .select();
 
-    if (error) {
-      console.error('[ADMIN] updateStatus ERROR', error);
-      return;
-    }
+  console.log('[ADMIN] updateStatus RESULT', {
+    data,
+    error,
+  });
 
-    // optimistic UI
-    setReports(prev =>
-      prev.map(r =>
-        r.id === reportId ? { ...r, status } : r
-      )
-    );
-  };
+  if (error) {
+    console.error('[ADMIN] updateStatus ERROR', error);
+    return;
+  }
+
+  setReports(prev =>
+    prev.map(r =>
+      r.id === reportId
+        ? { ...r, status, rejection_reason: payload.rejection_reason ?? null }
+        : r
+    )
+  );
+};
+
 
   return (
     <SafeArea>
@@ -253,10 +269,17 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
                   </ApproveButton>
 
                   <RejectButton
-                    onClick={() => updateStatus(r.id, 'rejected')}
-                  >
-                    Отклонить
-                  </RejectButton>
+  onClick={() =>
+    updateStatus(
+      r.id,
+      'rejected',
+      'Недостаточно доказательств'
+    )
+  }
+>
+  Отклонить
+</RejectButton>
+
                 </Actions>
               )}
             </ReportCard>
