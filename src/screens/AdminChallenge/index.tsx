@@ -51,6 +51,7 @@ type Report = {
   value: number | null;
   is_done: boolean | null;
   proof_text: string | null;
+  proof_media_urls: string[] | null;
   rejection_reason: string | null;
   participant: {
     user: {
@@ -99,19 +100,21 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
     });
 
     supabase
-      .from('reports')
-      .select(`
-        id,
-        report_date,
-        status,
-        value,
-        is_done,
-        proof_text,
-        rejection_reason,
-        participant:participants (
-          user:users ( username )
-        )
-      `)
+  .from('reports')
+  .select(`
+    id,
+    report_date,
+    status,
+    value,
+    is_done,
+    proof_text,
+    proof_media_urls,
+    rejection_reason,
+    participant:participants (
+      user:users ( username )
+    )
+  `)
+
       .eq('challenge_id', challengeId)
       .eq('report_date', reportDate)
       .returns<Report[]>()
@@ -245,22 +248,77 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
               </ReportHeader>
 
               <ReportBody>
-                <Label>Отчёт пользователя</Label>
-                <Value>
-                  {challenge.report_mode === 'simple'
-                    ? r.is_done
-                      ? 'Отметил выполнение дня'
-                      : '—'
-                    : `${r.value ?? 0} ${challenge.metric_name ?? ''}`}
-                </Value>
+  <Label>Отчёт пользователя</Label>
 
-                {r.rejection_reason && (
-                  <>
-                    <Label>Причина отклонения</Label>
-                    <Reason>{r.rejection_reason}</Reason>
-                  </>
-                )}
-              </ReportBody>
+  <Value>
+    {challenge.report_mode === 'simple'
+      ? r.is_done
+        ? 'Отметил выполнение дня'
+        : '—'
+      : `${r.value ?? 0} ${challenge.metric_name ?? ''}`}
+  </Value>
+
+  {/* ✅ МЕДИА ДОКАЗАТЕЛЬСТВА */}
+  {r.proof_media_urls && r.proof_media_urls.length > 0 && (
+    <>
+      <Label>Медиа доказательства</Label>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+          gap: 12,
+          marginTop: 8,
+        }}
+      >
+        {r.proof_media_urls.map((path, i) => {
+          const { data } = supabase.storage
+            .from('report-media')
+            .getPublicUrl(path);
+
+          const url = data.publicUrl;
+          const isVideo =
+            path.endsWith('.mp4') ||
+            path.endsWith('.mov') ||
+            path.endsWith('.webm');
+
+          return isVideo ? (
+            <video
+              key={i}
+              src={url}
+              controls
+              style={{
+                width: '100%',
+                borderRadius: 10,
+                background: '#000',
+              }}
+            />
+          ) : (
+            <img
+              key={i}
+              src={url}
+              alt="proof"
+              style={{
+                width: '100%',
+                borderRadius: 10,
+                objectFit: 'cover',
+              }}
+            />
+          );
+        })}
+      </div>
+    </>
+  )}
+
+  {/* ❌ ПРИЧИНА ОТКЛОНЕНИЯ */}
+  {r.rejection_reason && (
+    <>
+      <Label>Причина отклонения</Label>
+      <Reason>{r.rejection_reason}</Reason>
+    </>
+  )}
+</ReportBody>
+
 
               {/* ACTIONS */}
               {r.status === 'pending' && (
