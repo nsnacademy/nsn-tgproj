@@ -25,10 +25,12 @@ import {
   Label,
   Value,
   Reason,
+  
   Actions,
   ApproveButton,
   RejectButton,
   EmptyState,
+  CommentBox,
 } from './styles';
 
 type Props = {
@@ -284,25 +286,26 @@ if (error) {
               <ReportBody>
   <Label>Отчёт пользователя</Label>
 
-  <Value>
-    {challenge.report_mode === 'simple'
-      ? r.is_done
-        ? 'Отметил выполнение дня'
-        : '—'
-      : `${r.value ?? 0} ${challenge.metric_name ?? ''}`}
-  </Value>
+<Value>
+  {challenge.report_mode === 'simple'
+    ? r.is_done
+      ? 'Отметил выполнение дня'
+      : '—'
+    : `${r.value ?? 0} ${challenge.metric_name ?? ''}`}
+</Value>
 
-  {/* 📝 ТЕКСТ ОТЧЁТА */}
-  {r.proof_text && r.proof_text.trim() && (
-    <>
-      <Label>Комментарий</Label>
-      <Value style={{ opacity: 0.85 }}>
-        {r.proof_text}
-      </Value>
-    </>
-  )}
+{/* 📝 КОММЕНТАРИЙ ПОЛЬЗОВАТЕЛЯ */}
+{r.proof_text && r.proof_text.trim() && (
+  <>
+    <Label>Комментарий</Label>
+    <CommentBox>
+      {r.proof_text}
+    </CommentBox>
+  </>
+)}
 
-  {r.proof_media_urls && r.proof_media_urls.length > 0 && (
+{/* 📸 МЕДИА ДОКАЗАТЕЛЬСТВА */}
+{r.proof_media_urls && r.proof_media_urls.length > 0 && (
   <>
     <Label>Медиа доказательства</Label>
 
@@ -311,7 +314,7 @@ if (error) {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
         gap: 12,
-        marginTop: 8,
+        marginTop: 10,
       }}
     >
       {r.proof_media_urls.map((path, i) => {
@@ -330,7 +333,7 @@ if (error) {
             controls
             style={{
               width: '100%',
-              borderRadius: 10,
+              borderRadius: 12,
               background: '#000',
             }}
           />
@@ -341,7 +344,7 @@ if (error) {
             alt="proof"
             style={{
               width: '100%',
-              borderRadius: 10,
+              borderRadius: 12,
               objectFit: 'cover',
             }}
           />

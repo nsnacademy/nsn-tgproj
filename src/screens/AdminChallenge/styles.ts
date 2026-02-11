@@ -195,3 +195,15 @@ export const EmptyState = styled.div`
   opacity: 0.5;
   margin-top: 40px;
 `;
+
+export const CommentBox = styled.div`
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0.9;
+  white-space: pre-wrap;
+`;
+
