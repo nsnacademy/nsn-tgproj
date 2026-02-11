@@ -261,8 +261,9 @@ if (!todayReport) {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+  load();
+}, [challengeId, participantId]);
+
 
   const handlePrizeClick = (user: RatingRow) => {
     setSelectedPrize(user);
