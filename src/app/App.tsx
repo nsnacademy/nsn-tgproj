@@ -13,6 +13,7 @@ import ChallengeProgress from '../screens/ChallengeProgress';
 import ChallengeReport from '../screens/ChallengeReport';
 import Profile from '../screens/Profile';
 import Admin from '../screens/Admin';
+import AdminChallenge from '../screens/AdminChallenge';
 
 /* === ЭКРАНЫ === */
 type Screen =
@@ -55,8 +56,14 @@ function App() {
     challengeId?: string,
     participantId?: string
   ) => {
-    if (challengeId) setSelectedChallengeId(challengeId);
-    if (participantId) setSelectedParticipantId(participantId);
+    if (challengeId !== undefined) {
+      setSelectedChallengeId(challengeId);
+    }
+
+    if (participantId !== undefined) {
+      setSelectedParticipantId(participantId);
+    }
+
     setScreen(next);
   };
 
@@ -69,8 +76,10 @@ function App() {
   }) => {
     setSelectedChallengeId(data.challengeId);
     setSelectedParticipantId(data.participantId);
+
     if (data.reportMode) setReportMode(data.reportMode);
     if (data.metricName) setMetricName(data.metricName);
+
     setScreen('challenge-report');
   };
 
@@ -157,22 +166,11 @@ function App() {
         />
       )}
 
-      {/* 🔧 ВРЕМЕННАЯ ЗАГЛУШКА */}
       {screen === 'admin-challenge' && selectedChallengeId && (
-        <div
-          style={{
-            minHeight: '100vh',
-            background: '#000',
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 18,
-          }}
-        >
-          AdminChallenge<br />
-          challengeId: {selectedChallengeId}
-        </div>
+        <AdminChallenge
+          challengeId={selectedChallengeId}
+          onBack={() => navigate('admin')}
+        />
       )}
 
       {screen === 'create-flow-paid' && (
