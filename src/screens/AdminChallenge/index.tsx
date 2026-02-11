@@ -66,12 +66,15 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
   /* === LOAD CHALLENGE === */
   useEffect(() => {
+    console.log('[ADMIN] load challenge', challengeId);
+
     supabase
       .from('challenges')
       .select('title, report_mode, metric_name, start_at, duration_days')
       .eq('id', challengeId)
       .single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        console.log('[ADMIN] challenge response', { data, error });
         if (data) setChallenge(data);
       });
   }, [challengeId]);
@@ -83,6 +86,12 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
     const date = new Date(challenge.start_at);
     date.setDate(date.getDate() + dayIndex);
     const reportDate = date.toISOString().slice(0, 10);
+
+    console.log('[ADMIN] load reports', {
+      challengeId,
+      dayIndex,
+      reportDate,
+    });
 
     supabase
       .from('reports')
@@ -101,7 +110,10 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       .eq('challenge_id', challengeId)
       .eq('report_date', reportDate)
       .returns<Report[]>()
-      .then(({ data }) => setReports(data ?? []));
+      .then(({ data, error }) => {
+        console.log('[ADMIN] reports response', { data, error });
+        setReports(data ?? []);
+      });
   }, [challenge, dayIndex, challengeId]);
 
   if (!challenge) return null;
@@ -109,14 +121,36 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   const currentDate = new Date(challenge.start_at);
   currentDate.setDate(currentDate.getDate() + dayIndex);
 
+  /* === UPDATE STATUS (DEBUG) === */
   const updateStatus = async (
     reportId: string,
     status: 'approved' | 'rejected'
   ) => {
-    await supabase.from('reports').update({ status }).eq('id', reportId);
-    setReports(r =>
-      r.map(item =>
-        item.id === reportId ? { ...item, status } : item
+    console.log('[ADMIN] updateStatus CLICK', {
+      reportId,
+      status,
+    });
+
+    const { data, error } = await supabase
+      .from('reports')
+      .update({ status })
+      .eq('id', reportId)
+      .select();
+
+    console.log('[ADMIN] updateStatus RESULT', {
+      data,
+      error,
+    });
+
+    if (error) {
+      console.error('[ADMIN] updateStatus ERROR', error);
+      return;
+    }
+
+    // optimistic UI
+    setReports(prev =>
+      prev.map(r =>
+        r.id === reportId ? { ...r, status } : r
       )
     );
   };
@@ -139,7 +173,10 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       <DaySwitcher>
         <NavButton
           disabled={dayIndex === 0}
-          onClick={() => setDayIndex(d => d - 1)}
+          onClick={() => {
+            console.log('[ADMIN] dayIndex -1');
+            setDayIndex(d => d - 1);
+          }}
         >
           ←
         </NavButton>
@@ -155,7 +192,10 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
         <NavButton
           disabled={dayIndex + 1 >= challenge.duration_days}
-          onClick={() => setDayIndex(d => d + 1)}
+          onClick={() => {
+            console.log('[ADMIN] dayIndex +1');
+            setDayIndex(d => d + 1);
+          }}
         >
           →
         </NavButton>
@@ -206,10 +246,15 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
               {r.status === 'pending' && (
                 <Actions>
-                  <ApproveButton onClick={() => updateStatus(r.id, 'approved')}>
+                  <ApproveButton
+                    onClick={() => updateStatus(r.id, 'approved')}
+                  >
                     Засчитать
                   </ApproveButton>
-                  <RejectButton onClick={() => updateStatus(r.id, 'rejected')}>
+
+                  <RejectButton
+                    onClick={() => updateStatus(r.id, 'rejected')}
+                  >
                     Отклонить
                   </RejectButton>
                 </Actions>
