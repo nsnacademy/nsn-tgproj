@@ -134,8 +134,7 @@ export default function ChallengeProgress({
 
   const [reportDate, setReportDate] = useState<string>(''); // ✅ ДОБАВИТЬ
 
-  const [todayReportId, setTodayReportId] =
-  useState<string | null>(null);
+ 
 
 
   const [rejectionReason, setRejectionReason] =
@@ -245,7 +244,7 @@ console.log('[PROGRESS] calculatedDay:', calculatedDay);
 console.log('[PROGRESS] reportDate:', reportDate);
 console.log('[PROGRESS] todayReport:', todayReport);
 
-setTodayReportId(todayReport?.id ?? null);
+
 
 if (!todayReport) {
   setTodayStatus('none');
@@ -354,12 +353,7 @@ if (!todayReport) {
     ? 'Целевой вызов' 
     : 'Ежедневный вызов';
 
-  const getButtonText = () => {
-    if (todayStatus === 'approved') return 'Уже выполнено сегодня';
-    if (todayStatus === 'rejected') return 'Отправить отчёт заново';
-    if (challenge.report_mode === 'result') return 'Добавить результат';
-    return 'Отметить день';
-  };
+  
 
   const getProgressText = () => {
     if (challenge.report_mode === 'result') {

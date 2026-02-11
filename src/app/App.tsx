@@ -84,6 +84,7 @@ function App() {
   metricName: string | null;
 }) => {
 
+
     setSelectedChallengeId(data.challengeId);
     setSelectedParticipantId(data.participantId);
     setReportDate(data.reportDate);
