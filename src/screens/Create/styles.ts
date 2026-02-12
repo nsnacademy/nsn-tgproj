@@ -17,7 +17,7 @@ export const SafeArea = styled.div`
 ====================== */
 export const FixedTop = styled.div`
   position: fixed;
-  top: 0;
+  top: 30px;
   left: 0;
   right: 0;
   padding-top: 60px;
@@ -143,10 +143,7 @@ export const ActionButton = styled.button`
     background: rgba(255, 255, 255, 0.95);
   }
 
-  svg {
-    width: 20px;
-    height: 20px;
-  }
+  
 `;
 
 /* ======================
