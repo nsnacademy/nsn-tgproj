@@ -20,7 +20,6 @@ type Props = {
   onNavigateHome: () => void;
 };
 
-
 type Challenge = {
   title: string;
   description: string;
@@ -149,76 +148,90 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
 
   /* ================= JOIN ================= */
 
- 
-   async function joinChallenge() {
-  console.log('[JOIN] click');
+  async function joinChallenge() {
+    if (!accepted || joining || alreadyJoined) return;
 
-  if (!accepted || joining || alreadyJoined) {
-    console.log('[JOIN] blocked', { accepted, joining, alreadyJoined });
-    return;
-  }
+    setJoining(true);
 
-  setJoining(true);
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (!tgUser) {
+      setJoining(false);
+      return;
+    }
 
-  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  console.log('[JOIN] tgUser', tgUser);
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('telegram_id', tgUser.id)
+      .single();
 
-  if (!tgUser) {
-    console.log('[JOIN] no telegram user');
+    if (!user) {
+      setJoining(false);
+      return;
+    }
+
+    // 🔎 если уже есть participant → сразу в progress
+    const { data: existing } = await supabase
+      .from('participants')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('challenge_id', challengeId)
+      .maybeSingle();
+
+    if (existing) {
+      setAlreadyJoined(true);
+      setJoining(false);
+
+      window.dispatchEvent(
+        new CustomEvent('navigate-to-progress', {
+          detail: {
+            challengeId,
+            participantId: existing.id,
+          },
+        })
+      );
+      return;
+    }
+
+    // ➕ создаём participant
+    const { error } = await supabase
+      .from('participants')
+      .insert({
+        user_id: user.id,
+        challenge_id: challengeId,
+      });
+
+    if (error) {
+      console.error(error);
+      setJoining(false);
+      return;
+    }
+
+    // 🔁 получаем participant
+    const { data: participant } = await supabase
+      .from('participants')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('challenge_id', challengeId)
+      .single();
+
+    if (!participant) {
+      setJoining(false);
+      return;
+    }
+
     setJoining(false);
-    return;
+
+    // 🔥 АВТОПЕРЕХОД В ChallengeProgress
+    window.dispatchEvent(
+      new CustomEvent('navigate-to-progress', {
+        detail: {
+          challengeId,
+          participantId: participant.id,
+        },
+      })
+    );
   }
-
-  const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('id')
-    .eq('telegram_id', tgUser.id)
-    .single();
-
-  console.log('[JOIN] user from db', user, userError);
-
-  if (!user) {
-    setJoining(false);
-    return;
-  }
-
-  const { data: existing } = await supabase
-    .from('participants')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('challenge_id', challengeId)
-    .maybeSingle();
-
-  console.log('[JOIN] existing participant', existing);
-
-  if (existing) {
-    console.log('[JOIN] already exists → go home');
-    setAlreadyJoined(true);
-    setJoining(false);
-    onNavigateHome();
-    return;
-  }
-
-  const { error } = await supabase
-    .from('participants')
-    .insert({
-      user_id: user.id,
-      challenge_id: challengeId,
-    });
-
-  console.log('[JOIN] insert result', error);
-
-  if (error) {
-    setJoining(false);
-    return;
-  }
-
-  console.log('[JOIN] SUCCESS → go home');
-  setJoining(false);
-  onNavigateHome();
-}
-
-
 
   /* ================= UI LOGIC ================= */
 
@@ -294,31 +307,8 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         </Row>
 
         <Row>{reportExplanation}</Row>
-
-        <Divider />
-
-        <Row><b>Длительность:</b> {challenge.duration_days} дней</Row>
-
-        {challenge.has_goal && (
-          <Row><b>Цель:</b> {challenge.goal_value}</Row>
-        )}
-
-        {challenge.has_limit && (
-          <Row><b>Лимит в день:</b> {challenge.limit_per_day}</Row>
-        )}
-
-        {challenge.has_proof && (
-          <Row>
-            <b>Подтверждение:</b> {challenge.proof_types?.join(', ')}
-          </Row>
-        )}
-
-        <Row>
-          <b>Рейтинг:</b> {challenge.has_rating ? 'Есть' : 'Нет'}
-        </Row>
       </Card>
 
-      {/* CHECK */}
       <CheckboxRow onClick={() => setAccepted(!accepted)}>
         <input type="checkbox" checked={accepted} readOnly />
         <span>Я ознакомился с условиями</span>
