@@ -328,10 +328,10 @@ if (Object.keys(urls).length > 0) {
                         const url = mediaUrls[path];
                         if (!url) return null;
 
-                        const isVideo =
-                          path.toLowerCase().endsWith('.mp4') ||
-                          path.toLowerCase().endsWith('.mov') ||
-                          path.toLowerCase().endsWith('.webm');
+                        const isVideo = path.toLowerCase().includes('.mp4')
+                        || path.toLowerCase().includes('.mov')
+                        || path.toLowerCase().includes('.webm');
+
 
                         return isVideo ? (
                           <video
