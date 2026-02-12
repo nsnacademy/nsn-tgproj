@@ -152,19 +152,11 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
     return <SafeArea />;
   }
 
-  /* ================= SAFE DESTRUCTURE ================= */
-
-  const {
-    title,
-    username,
-    description,
-    rules,
-    max_participants,
-  } = challenge;
+  /* ================= LIMIT ================= */
 
   const limitReached =
-    max_participants !== null &&
-    participantsCount >= max_participants;
+    challenge.max_participants !== null &&
+    participantsCount >= challenge.max_participants;
 
   /* ================= JOIN ================= */
 
@@ -249,11 +241,28 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
       return;
     }
 
+    // 🔴 ВАЖНО: получаем participantId
+    const { data: participant, error: fetchError } = await supabase
+      .from('participants')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('challenge_id', challengeId)
+      .single();
+
+    if (fetchError || !participant) {
+      console.error('[JOIN] fetch participant error', fetchError);
+      setJoining(false);
+      return;
+    }
+
     setJoining(false);
 
     window.dispatchEvent(
       new CustomEvent('navigate-to-progress', {
-        detail: { challengeId },
+        detail: {
+          challengeId,
+          participantId: participant.id,
+        },
       })
     );
   }
@@ -263,17 +272,17 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   return (
     <SafeArea>
       <Header>
-        <Title>{title}</Title>
-        <Username>@{username}</Username>
+        <Title>{challenge.title}</Title>
+        <Username>@{challenge.username}</Username>
       </Header>
 
       <Card>
-        <Row><b>Описание:</b> {description}</Row>
+        <Row><b>Описание:</b> {challenge.description}</Row>
 
-        {rules && (
+        {challenge.rules && (
           <>
             <Divider />
-            <Row><b>Условия:</b> {rules}</Row>
+            <Row><b>Условия:</b> {challenge.rules}</Row>
           </>
         )}
       </Card>
@@ -281,8 +290,8 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
       <Card>
         <Row>
           <b>Участники:</b>{' '}
-          {max_participants !== null
-            ? `${participantsCount} / ${max_participants}`
+          {challenge.max_participants !== null
+            ? `${participantsCount} / ${challenge.max_participants}`
             : participantsCount}
         </Row>
 
