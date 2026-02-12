@@ -222,7 +222,7 @@ function App() {
       )}
 
       {screen === 'create' && (
-        <Create onNavigate={navigate} />
+        <Create onNavigate={navigate} screen={'home'} />
       )}
 
       {screen === 'create-flow' && (
