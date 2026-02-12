@@ -38,7 +38,46 @@ export const List = styled.div`
   margin-top: 8px;
 `;
 
+/* =========================
+   CHALLENGE CARD
+========================= */
 
+export const ChallengeCard = styled.div`
+  position: relative;
+  background: rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 16px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  /* 🔥 ВАЖНО: сам контейнер НЕ ловит клики */
+  pointer-events: none;
+
+  &:active {
+    background: rgba(255,255,255,0.1);
+  }
+`;
+
+export const ChallengeInfo = styled.div`
+  flex: 1;
+  min-width: 0;
+  padding-right: 12px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  cursor: pointer;
+
+  /* 🔥 ТОЛЬКО ЭТА ЧАСТЬ КЛИКАБЕЛЬНА */
+  pointer-events: auto;
+
+  &:hover {
+    opacity: 0.85;
+  }
+`;
 
 export const ChallengeTitle = styled.div`
   font-size: 15px;
@@ -48,7 +87,47 @@ export const ChallengeTitle = styled.div`
 export const ChallengeMeta = styled.div`
   font-size: 12px;
   color: rgba(255,255,255,0.5);
-  margin-top: 4px;
+`;
+
+/* =========================
+   ACTIONS
+========================= */
+
+export const CardActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  flex-shrink: 0;
+
+  /* 🔥 КЛИКИ ТОЛЬКО ЗДЕСЬ */
+  pointer-events: auto;
+`;
+
+export const ShareButton = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+
+  border: none;
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  font-size: 15px;
+
+  cursor: pointer;
+  touch-action: manipulation;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    transform: scale(0.9);
+  }
+
+  &:hover {
+    background: rgba(255,255,255,0.25);
+  }
 `;
 
 export const PendingBadge = styled.div`
@@ -59,58 +138,22 @@ export const PendingBadge = styled.div`
   color: #fff;
   font-size: 13px;
   font-weight: 600;
+
   display: flex;
   align-items: center;
   justify-content: center;
 `;
 
-export const ChallengeCard = styled.div`
-  position: relative;
-  background: rgba(255,255,255,0.06);
-  border-radius: 16px;
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-
-  &:active {
-    background: rgba(255,255,255,0.1);
-  }
-`;
-
-export const ChallengeInfo = styled.div`
-  flex: 1;
-  padding-right: 12px;
-`;
-
-export const CardActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-export const ShareButton = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
-  border: none;
-  background: rgba(255,255,255,0.18);
-  color: #fff;
-  font-size: 15px;
-  cursor: pointer;
-  touch-action: manipulation;
-
-  &:active {
-    transform: scale(0.9);
-  }
-`;
+/* =========================
+   INVITE SETTINGS
+========================= */
 
 export const InviteOverlay = styled.div`
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.7);
   z-index: 50;
+
   display: flex;
   align-items: flex-end;
 `;
@@ -161,4 +204,3 @@ export const InviteButton = styled.button`
   color: #000;
   font-weight: 600;
 `;
-
