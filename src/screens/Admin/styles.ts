@@ -105,3 +105,60 @@ export const ShareButton = styled.button`
     transform: scale(0.9);
   }
 `;
+
+export const InviteOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+`;
+
+export const InviteCard = styled.div`
+  width: 100%;
+  background: #111;
+  border-radius: 24px 24px 0 0;
+  padding: 20px;
+`;
+
+export const InviteTitle = styled.h3`
+  font-size: 18px;
+  margin-bottom: 16px;
+`;
+
+export const InviteRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+`;
+
+export const InviteLabel = styled.div`
+  font-size: 14px;
+  opacity: 0.8;
+`;
+
+export const InviteInput = styled.input`
+  width: 120px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #000;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+`;
+
+export const InviteActions = styled.div`
+  margin-top: 20px;
+`;
+
+export const InviteButton = styled.button`
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  background: #fff;
+  color: #000;
+  font-weight: 600;
+`;
+
