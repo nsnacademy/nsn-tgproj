@@ -133,27 +133,31 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
   const urls: Record<string, string> = {};
 
-  for (const report of data) {
-    if (!report.proof_media_urls) continue;
+for (const report of data) {
+  if (!report.proof_media_urls) continue;
 
-    for (const path of report.proof_media_urls) {
-      const { data: signed, error } = await supabase.storage
-  .from('report-media')
-  .createSignedUrl(path, 60 * 60);
+  for (const path of report.proof_media_urls) {
+    // 👇 если уже есть — не запрашиваем
+    if (mediaUrls[path]) continue;
 
-if (error) {
-  console.error('[SIGNED URL ERROR]', error);
-  continue;
+    const { data: signed } = await supabase.storage
+      .from('report-media')
+      .createSignedUrl(path, 60 * 60);
+
+    if (signed?.signedUrl) {
+      urls[path] = signed.signedUrl;
+    }
+  }
+}
+
+if (Object.keys(urls).length > 0) {
+  setMediaUrls(prev => ({
+    ...prev,
+    ...urls,
+  }));
 }
 
 
-      if (signed?.signedUrl) {
-        urls[path] = signed.signedUrl;
-      }
-    }
-  }
-
-  setMediaUrls(urls);
 });
 
 
