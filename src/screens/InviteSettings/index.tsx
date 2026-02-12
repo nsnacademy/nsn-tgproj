@@ -141,7 +141,8 @@ export default function InviteSettings({
   const copyLink = async () => {
     if (!invite) return;
 
-    const link = `https://t.me/YOUR_BOT_USERNAME?startapp=invite_${invite.code}`;
+    const link = `https://t.me/Projects365_bot?startapp=invite_${invite.code}`;
+
     await navigator.clipboard.writeText(link);
 
     alert('Ссылка приглашения скопирована');
