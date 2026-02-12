@@ -38,19 +38,7 @@ export const List = styled.div`
   margin-top: 8px;
 `;
 
-export const ChallengeCard = styled.div`
-  background: rgba(255,255,255,0.06);
-  border-radius: 16px;
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
 
-  &:hover {
-    background: rgba(255,255,255,0.1);
-  }
-`;
 
 export const ChallengeTitle = styled.div`
   font-size: 15px;
@@ -76,18 +64,46 @@ export const PendingBadge = styled.div`
   justify-content: center;
 `;
 
-export const ShareButton = styled.div`
-  width: 28px;
-  height: 28px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.12);
+export const ChallengeCard = styled.div`
+  background: rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+export const ChallengeInfo = styled.div`
+  flex: 1;
+  cursor: pointer;
+`;
+
+export const CardActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+export const ShareButton = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  border: none;
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  touch-action: manipulation;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
 
   &:hover {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.22);
+  }
+
+  &:active {
+    transform: scale(0.94);
   }
 `;

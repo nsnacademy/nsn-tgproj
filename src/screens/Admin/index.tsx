@@ -8,10 +8,12 @@ import {
   HeaderRow,
   List,
   ChallengeCard,
+  ChallengeInfo,
   ChallengeTitle,
   ChallengeMeta,
   PendingBadge,
-  ShareButton, // 🔗 INVITE
+  ShareButton,
+  CardActions,
 } from './styles';
 
 import { Toggle, ToggleKnob } from '../Profile/styles';
@@ -49,20 +51,13 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   const [accessChecked, setAccessChecked] = useState(false);
   const [challenges, setChallenges] = useState<AdminChallenge[]>([]);
 
-  // 🔒 защита админки
   useEffect(() => {
     async function init() {
       const user = await getCurrentUser();
-      if (!user) {
-        onNavigate('profile');
-        return;
-      }
+      if (!user) return onNavigate('profile');
 
       const isCreator = await checkIsCreator(user.id);
-      if (!isCreator) {
-        onNavigate('profile');
-        return;
-      }
+      if (!isCreator) return onNavigate('profile');
 
       const { data, error } = await supabase.rpc(
         'get_admin_challenges',
@@ -70,7 +65,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
       );
 
       if (error) {
-        console.error('[ADMIN] load challenges error', error);
+        console.error('[ADMIN] load error', error);
         return;
       }
 
@@ -81,17 +76,13 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
     init();
   }, [onNavigate]);
 
-  // 🔗 INVITE: копирование ссылки
+  // 🔗 INVITE
   const handleShare = async (
-    e: React.MouseEvent,
     challengeId: string
   ) => {
-    e.stopPropagation();
-
     const user = await getCurrentUser();
     if (!user) return;
 
-    // 1️⃣ пробуем получить существующий invite
     const { data: existing } = await supabase
       .from('challenge_invites')
       .select('code')
@@ -102,7 +93,6 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
     let code = existing?.code;
 
-    // 2️⃣ если нет — создаём
     if (!code) {
       const { data } = await supabase.rpc(
         'create_challenge_invite',
@@ -111,21 +101,19 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
           p_created_by: user.id,
         }
       );
-
       code = data;
     }
 
     if (!code) return;
 
     const link = `https://t.me/YOUR_BOT_USERNAME?startapp=invite_${code}`;
-
     await navigator.clipboard.writeText(link);
-    alert('Ссылка скопирована');
+
+    alert('Ссылка приглашения скопирована');
   };
 
   const onToggleBack = () => {
     if (locked) return;
-
     setAdminMode(false);
     setLocked(true);
 
@@ -140,10 +128,8 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   return (
     <SafeArea>
       <Container>
-        {/* HEADER */}
         <HeaderRow>
           <Title>Админ-панель</Title>
-
           <Toggle $active={adminMode} onClick={onToggleBack}>
             <ToggleKnob $active={adminMode} />
           </Toggle>
@@ -152,51 +138,45 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
         <Text>Мои вызовы</Text>
 
         <List>
-          {challenges.length === 0 ? (
-            <Text style={{ marginTop: 16 }}>
-              У вас пока нет вызовов для модерации
-            </Text>
-          ) : (
-            challenges.map(ch => (
-              <ChallengeCard
-                key={ch.id}
+          {challenges.map(ch => (
+            <ChallengeCard key={ch.id}>
+              {/* ЛЕВАЯ ЧАСТЬ — ПЕРЕХОД */}
+              <ChallengeInfo
                 onClick={() =>
                   onNavigate('admin-challenge', ch.id)
                 }
               >
-                <div>
-                  <ChallengeTitle>{ch.title}</ChallengeTitle>
+                <ChallengeTitle>{ch.title}</ChallengeTitle>
+                <ChallengeMeta>
+                  {new Date(ch.start_at).toLocaleDateString()} →
+                  {ch.end_at
+                    ? ` ${new Date(ch.end_at).toLocaleDateString()}`
+                    : ' …'}
+                </ChallengeMeta>
+              </ChallengeInfo>
 
-                  <ChallengeMeta>
-                    {new Date(ch.start_at).toLocaleDateString()} →
-                    {ch.end_at
-                      ? ` ${new Date(ch.end_at).toLocaleDateString()}`
-                      : ' …'}
-                  </ChallengeMeta>
-                </div>
+              {/* ПРАВАЯ ЧАСТЬ — ДЕЙСТВИЯ */}
+              <CardActions>
+                <ShareButton
+                  type="button"
+                  onClick={() => handleShare(ch.id)}
+                  aria-label="Поделиться"
+                >
+                  🔗
+                </ShareButton>
 
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {/* 🔗 INVITE */}
-                  <ShareButton
-                    onClick={e => handleShare(e, ch.id)}
-                  >
-                    🔗
-                  </ShareButton>
-
-                  {ch.pending_count > 0 && (
-                    <PendingBadge>
-                      {ch.pending_count}
-                    </PendingBadge>
-                  )}
-                </div>
-              </ChallengeCard>
-            ))
-          )}
+                {ch.pending_count > 0 && (
+                  <PendingBadge>
+                    {ch.pending_count}
+                  </PendingBadge>
+                )}
+              </CardActions>
+            </ChallengeCard>
+          ))}
         </List>
       </Container>
 
-      {/* Bottom navigation */}
-      <BottomNav>
+       <BottomNav>
         <NavItem
           $active={screen === 'home'}
           onClick={() => onNavigate('home')}
@@ -240,3 +220,14 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
     </SafeArea>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
