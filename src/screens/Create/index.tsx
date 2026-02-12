@@ -4,13 +4,14 @@ import { BottomNav, NavItem } from '../Home/styles';
 
 import {
   SafeArea,
+  FixedTop,
   TopBar,
+  TopOffset,
+  ScrollContainer,
   SearchField,
   SearchInput,
   ClearButton,
   ActionButton,
-  
-
   List,
   Card,
   CardHeader,
@@ -65,10 +66,6 @@ export function Create({ screen, onNavigate }: CreateProps) {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
 
-  /* =========================
-     LOAD DATA
-  ========================= */
-
   useEffect(() => {
     load();
   }, []);
@@ -86,10 +83,7 @@ export function Create({ screen, onNavigate }: CreateProps) {
         users ( username )
       `);
 
-    if (error || !data) {
-      console.error('[CREATE] load error', error);
-      return;
-    }
+    if (!data || error) return;
 
     const mapped: Challenge[] = data.map((c: ChallengeFromDB) => {
       const isFuture =
@@ -111,83 +105,75 @@ export function Create({ screen, onNavigate }: CreateProps) {
     setChallenges(mapped);
   }
 
-  /* =========================
-     FILTER
-  ========================= */
-
-  const filtered = challenges.filter((c) =>
+  const filtered = challenges.filter(c =>
     c.title.toLowerCase().includes(query.toLowerCase())
   );
 
-  /* =========================
-     RENDER
-  ========================= */
-
   return (
     <SafeArea>
-      {/* TOP BAR */}
-      <TopBar>
-        <SearchField $active={keyboardOpen || query.length > 0}>
-          <svg
-            width="18"
-            height="18"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <circle cx="8" cy="8" r="6" />
-            <line x1="13" y1="13" x2="17" y2="17" />
-          </svg>
+      {/* FIXED TOP */}
+      <FixedTop>
+        <TopBar>
+          <SearchField $active={keyboardOpen || query.length > 0}>
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="8" cy="8" r="6" />
+              <line x1="13" y1="13" x2="17" y2="17" />
+            </svg>
 
-          <SearchInput
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Поиск вызовов"
-            onFocus={() => setKeyboardOpen(true)}
-            onBlur={() => setKeyboardOpen(false)}
-          />
+            <SearchInput
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Поиск вызовов"
+              onFocus={() => setKeyboardOpen(true)}
+              onBlur={() => setKeyboardOpen(false)}
+            />
 
-          {query && (
-            <ClearButton onClick={() => setQuery('')}>
-              ✕
-            </ClearButton>
-          )}
-        </SearchField>
+            {query && (
+              <ClearButton onClick={() => setQuery('✕')}>
+                ✕
+              </ClearButton>
+            )}
+          </SearchField>
 
-        <ActionButton onClick={() => onNavigate('create-flow')}>
-          +
-        </ActionButton>
-      </TopBar>
+          <ActionButton onClick={() => onNavigate('create-flow')}>
+            +
+          </ActionButton>
+        </TopBar>
+      </FixedTop>
 
-      {/* LIST */}
-      <List>
-        {filtered.map((c) => (
-          <Card key={c.id}>
-            <CardHeader>
-              <div>
-                <CardTitle>{c.title}</CardTitle>
-                <CardMeta>
-                  @{c.username} · {c.reportType}
-                </CardMeta>
-              </div>
+      {/* OFFSET UNDER FIXED TOP */}
+      <TopOffset />
 
-              <Status>{c.status}</Status>
-            </CardHeader>
+      {/* SCROLL AREA */}
+      <ScrollContainer>
+        <List>
+          {filtered.map(c => (
+            <Card key={c.id}>
+              <CardHeader>
+                <div>
+                  <CardTitle>{c.title}</CardTitle>
+                  <CardMeta>
+                    @{c.username} · {c.reportType}
+                  </CardMeta>
+                </div>
+                <Status>{c.status}</Status>
+              </CardHeader>
 
-            <CardRow>
-              Длительность: {c.duration} дней
-            </CardRow>
+              <CardRow>
+                Длительность: {c.duration} дней
+              </CardRow>
 
-            <MoreButton
-              onClick={() =>
-                onNavigate('challenge-details', c.id)
-              }
-            >
-              Подробнее
-            </MoreButton>
-          </Card>
-        ))}
-      </List>
+              <MoreButton
+                onClick={() =>
+                  onNavigate('challenge-details', c.id)
+                }
+              >
+                Подробнее
+              </MoreButton>
+            </Card>
+          ))}
+        </List>
+      </ScrollContainer>
 
       {/* BOTTOM NAV */}
       <BottomNav>
@@ -263,3 +249,6 @@ export function Create({ screen, onNavigate }: CreateProps) {
     </SafeArea>
   );
 }
+
+
+
