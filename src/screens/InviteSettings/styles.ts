@@ -20,8 +20,29 @@ export const Container = styled.div`
 export const HeaderRow = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  position: relative;
   margin-bottom: 24px;
+`;
+
+export const BackButton = styled.button`
+  position: absolute;
+  left: 0;
+
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.97);
+  }
 `;
 
 export const Title = styled.h1`
@@ -65,8 +86,7 @@ export const Input = styled.input`
 
   background: #000;
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-
+  border: 1px solid rgba(255,255,255,0.2);
   outline: none;
 
   &:focus {
@@ -75,46 +95,40 @@ export const Input = styled.input`
 `;
 
 /* =========================
-   FOOTER
+   BUTTONS
 ========================= */
 
-export const Footer = styled.div`
-  padding: 16px 20px 24px;
-`;
-
-export const Button = styled.button<{ $secondary?: boolean }>`
+export const PrimaryButton = styled.button`
   width: 100%;
   padding: 14px;
   border-radius: 14px;
-
   border: none;
+
   font-weight: 600;
   font-size: 15px;
 
-  background: ${({ $secondary }) =>
-    $secondary ? 'rgba(255,255,255,0.1)' : '#fff'};
-  color: ${({ $secondary }) =>
-    $secondary ? '#fff' : '#000'};
+  background: #fff;
+  color: #000;
 
   cursor: pointer;
-
-  &:active {
-    transform: scale(0.98);
-  }
+  transition: opacity 0.2s ease, transform 0.1s ease;
 
   &:disabled {
     opacity: 0.4;
     cursor: not-allowed;
   }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
 `;
 
 /* =========================
-   TOGGLE (ТОЛЬКО ТУТ)
+   TOGGLE
 ========================= */
 
 export const Toggle = styled.div<{
   $active: boolean;
-  $disabled?: boolean;
 }>`
   width: 44px;
   height: 26px;
@@ -126,16 +140,13 @@ export const Toggle = styled.div<{
   background: ${({ $active }) =>
     $active ? '#fff' : 'rgba(255,255,255,0.3)'};
 
-  cursor: ${({ $disabled }) =>
-    $disabled ? 'not-allowed' : 'pointer'};
-
-  opacity: ${({ $disabled }) =>
-    $disabled ? 0.4 : 1};
-
-  transition: background 0.2s ease, opacity 0.2s ease;
+  cursor: pointer;
+  transition: background 0.2s ease;
 `;
 
-export const ToggleKnob = styled.div<{ $active: boolean }>`
+export const ToggleKnob = styled.div<{
+  $active: boolean;
+}>`
   width: 20px;
   height: 20px;
   border-radius: 50%;

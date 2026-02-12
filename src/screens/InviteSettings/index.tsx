@@ -4,13 +4,14 @@ import {
   SafeArea,
   Container,
   HeaderRow,
+  BackButton,
   Title,
   Section,
   Row,
   Label,
   Value,
   Input,
-  Button,
+  PrimaryButton,
   Toggle,
   ToggleKnob,
 } from './styles';
@@ -46,7 +47,6 @@ export default function InviteSettings({
       const user = await getCurrentUser();
       if (!user) return;
 
-      // 1. пробуем найти существующий инвайт
       const { data: existing } = await supabase
         .from('challenge_invites')
         .select('*')
@@ -56,7 +56,6 @@ export default function InviteSettings({
 
       let inviteData = existing;
 
-      // 2. если нет — создаём ОДИН инвайт на вызов
       if (!inviteData) {
         const { data: code } = await supabase.rpc(
           'create_challenge_invite',
@@ -126,15 +125,17 @@ export default function InviteSettings({
   return (
     <SafeArea>
       <Container>
+        {/* HEADER */}
         <HeaderRow>
-          <Button $secondary onClick={onBack}>
+          <BackButton onClick={onBack}>
             ← Назад
-          </Button>
+          </BackButton>
+
           <Title>Приглашение</Title>
         </HeaderRow>
 
         <Section>
-          {/* 🔘 TOGGLE */}
+          {/* TOGGLE */}
           <Row>
             <Label>Ссылка активна</Label>
             <Toggle
@@ -147,17 +148,13 @@ export default function InviteSettings({
             </Toggle>
           </Row>
 
-          {/* 🔗 COPY LINK — СРАЗУ ПОД ТУМБЛЕРОМ */}
-          <Button
-            onClick={copyLink}
+          {/* COPY LINK */}
+          <PrimaryButton
             disabled={!invite.is_active}
-            style={{
-              opacity: invite.is_active ? 1 : 0.4,
-              cursor: invite.is_active ? 'pointer' : 'not-allowed',
-            }}
+            onClick={copyLink}
           >
             Скопировать ссылку
-          </Button>
+          </PrimaryButton>
 
           <Row>
             <Label>Лимит участников</Label>
