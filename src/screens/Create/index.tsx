@@ -79,18 +79,19 @@ export function Create({ screen, onNavigate }: CreateProps) {
 
   async function load() {
     const { data, error } = await supabase
-      .from('challenges')
-      .select(`
-        id,
-        title,
-        report_mode,
-        duration_days,
-        start_mode,
-        start_date,
-        creator:users!challenges_created_by_fkey (
-          username
-        )
-      `);
+  .from('challenges')
+  .select(`
+    id,
+    title,
+    report_mode,
+    duration_days,
+    start_mode,
+    start_date,
+    creator:users!challenges_creator_id_fkey (
+      username
+    )
+  `);
+
 
     if (!data || error) {
       console.error('[CREATE] load error', error);
