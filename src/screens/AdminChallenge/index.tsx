@@ -464,6 +464,27 @@ if (Object.keys(urls).length > 0) {
       padding: 20,
     }}
   >
+    {/* КНОПКА ЗАКРЫТИЯ */}
+    <button
+      onClick={() => setFullscreenImage(null)}
+      style={{
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        width: 36,
+        height: 36,
+        borderRadius: '50%',
+        border: 'none',
+        background: 'rgba(0,0,0,0.6)',
+        color: '#fff',
+        fontSize: 24,
+        cursor: 'pointer',
+      }}
+    >
+      ×
+    </button>
+
+    {/* ФОТО */}
     <img
       src={fullscreenImage}
       alt="fullscreen"
@@ -477,6 +498,7 @@ if (Object.keys(urls).length > 0) {
     />
   </div>
 )}
+
 
   </SafeArea>
 );
