@@ -34,8 +34,18 @@ export const Text = styled.p`
 export const List = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   margin-top: 8px;
+`;
+
+/* =========================
+   CARD ROW (wrapper)
+========================= */
+
+export const CardRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
 /* =========================
@@ -43,27 +53,11 @@ export const List = styled.div`
 ========================= */
 
 export const ChallengeCard = styled.div`
-  position: relative;
+  flex: 1;
+
   background: rgba(255,255,255,0.06);
   border-radius: 16px;
-  padding: 16px;
-
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  /* ❌ контейнер сам НЕ кликабельный */
-  pointer-events: none;
-
-  &:active {
-    background: rgba(255,255,255,0.1);
-  }
-`;
-
-export const ChallengeInfo = styled.div`
-  flex: 1;
-  min-width: 0;
-  padding-right: 12px;
+  padding: 16px 18px;
 
   display: flex;
   flex-direction: column;
@@ -71,11 +65,8 @@ export const ChallengeInfo = styled.div`
 
   cursor: pointer;
 
-  /* ✅ ТОЛЬКО ЭТА ЧАСТЬ ЛОВИТ ТАП */
-  pointer-events: auto;
-
   &:active {
-    opacity: 0.8;
+    background: rgba(255,255,255,0.1);
   }
 `;
 
@@ -90,27 +81,16 @@ export const ChallengeMeta = styled.div`
 `;
 
 /* =========================
-   ACTIONS
+   ACTION BUTTON (OUTSIDE)
 ========================= */
 
-export const CardActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  flex-shrink: 0;
-
-  /* ✅ кнопки кликабельны, но не перекрывают карточку */
-  pointer-events: auto;
-`;
-
 export const ShareButton = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 17px;
 
   border: none;
-  background: rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.15);
   color: #fff;
   font-size: 15px;
 
