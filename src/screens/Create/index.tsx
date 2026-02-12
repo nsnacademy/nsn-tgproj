@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
+import { BottomNav, NavItem } from '../Home/styles';
 
 import {
   SafeArea,
@@ -8,8 +9,7 @@ import {
   SearchInput,
   ClearButton,
   ActionButton,
-  BottomNav,
-  NavItem,
+  
 
   List,
   Card,
