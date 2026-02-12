@@ -45,38 +45,52 @@ export default function InviteSettings({
     async function load() {
       console.log('[INVITE] load settings', challengeId);
 
-      const user = await getCurrentUser();
-      if (!user) return;
+      try {
+        const user = await getCurrentUser();
+        if (!user) return;
 
-      const { data: existing } = await supabase
-        .from('challenge_invites')
-        .select('*')
-        .eq('challenge_id', challengeId)
-        .limit(1)
-        .single();
-
-      let inviteData = existing;
-
-      if (!inviteData) {
-        const { data: code } = await supabase.rpc(
-          'create_challenge_invite',
-          {
-            p_challenge_id: challengeId,
-            p_created_by: user.id,
-          }
-        );
-
-        const { data: created } = await supabase
+        const { data: existing } = await supabase
           .from('challenge_invites')
           .select('*')
-          .eq('code', code)
-          .single();
+          .eq('challenge_id', challengeId)
+          .limit(1)
+          .maybeSingle();
 
-        inviteData = created;
+        let inviteData = existing;
+
+        if (!inviteData) {
+          const { data: code, error: rpcError } =
+            await supabase.rpc('create_challenge_invite', {
+              p_challenge_id: challengeId,
+              p_created_by: user.id,
+            });
+
+          if (rpcError) {
+            console.error('[INVITE] create error', rpcError);
+            return;
+          }
+
+          const { data: created, error: loadError } =
+            await supabase
+              .from('challenge_invites')
+              .select('*')
+              .eq('code', code)
+              .single();
+
+          if (loadError) {
+            console.error('[INVITE] load created error', loadError);
+            return;
+          }
+
+          inviteData = created;
+        }
+
+        setInvite(inviteData);
+      } catch (e) {
+        console.error('[INVITE] fatal error', e);
+      } finally {
+        setLoading(false);
       }
-
-      setInvite(inviteData);
-      setLoading(false);
     }
 
     load();
@@ -91,12 +105,17 @@ export default function InviteSettings({
 
     console.log('[INVITE] update', patch);
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('challenge_invites')
       .update(patch)
       .eq('id', invite.id)
       .select()
       .single();
+
+    if (error) {
+      console.error('[INVITE] update error', error);
+      return;
+    }
 
     setInvite(data);
   };
@@ -110,8 +129,6 @@ export default function InviteSettings({
     alert('Ссылка приглашения скопирована');
   };
 
-  if (loading || !invite) return null;
-
   /* =========================
      RENDER
   ========================= */
@@ -120,55 +137,67 @@ export default function InviteSettings({
     <SafeArea>
       <Container>
         <HeaderRow>
+          <Button $secondary onClick={onBack}>
+            ← Назад
+          </Button>
           <Title>Приглашение</Title>
         </HeaderRow>
 
-        <Section>
-          <Row>
-            <Label>Ссылка активна</Label>
-            <Toggle
-              $active={invite.is_active}
-              onClick={() =>
-                updateInvite({ is_active: !invite.is_active })
-              }
-            >
-              <ToggleKnob $active={invite.is_active} />
-            </Toggle>
-          </Row>
+        {loading && (
+          <Section>
+            <Label>Загрузка…</Label>
+          </Section>
+        )}
 
-          <Row>
-            <Label>Лимит участников</Label>
-            <Input
-              type="number"
-              placeholder="Без лимита"
-              value={invite.max_uses ?? ''}
-              onChange={e =>
-                updateInvite({
-                  max_uses:
-                    e.target.value === ''
-                      ? null
-                      : Number(e.target.value),
-                })
-              }
-            />
-          </Row>
+        {!loading && invite && (
+          <Section>
+            <Row>
+              <Label>Ссылка активна</Label>
+              <Toggle
+                $active={invite.is_active}
+                onClick={() =>
+                  updateInvite({
+                    is_active: !invite.is_active,
+                  })
+                }
+              >
+                <ToggleKnob $active={invite.is_active} />
+              </Toggle>
+            </Row>
 
-          <Row>
-            <Label>Уже присоединились</Label>
-            <Value>
-              {invite.uses_count}
-              {invite.max_uses
-                ? ` / ${invite.max_uses}`
-                : ''}
-            </Value>
-          </Row>
-        </Section>
+            <Row>
+              <Label>Лимит участников</Label>
+              <Input
+                type="number"
+                placeholder="Без лимита"
+                value={invite.max_uses ?? ''}
+                onChange={e =>
+                  updateInvite({
+                    max_uses:
+                      e.target.value === ''
+                        ? null
+                        : Number(e.target.value),
+                  })
+                }
+              />
+            </Row>
+
+            <Row>
+              <Label>Уже присоединились</Label>
+              <Value>
+                {invite.uses_count}
+                {invite.max_uses
+                  ? ` / ${invite.max_uses}`
+                  : ''}
+              </Value>
+            </Row>
+          </Section>
+        )}
       </Container>
 
       <Footer>
-        <Button onClick={copyLink}>Скопировать ссылку</Button>
-        <Button $secondary onClick={onBack}>
-          Назад
+        <Button onClick={copyLink}>
+          Скопировать ссылку
         </Button>
       </Footer>
     </SafeArea>
