@@ -117,6 +117,9 @@ export default function ChallengeProgress({
   onOpenReport,
 }: Props) {
   const [loading, setLoading] = useState(true);
+  const [challengeFinished, setChallengeFinished] = useState(false);
+  const [userCompleted, setUserCompleted] = useState(false);
+
   const [challenge, setChallenge] = useState<ChallengeData | null>(null);
 
   const [currentDay, setCurrentDay] = useState(1);
@@ -175,6 +178,18 @@ export default function ChallengeProgress({
     }
 
     setChallenge(challengeData);
+
+    const { data: participant } = await supabase
+  .from('participants')
+  .select('challenge_finished, user_completed')
+  .eq('id', participantId)
+  .single();
+
+if (participant) {
+  setChallengeFinished(participant.challenge_finished);
+  setUserCompleted(participant.user_completed);
+}
+
 
     const { count } = await supabase
       .from('participants')
@@ -457,66 +472,69 @@ if (!todayReport) {
               
               <ProgressText>{getProgressText()}</ProgressText>
               
-              <TodayStatus>
-  <StatusBadge $status={todayStatus}>
-    {todayStatus === 'none' && (
-      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="8" cy="8" r="7" />
-          <path d="M8 4v4l2 2" />
-        </svg>
-        Сегодня не отмечено
-      </span>
-    )}
+              {!challengeFinished && (
+  <TodayStatus>
+    <StatusBadge $status={todayStatus}>
+      {todayStatus === 'none' && (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="8" cy="8" r="7" />
+            <path d="M8 4v4l2 2" />
+          </svg>
+          Сегодня не отмечено
+        </span>
+      )}
 
-    {todayStatus === 'pending' && (
-      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="8" cy="8" r="7" />
-          <path d="M8 4v4l2 2" />
-        </svg>
-        Ожидает проверки
-      </span>
-    )}
+      {todayStatus === 'pending' && (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="8" cy="8" r="7" />
+            <path d="M8 4v4l2 2" />
+          </svg>
+          Ожидает проверки
+        </span>
+      )}
 
-    {todayStatus === 'approved' && (
-      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="8" cy="8" r="7" />
-          <path d="M6 9l2 2 4-4" />
-        </svg>
-        Сегодня выполнено
-      </span>
-    )}
+      {todayStatus === 'approved' && (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="8" cy="8" r="7" />
+            <path d="M6 9l2 2 4-4" />
+          </svg>
+          Сегодня выполнено
+        </span>
+      )}
 
-    {todayStatus === 'rejected' && (
-      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="8" cy="8" r="7" />
-          <path d="M5 5l6 6M11 5l-6 6" />
-        </svg>
-        Отчёт отклонён
-      </span>
-    )}
-  </StatusBadge>
+      {todayStatus === 'rejected' && (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="8" cy="8" r="7" />
+            <path d="M5 5l6 6M11 5l-6 6" />
+          </svg>
+          Отчёт отклонён
+        </span>
+      )}
+    </StatusBadge>
 
-  {todayStatus === 'rejected' && rejectionReason && (
-    <div
-      style={{
-        marginTop: 10,
-        padding: 12,
-        borderRadius: 12,
-        background: 'rgba(255, 80, 80, 0.12)',
-        color: '#ff6b6b',
-        fontSize: 14,
-        lineHeight: 1.4,
-      }}
-    >
-      <strong>Причина отклонения:</strong><br />
-      {rejectionReason}
-    </div>
-  )}
-</TodayStatus>
+    {todayStatus === 'rejected' && rejectionReason && (
+      <div
+        style={{
+          marginTop: 10,
+          padding: 12,
+          borderRadius: 12,
+          background: 'rgba(255, 80, 80, 0.12)',
+          color: '#ff6b6b',
+          fontSize: 14,
+          lineHeight: 1.4,
+        }}
+      >
+        <strong>Причина отклонения:</strong><br />
+        {rejectionReason}
+      </div>
+    )}
+  </TodayStatus>
+)}
+
 
             </ProgressSection>
           </ProgressInfo>
@@ -679,76 +697,76 @@ if (!todayReport) {
 
       {/* Кнопка действия */}
       <ActionBlock>
-        {todayStatus === 'none' || todayStatus === 'rejected' ? (
-
-          <PrimaryButton
-  $variant={challenge.report_mode}
-  onClick={() =>
-    onOpenReport({
-  challengeId,
-  participantId,
-  reportDate,
-  reportMode: challenge.report_mode,
-  metricName: challenge.metric_name,
-})
-
-  }
->
-  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-    {challenge.report_mode === 'result' ? (
-      <>
-        <svg
-          width="20"
-          height="20"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <rect x="3" y="3" width="14" height="14" rx="2" />
-          <line x1="8" y1="3" x2="8" y2="17" />
-        </svg>
-        Добавить результат
-      </>
-    ) : (
-      <>
-        <svg
-          width="20"
-          height="20"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
+  {challengeFinished ? (
+    // 🏁 ВЫЗОВ ЗАВЕРШЁН
+    <DisabledButton>
+      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="10" cy="10" r="8" />
-          <path d="M6 10l2 2 4-4" />
+          <path d="M6 10l3 3 5-5" />
         </svg>
-        Отметить выполнение
-      </>
-    )}
-  </span>
-</PrimaryButton>
-
-        ) : todayStatus === 'pending' ? (
-          <DisabledButton>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="10" cy="10" r="8" />
-                <path d="M10 6v4l2 2" />
-              </svg>
-              Ожидает проверки
-            </span>
-          </DisabledButton>
+        {userCompleted ? 'Вызов успешно завершён' : 'Вызов завершён'}
+      </span>
+    </DisabledButton>
+  ) : todayStatus === 'none' || todayStatus === 'rejected' ? (
+    // ▶️ МОЖНО ОТПРАВЛЯТЬ ОТЧЁТ
+    <PrimaryButton
+      $variant={challenge.report_mode}
+      onClick={() =>
+        onOpenReport({
+          challengeId,
+          participantId,
+          reportDate,
+          reportMode: challenge.report_mode,
+          metricName: challenge.metric_name,
+        })
+      }
+    >
+      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {challenge.report_mode === 'result' ? (
+          <>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="14" height="14" rx="2" />
+              <line x1="8" y1="3" x2="8" y2="17" />
+            </svg>
+            Добавить результат
+          </>
         ) : (
-          <DisabledButton>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="10" cy="10" r="8" />
-                <path d="M6 10l3 3 5-5" />
-              </svg>
-              Сегодня выполнено
-            </span>
-          </DisabledButton>
+          <>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="10" cy="10" r="8" />
+              <path d="M6 10l2 2 4-4" />
+            </svg>
+            Отметить выполнение
+          </>
         )}
-      </ActionBlock>
+      </span>
+    </PrimaryButton>
+  ) : todayStatus === 'pending' ? (
+    // ⏳ НА ПРОВЕРКЕ
+    <DisabledButton>
+      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="10" cy="10" r="8" />
+          <path d="M10 6v4l2 2" />
+        </svg>
+        Ожидает проверки
+      </span>
+    </DisabledButton>
+  ) : (
+    // ✅ СЕГОДНЯ ВЫПОЛНЕНО
+    <DisabledButton>
+      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="10" cy="10" r="8" />
+          <path d="M6 10l3 3 5-5" />
+        </svg>
+        Сегодня выполнено
+      </span>
+    </DisabledButton>
+  )}
+</ActionBlock>
+
 
       {/* Оверлей с наградой */}
       {showPrize && selectedPrize && (
