@@ -35,6 +35,7 @@ export const TopBar = styled.div`
 
 export const TopOffset = styled.div`
   height: 140px;
+  margin-top: 50px;
 `;
 
 /* ======================
