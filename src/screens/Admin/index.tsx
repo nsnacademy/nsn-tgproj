@@ -78,8 +78,12 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
   // 🔗 INVITE
   const handleShare = async (
+    e: React.MouseEvent,
     challengeId: string
   ) => {
+    e.preventDefault();
+    e.stopPropagation(); // 🔥 КЛЮЧЕВО
+
     const user = await getCurrentUser();
     if (!user) return;
 
@@ -139,13 +143,14 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
         <List>
           {challenges.map(ch => (
-            <ChallengeCard key={ch.id}>
-              {/* ЛЕВАЯ ЧАСТЬ — ПЕРЕХОД */}
-              <ChallengeInfo
-                onClick={() =>
-                  onNavigate('admin-challenge', ch.id)
-                }
-              >
+            <ChallengeCard
+              key={ch.id}
+              onClick={() =>
+                onNavigate('admin-challenge', ch.id)
+              }
+            >
+              {/* ИНФО */}
+              <ChallengeInfo>
                 <ChallengeTitle>{ch.title}</ChallengeTitle>
                 <ChallengeMeta>
                   {new Date(ch.start_at).toLocaleDateString()} →
@@ -155,11 +160,11 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                 </ChallengeMeta>
               </ChallengeInfo>
 
-              {/* ПРАВАЯ ЧАСТЬ — ДЕЙСТВИЯ */}
+              {/* ДЕЙСТВИЯ */}
               <CardActions>
                 <ShareButton
                   type="button"
-                  onClick={() => handleShare(ch.id)}
+                  onClick={e => handleShare(e, ch.id)}
                   aria-label="Поделиться"
                 >
                   🔗
@@ -176,7 +181,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
         </List>
       </Container>
 
-       <BottomNav>
+      <BottomNav>
         <NavItem
           $active={screen === 'home'}
           onClick={() => onNavigate('home')}
@@ -220,14 +225,3 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
     </SafeArea>
   );
 }
-
-
-
-
-
-
-
-
-
-
-

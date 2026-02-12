@@ -65,17 +65,23 @@ export const PendingBadge = styled.div`
 `;
 
 export const ChallengeCard = styled.div`
+  position: relative;
   background: rgba(255,255,255,0.06);
   border-radius: 16px;
   padding: 16px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+
+  &:active {
+    background: rgba(255,255,255,0.1);
+  }
 `;
 
 export const ChallengeInfo = styled.div`
   flex: 1;
-  cursor: pointer;
+  padding-right: 12px;
 `;
 
 export const CardActions = styled.div`
@@ -89,21 +95,13 @@ export const ShareButton = styled.button`
   height: 32px;
   border-radius: 16px;
   border: none;
-  background: rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.18);
   color: #fff;
   font-size: 15px;
   cursor: pointer;
   touch-action: manipulation;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    background: rgba(255,255,255,0.22);
-  }
-
   &:active {
-    transform: scale(0.94);
+    transform: scale(0.9);
   }
 `;
