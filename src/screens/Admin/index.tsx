@@ -8,22 +8,13 @@ import {
   HeaderRow,
   List,
 
-  CardRow,          // ✅ НОВАЯ ОБЁРТКА
+  CardRow,
   ChallengeCard,
   ChallengeTitle,
   ChallengeMeta,
 
   PendingBadge,
   ShareButton,
-
-  InviteOverlay,
-  InviteCard,
-  InviteTitle,
-  InviteRow,
-  InviteLabel,
-  InviteInput,
-  InviteActions,
-  InviteButton,
 } from './styles';
 
 import { Toggle, ToggleKnob } from '../Profile/styles';
@@ -40,7 +31,8 @@ type Screen =
   | 'create'
   | 'profile'
   | 'admin'
-  | 'admin-challenge';
+  | 'admin-challenge'
+  | 'invite-settings';
 
 type AdminProps = {
   screen: Screen;
@@ -55,21 +47,11 @@ type AdminChallenge = {
   pending_count: number;
 };
 
-type InviteState = {
-  id: string;
-  code: string;
-  is_active: boolean;
-  max_uses: number | null;
-};
-
 export default function Admin({ screen, onNavigate }: AdminProps) {
   const [adminMode, setAdminMode] = useState(true);
   const [locked, setLocked] = useState(false);
   const [accessChecked, setAccessChecked] = useState(false);
   const [challenges, setChallenges] = useState<AdminChallenge[]>([]);
-
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [invite, setInvite] = useState<InviteState | null>(null);
 
   /* =========================
      INIT
@@ -80,16 +62,10 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
       console.log('[ADMIN] init');
 
       const user = await getCurrentUser();
-      if (!user) {
-        console.log('[ADMIN] no user');
-        return onNavigate('profile');
-      }
+      if (!user) return onNavigate('profile');
 
       const isCreator = await checkIsCreator(user.id);
-      if (!isCreator) {
-        console.log('[ADMIN] not creator');
-        return onNavigate('profile');
-      }
+      if (!isCreator) return onNavigate('profile');
 
       const { data, error } = await supabase.rpc(
         'get_admin_challenges',
@@ -110,85 +86,11 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   }, [onNavigate]);
 
   /* =========================
-     INVITE
-  ========================= */
-
-  const openInvite = async (
-    e: React.MouseEvent,
-    challengeId: string
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    console.log('[ADMIN] openInvite click', challengeId);
-
-    const user = await getCurrentUser();
-    if (!user) return;
-
-    const { data: existing } = await supabase
-      .from('challenge_invites')
-      .select('*')
-      .eq('challenge_id', challengeId)
-      .limit(1)
-      .single();
-
-    let inviteData = existing;
-
-    if (!inviteData) {
-      const { data: code } = await supabase.rpc(
-        'create_challenge_invite',
-        {
-          p_challenge_id: challengeId,
-          p_created_by: user.id,
-        }
-      );
-
-      const { data: created } = await supabase
-        .from('challenge_invites')
-        .select('*')
-        .eq('code', code)
-        .single();
-
-      inviteData = created;
-    }
-
-    setInvite(inviteData);
-    setInviteOpen(true);
-  };
-
-  const updateInvite = async (patch: Partial<InviteState>) => {
-    if (!invite) return;
-
-    console.log('[ADMIN] updateInvite', patch);
-
-    const { data } = await supabase
-      .from('challenge_invites')
-      .update(patch)
-      .eq('id', invite.id)
-      .select()
-      .single();
-
-    setInvite(data);
-  };
-
-  const copyLink = async () => {
-    if (!invite) return;
-
-    const link = `https://t.me/YOUR_BOT_USERNAME?startapp=invite_${invite.code}`;
-    await navigator.clipboard.writeText(link);
-
-    console.log('[ADMIN] invite link copied', link);
-    alert('Ссылка скопирована');
-  };
-
-  /* =========================
      EXIT ADMIN
   ========================= */
 
   const onToggleBack = () => {
     if (locked) return;
-
-    console.log('[ADMIN] exit admin mode');
 
     setAdminMode(false);
     setLocked(true);
@@ -220,7 +122,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
         <List>
           {challenges.map(ch => (
             <CardRow key={ch.id}>
-              {/* 🔲 КАРТОЧКА — ТОЛЬКО ПЕРЕХОД */}
+              {/* КАРТОЧКА — ПЕРЕХОД В УПРАВЛЕНИЕ */}
               <ChallengeCard
                 onClick={() => {
                   console.log(
@@ -239,10 +141,16 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                 </ChallengeMeta>
               </ChallengeCard>
 
-              {/* 🔗 ОТДЕЛЬНОЕ ДЕЙСТВИЕ */}
+              {/* 🔗 КНОПКА — ПЕРЕХОД В INVITE SETTINGS */}
               <ShareButton
                 type="button"
-                onClick={e => openInvite(e, ch.id)}
+                onClick={() => {
+                  console.log(
+                    '[ADMIN] open invite settings',
+                    ch.id
+                  );
+                  onNavigate('invite-settings', ch.id);
+                }}
               >
                 🔗
               </ShareButton>
@@ -256,53 +164,6 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
           ))}
         </List>
       </Container>
-
-      {/* =========================
-          INVITE SETTINGS
-      ========================= */}
-
-      {inviteOpen && invite && (
-        <InviteOverlay onClick={() => setInviteOpen(false)}>
-          <InviteCard onClick={e => e.stopPropagation()}>
-            <InviteTitle>Приглашение</InviteTitle>
-
-            <InviteRow>
-              <InviteLabel>Приглашение активно</InviteLabel>
-              <Toggle
-                $active={invite.is_active}
-                onClick={() =>
-                  updateInvite({ is_active: !invite.is_active })
-                }
-              >
-                <ToggleKnob $active={invite.is_active} />
-              </Toggle>
-            </InviteRow>
-
-            <InviteRow>
-              <InviteLabel>Лимит участников</InviteLabel>
-              <InviteInput
-                type="number"
-                placeholder="0 = без лимита"
-                value={invite.max_uses ?? ''}
-                onChange={e =>
-                  updateInvite({
-                    max_uses:
-                      e.target.value === ''
-                        ? null
-                        : Number(e.target.value),
-                  })
-                }
-              />
-            </InviteRow>
-
-            <InviteActions>
-              <InviteButton onClick={copyLink}>
-                Скопировать ссылку
-              </InviteButton>
-            </InviteActions>
-          </InviteCard>
-        </InviteOverlay>
-      )}
 
       {/* =========================
           BOTTOM NAV

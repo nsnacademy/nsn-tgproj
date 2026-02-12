@@ -14,6 +14,7 @@ import ChallengeReport from '../screens/ChallengeReport';
 import Profile from '../screens/Profile';
 import Admin from '../screens/Admin';
 import AdminChallenge from '../screens/AdminChallenge';
+import InviteSettings from '../screens/InviteSettings';
 
 /* === ЭКРАНЫ === */
 type Screen =
@@ -28,7 +29,8 @@ type Screen =
   | 'challenge-report'
   | 'profile'
   | 'admin'
-  | 'admin-challenge';
+  | 'admin-challenge'
+  | 'invite-settings'; // ✅ НОВЫЙ ЭКРАН
 
 function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -51,29 +53,26 @@ function App() {
 
   /* === INIT TELEGRAM === */
   useEffect(() => {
-  console.log('[APP] init telegram');
+    console.log('[APP] init telegram');
 
-  saveTelegramUser();
+    saveTelegramUser();
 
-  const tg = window.Telegram?.WebApp;
-  if (tg) {
-    tg.ready();
-    tg.expand();
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
 
-    // ⚠️ ВАЖНО: TypeScript-safe вызов
-    (tg as any).disableClosingConfirmation?.();
-  }
-}, []);
+      // TS-safe
+      (tg as any).disableClosingConfirmation?.();
+    }
+  }, []);
 
-
-  /* 🔥 КРИТИЧНО: ЛОГ И СИНХРОНИЗАЦИЯ ЭКРАНА */
+  /* === SCREEN SYNC === */
   useEffect(() => {
     console.log('[APP] screen changed →', screen);
 
     const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.expand();
-    }
+    if (tg) tg.expand();
   }, [screen]);
 
   /* === НАВИГАЦИЯ === */
@@ -195,21 +194,23 @@ function App() {
         )}
 
       {screen === 'profile' && (
-        <Profile
-          screen={screen}
-          onNavigate={navigate}
-        />
+        <Profile screen={screen} onNavigate={navigate} />
       )}
 
       {screen === 'admin' && (
-        <Admin
-          screen={screen}
-          onNavigate={navigate}
-        />
+        <Admin screen={screen} onNavigate={navigate} />
       )}
 
       {screen === 'admin-challenge' && selectedChallengeId && (
         <AdminChallenge
+          challengeId={selectedChallengeId}
+          onBack={() => navigate('admin')}
+        />
+      )}
+
+      {/* ✅ НОВЫЙ ЭКРАН INVITE */}
+      {screen === 'invite-settings' && selectedChallengeId && (
+        <InviteSettings
           challengeId={selectedChallengeId}
           onBack={() => navigate('admin')}
         />

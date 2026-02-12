@@ -1,5 +1,9 @@
 import styled from 'styled-components';
 
+/* =========================
+   LAYOUT
+========================= */
+
 export const SafeArea = styled.div`
   min-height: 100vh;
   background: #000;
@@ -27,7 +31,7 @@ export const Title = styled.h1`
 
 export const Text = styled.p`
   font-size: 14px;
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.7);
   margin-bottom: 12px;
 `;
 
@@ -39,7 +43,7 @@ export const List = styled.div`
 `;
 
 /* =========================
-   CARD ROW (wrapper)
+   CARD ROW (CARD + ACTIONS)
 ========================= */
 
 export const CardRow = styled.div`
@@ -55,7 +59,7 @@ export const CardRow = styled.div`
 export const ChallengeCard = styled.div`
   flex: 1;
 
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 16px;
   padding: 16px 18px;
 
@@ -66,7 +70,7 @@ export const ChallengeCard = styled.div`
   cursor: pointer;
 
   &:active {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
   }
 `;
 
@@ -77,11 +81,11 @@ export const ChallengeTitle = styled.div`
 
 export const ChallengeMeta = styled.div`
   font-size: 12px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
 `;
 
 /* =========================
-   ACTION BUTTON (OUTSIDE)
+   ACTIONS (RIGHT SIDE)
 ========================= */
 
 export const ShareButton = styled.button`
@@ -90,7 +94,7 @@ export const ShareButton = styled.button`
   border-radius: 17px;
 
   border: none;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   color: #fff;
   font-size: 15px;
 
@@ -106,7 +110,7 @@ export const ShareButton = styled.button`
   }
 
   &:hover {
-    background: rgba(255,255,255,0.25);
+    background: rgba(255, 255, 255, 0.25);
   }
 `;
 
@@ -123,79 +127,4 @@ export const PendingBadge = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-`;
-
-/* =========================
-   INVITE SETTINGS
-========================= */
-
-export const InviteOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 50;
-
-  display: flex;
-  align-items: flex-end;
-`;
-
-export const InviteCard = styled.div`
-  width: 100%;
-  background: #111;
-  border-radius: 24px 24px 0 0;
-  padding: 20px;
-`;
-
-export const InviteTitle = styled.h3`
-  font-size: 18px;
-  margin-bottom: 16px;
-`;
-
-export const InviteRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-`;
-
-export const InviteLabel = styled.div`
-  font-size: 14px;
-  opacity: 0.8;
-`;
-
-export const InviteInput = styled.input`
-  width: 120px;
-  padding: 8px 10px;
-  border-radius: 10px;
-
-  background: #000;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.2);
-
-  outline: none;
-
-  &:focus {
-    border-color: #fff;
-  }
-`;
-
-export const InviteActions = styled.div`
-  margin-top: 20px;
-`;
-
-export const InviteButton = styled.button`
-  width: 100%;
-  padding: 14px;
-  border-radius: 14px;
-
-  border: none;
-  background: #fff;
-  color: #000;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  &:active {
-    transform: scale(0.98);
-  }
 `;
