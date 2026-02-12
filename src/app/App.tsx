@@ -20,7 +20,7 @@ import InviteSettings from '../screens/InviteSettings';
    SCREENS
 ========================= */
 
-type Screen =
+export type Screen =
   | 'splash'
   | 'home'
   | 'create'
@@ -54,7 +54,6 @@ function App() {
 
   const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
-  // защита от повторной обработки invite
   const inviteHandledRef = useRef(false);
 
   /* =========================
@@ -62,23 +61,18 @@ function App() {
   ========================= */
 
   useEffect(() => {
-    console.log('[APP] init telegram');
-
-    // ✅ ВАЖНО: теперь функция реально используется
     saveTelegramUser();
 
     const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.ready();
       tg.expand();
-
-      // TS-safe
       (tg as any).disableClosingConfirmation?.();
     }
   }, []);
 
   /* =========================
-     LISTENER: AUTO → PROGRESS
+     AUTO → PROGRESS
   ========================= */
 
   useEffect(() => {
@@ -96,36 +90,24 @@ function App() {
   }, []);
 
   /* =========================
-     HANDLE INVITE (start_param)
+     HANDLE INVITE
   ========================= */
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (!tg) return;
 
-    const unsafeData = tg.initDataUnsafe as any;
-    const startParam = unsafeData?.start_param;
-
-    console.log('[APP] start_param:', startParam);
-
-    if (!startParam) return;
-    if (inviteHandledRef.current) return;
+    const startParam = (tg.initDataUnsafe as any)?.start_param;
+    if (!startParam || inviteHandledRef.current) return;
 
     if (startParam.startsWith('invite_')) {
       inviteHandledRef.current = true;
-
       const code = startParam.replace('invite_', '');
-      console.log('[APP] invite detected:', code);
 
       supabase
         .rpc('get_challenge_by_invite', { p_code: code })
-        .then(({ data, error }) => {
-          if (error || !data) {
-            console.error('[APP] invalid invite', error);
-            return;
-          }
-
-          console.log('[APP] invite → challengeId', data);
+        .then(({ data }) => {
+          if (!data) return;
           setSelectedChallengeId(data);
           setScreen('challenge-details');
         });
@@ -133,18 +115,7 @@ function App() {
   }, []);
 
   /* =========================
-     SCREEN SYNC
-  ========================= */
-
-  useEffect(() => {
-    console.log('[APP] screen changed →', screen);
-
-    const tg = window.Telegram?.WebApp;
-    if (tg) tg.expand();
-  }, [screen]);
-
-  /* =========================
-     NAVIGATION
+     NAVIGATION (SOURCE OF TRUTH)
   ========================= */
 
   const navigate = (
@@ -152,11 +123,6 @@ function App() {
     challengeId?: string,
     participantId?: string
   ) => {
-    console.log('[APP] navigate →', next, {
-      challengeId,
-      participantId,
-    });
-
     if (challengeId !== undefined) {
       setSelectedChallengeId(challengeId);
     }
@@ -172,10 +138,6 @@ function App() {
     setScreen(next);
   };
 
-  /* =========================
-     OPEN REPORT
-  ========================= */
-
   const openReport = (data: {
     challengeId: string;
     participantId: string;
@@ -183,20 +145,17 @@ function App() {
     reportMode: 'simple' | 'result';
     metricName: string | null;
   }) => {
-    console.log('[APP] openReport', data);
-
     setSelectedChallengeId(data.challengeId);
     setSelectedParticipantId(data.participantId);
     setReportDate(data.reportDate);
 
-    if (data.reportMode) setReportMode(data.reportMode);
+    setReportMode(data.reportMode);
     if (data.metricName) setMetricName(data.metricName);
 
     setScreen('challenge-report');
   };
 
   const goHomeAndRefresh = () => {
-    console.log('[APP] goHomeAndRefresh');
     setHomeRefreshKey(k => k + 1);
     setScreen('home');
   };
@@ -222,7 +181,10 @@ function App() {
       )}
 
       {screen === 'create' && (
-        <Create onNavigate={navigate} screen={'home'} />
+        <Create
+          screen={screen}
+          onNavigate={navigate}
+        />
       )}
 
       {screen === 'create-flow' && (
@@ -272,11 +234,17 @@ function App() {
         )}
 
       {screen === 'profile' && (
-        <Profile screen={screen} onNavigate={navigate} />
+        <Profile
+          screen={screen}
+          onNavigate={navigate}
+        />
       )}
 
       {screen === 'admin' && (
-        <Admin screen={screen} onNavigate={navigate} />
+        <Admin
+          screen={screen}
+          onNavigate={navigate}
+        />
       )}
 
       {screen === 'admin-challenge' && selectedChallengeId && (
