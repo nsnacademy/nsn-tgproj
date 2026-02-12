@@ -43,16 +43,26 @@ export const ToggleLabel = styled.div`
   font-weight: 500;
 `;
 
-export const Toggle = styled.div<{ $active: boolean }>`
+export const Toggle = styled.div<{
+  $active: boolean;
+  $disabled?: boolean;
+}>`
   width: 46px;
   height: 26px;
   border-radius: 13px;
   background: ${({ $active }) =>
     $active ? '#fff' : 'rgba(255,255,255,0.3)'};
+
   position: relative;
-  cursor: pointer;
+  cursor: ${({ $disabled }) =>
+    $disabled ? 'not-allowed' : 'pointer'};
+
+  opacity: ${({ $disabled }) =>
+    $disabled ? 0.4 : 1};
+
   transition: all 0.2s ease;
 `;
+
 
 export const ToggleKnob = styled.div<{ $active: boolean }>`
   width: 22px;

@@ -69,7 +69,7 @@ export const Footer = styled.div`
 `;
 
 export const Button = styled.button<{ $secondary?: boolean }>`
-  width: 100%;
+  
   padding: 14px;
   border-radius: 14px;
   border: none;
