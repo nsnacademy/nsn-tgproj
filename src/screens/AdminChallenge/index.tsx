@@ -475,7 +475,7 @@ if (Object.keys(urls).length > 0) {
         height: 36,
         borderRadius: '50%',
         border: 'none',
-        background: 'rgba(198, 66, 66, 0.6)',
+        background: 'rgba(0, 0, 0, 0.6)',
         color: '#fff',
         fontSize: 26,
         cursor: 'pointer',
