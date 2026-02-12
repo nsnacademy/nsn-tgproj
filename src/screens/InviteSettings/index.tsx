@@ -50,7 +50,7 @@ export default function InviteSettings({
       const user = await getCurrentUser();
       if (!user) return;
 
-      // 1️⃣ INVITE (как было)
+      // 1️⃣ INVITE
       const { data: existingInvite } = await supabase
         .from('challenge_invites')
         .select('*')
@@ -82,18 +82,16 @@ export default function InviteSettings({
       setInvite(inviteData);
 
       // 2️⃣ CHALLENGE LIMIT
-      // 2️⃣ CHALLENGE LIMIT
-const { data: challenge } = await supabase
-  .from('challenges')
-  .select('max_participants')
-  .eq('id', challengeId)
-  .single();
+      const { data: challenge } = await supabase
+        .from('challenges')
+        .select('max_participants')
+        .eq('id', challengeId)
+        .single();
 
-if (challenge && challenge.max_participants !== null) {
-  setLimitEnabled(true);
-  setMaxParticipants(challenge.max_participants);
-}
-
+      if (challenge && challenge.max_participants !== null) {
+        setLimitEnabled(true);
+        setMaxParticipants(challenge.max_participants);
+      }
 
       // 3️⃣ COUNT PARTICIPANTS
       const { count } = await supabase
@@ -102,7 +100,6 @@ if (challenge && challenge.max_participants !== null) {
         .eq('challenge_id', challengeId);
 
       setParticipantsCount(count ?? 0);
-
       setLoading(false);
     }
 
@@ -135,14 +132,12 @@ if (challenge && challenge.max_participants !== null) {
 
   const toggleLimit = async () => {
     if (limitEnabled) {
-      // выключаем лимит
       setLimitEnabled(false);
       setMaxParticipants('');
       await updateChallengeLimit(null);
     } else {
-      // включаем лимит
-      setLimitEnabled(true);
       const initial = participantsCount || 1;
+      setLimitEnabled(true);
       setMaxParticipants(initial);
       await updateChallengeLimit(initial);
     }
@@ -170,6 +165,43 @@ if (challenge && challenge.max_participants !== null) {
   };
 
   /* =========================
+     🔥 DELETE CHALLENGE
+  ========================= */
+
+  const deleteChallenge = async () => {
+    const confirmed = window.confirm(
+      'Вы уверены, что хотите удалить вызов?\nЭто действие необратимо.'
+    );
+
+    if (!confirmed) return;
+
+    // 1️⃣ удалить участников
+    await supabase
+      .from('participants')
+      .delete()
+      .eq('challenge_id', challengeId);
+
+    // 2️⃣ удалить инвайты
+    await supabase
+      .from('challenge_invites')
+      .delete()
+      .eq('challenge_id', challengeId);
+
+    // 3️⃣ удалить сам вызов
+    const { error } = await supabase
+      .from('challenges')
+      .delete()
+      .eq('id', challengeId);
+
+    if (error) {
+      console.error('[DELETE CHALLENGE] error', error);
+      return;
+    }
+
+    onBack();
+  };
+
+  /* =========================
      RENDER
   ========================= */
 
@@ -194,7 +226,7 @@ if (challenge && challenge.max_participants !== null) {
         </HeaderRow>
 
         <Section>
-          {/* INVITE TOGGLE */}
+          {/* INVITE */}
           <Row>
             <Label>Ссылка активна</Label>
             <Toggle
@@ -214,7 +246,7 @@ if (challenge && challenge.max_participants !== null) {
             Скопировать ссылку
           </PrimaryButton>
 
-          {/* 🔥 LIMIT TOGGLE */}
+          {/* LIMIT */}
           <Row>
             <Label>Лимит участников (на вызов)</Label>
             <Toggle
@@ -245,6 +277,19 @@ if (challenge && challenge.max_participants !== null) {
                 : ''}
             </Value>
           </Row>
+        </Section>
+
+        {/* 🔥 DELETE */}
+        <Section>
+          <PrimaryButton
+            style={{
+              background: '#ff3b30',
+              color: '#fff',
+            }}
+            onClick={deleteChallenge}
+          >
+            Удалить вызов
+          </PrimaryButton>
         </Section>
       </Container>
     </SafeArea>
