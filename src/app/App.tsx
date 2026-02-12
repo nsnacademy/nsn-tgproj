@@ -54,64 +54,83 @@ function App() {
 
   const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
-  // защита от повторного invite
+  // защита от повторной обработки invite
   const inviteHandledRef = useRef(false);
 
   /* =========================
-     INIT TELEGRAM
+     INIT TELEGRAM + SAVE USER
   ========================= */
 
   useEffect(() => {
     console.log('[APP] init telegram');
 
+    // ✅ ВАЖНО: теперь функция реально используется
     saveTelegramUser();
 
     const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.ready();
       tg.expand();
+
+      // TS-safe
       (tg as any).disableClosingConfirmation?.();
     }
   }, []);
 
   /* =========================
-   HANDLE INVITE (start_param)
-========================= */
+     LISTENER: AUTO → PROGRESS
+  ========================= */
 
-useEffect(() => {
-  const tg = window.Telegram?.WebApp;
-  if (!tg) return;
+  useEffect(() => {
+    const handler = (e: any) => {
+      navigate(
+        'challenge-progress',
+        e.detail.challengeId,
+        e.detail.participantId
+      );
+    };
 
-  const unsafeData = tg.initDataUnsafe as any;
-  const startParam = unsafeData?.start_param;
+    window.addEventListener('navigate-to-progress', handler);
+    return () =>
+      window.removeEventListener('navigate-to-progress', handler);
+  }, []);
 
-  console.log('[APP] start_param:', startParam);
+  /* =========================
+     HANDLE INVITE (start_param)
+  ========================= */
 
-  if (!startParam) return;
-  if (inviteHandledRef.current) return;
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return;
 
-  if (startParam.startsWith('invite_')) {
-    inviteHandledRef.current = true;
+    const unsafeData = tg.initDataUnsafe as any;
+    const startParam = unsafeData?.start_param;
 
-    const code = startParam.replace('invite_', '');
-    console.log('[APP] invite detected:', code);
+    console.log('[APP] start_param:', startParam);
 
-    supabase
-      .rpc('get_challenge_by_invite', { p_code: code })
-      .then(({ data, error }) => {
-        if (error || !data) {
-          console.error('[APP] invalid invite', error);
-          return;
-        }
+    if (!startParam) return;
+    if (inviteHandledRef.current) return;
 
-        console.log('[APP] invite → challengeId', data);
+    if (startParam.startsWith('invite_')) {
+      inviteHandledRef.current = true;
 
-        setSelectedChallengeId(data);
-        setScreen('challenge-details');
-      });
-  }
-}, []);
+      const code = startParam.replace('invite_', '');
+      console.log('[APP] invite detected:', code);
 
+      supabase
+        .rpc('get_challenge_by_invite', { p_code: code })
+        .then(({ data, error }) => {
+          if (error || !data) {
+            console.error('[APP] invalid invite', error);
+            return;
+          }
+
+          console.log('[APP] invite → challengeId', data);
+          setSelectedChallengeId(data);
+          setScreen('challenge-details');
+        });
+    }
+  }, []);
 
   /* =========================
      SCREEN SYNC
