@@ -14,7 +14,7 @@ export const FixedTop = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  padding-top: 90px;
+  padding-top: 100px;
   background: #000;
   z-index: 1000;
 `;

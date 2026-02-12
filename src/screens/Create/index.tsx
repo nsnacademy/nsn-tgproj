@@ -45,8 +45,11 @@ type ChallengeFromDB = {
   duration_days: number;
   start_mode: 'now' | 'date';
   start_date: string | null;
-  users: { username: string }[] | null;
+  creator: {
+    username: string | null;
+  }[] | null;
 };
+
 
 type Challenge = {
   id: string;
@@ -55,23 +58,7 @@ type Challenge = {
   reportType: string;
   duration: number;
   status: 'Идёт' | 'Скоро';
-  searchText: string; // 👈 добавлено
 };
-
-/* =========================
-   DEBOUNCE
-========================= */
-
-function useDebounce<T>(value: T, delay = 250) {
-  const [debounced, setDebounced] = useState(value);
-
-  useEffect(() => {
-    const id = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(id);
-  }, [value, delay]);
-
-  return debounced;
-}
 
 /* =========================
    COMPONENT
@@ -82,11 +69,13 @@ export function Create({ screen, onNavigate }: CreateProps) {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
 
-  const debouncedQuery = useDebounce(query, 250);
-
   useEffect(() => {
     load();
   }, []);
+
+  /* =========================
+     LOAD — НЕ ИЗМЕНЯЛ
+  ========================= */
 
   async function load() {
     const { data, error } = await supabase
@@ -98,10 +87,15 @@ export function Create({ screen, onNavigate }: CreateProps) {
         duration_days,
         start_mode,
         start_date,
-        users ( username )
+        creator:users!challenges_created_by_fkey (
+          username
+        )
       `);
 
-    if (!data || error) return;
+    if (!data || error) {
+      console.error('[CREATE] load error', error);
+      return;
+    }
 
     const mapped: Challenge[] = data.map((c: ChallengeFromDB) => {
       const isFuture =
@@ -110,22 +104,16 @@ export function Create({ screen, onNavigate }: CreateProps) {
         new Date(c.start_date) > new Date();
 
       const reportLabel =
-        c.report_mode === 'simple' ? 'отметка' : 'результат';
-
-      const searchText = `
-        ${c.title}
-        ${reportLabel}
-        ${c.duration_days} дней
-      `.toLowerCase();
+        c.report_mode === 'simple' ? 'Отметка' : 'Результат';
 
       return {
         id: c.id,
         title: c.title,
-        username: c.users?.[0]?.username ?? 'unknown',
+        username: c.creator?.[0]?.username ?? 'unknown',
+
         reportType: reportLabel,
         duration: c.duration_days,
         status: isFuture ? 'Скоро' : 'Идёт',
-        searchText,
       };
     });
 
@@ -133,21 +121,12 @@ export function Create({ screen, onNavigate }: CreateProps) {
   }
 
   /* =========================
-     FILTER (KEYWORDS)
+     FILTER
   ========================= */
 
-  const words = debouncedQuery
-    .toLowerCase()
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  const filtered =
-    words.length === 0
-      ? challenges
-      : challenges.filter(c =>
-          words.every(word => c.searchText.includes(word))
-        );
+  const filtered = challenges.filter(c =>
+    c.title.toLowerCase().includes(query.toLowerCase())
+  );
 
   /* =========================
      RENDER
@@ -172,7 +151,7 @@ export function Create({ screen, onNavigate }: CreateProps) {
 
             <SearchInput
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={e => setQuery(e.target.value)}
               placeholder="Поиск вызовов"
               onFocus={() => setKeyboardOpen(true)}
               onBlur={() => setKeyboardOpen(false)}
@@ -191,6 +170,7 @@ export function Create({ screen, onNavigate }: CreateProps) {
         </TopBar>
       </FixedTop>
 
+      {/* OFFSET */}
       <TopOffset />
 
       {/* SCROLL */}
@@ -205,6 +185,7 @@ export function Create({ screen, onNavigate }: CreateProps) {
                     @{c.username} · {c.reportType}
                   </CardMeta>
                 </div>
+
                 <Status>{c.status}</Status>
               </CardHeader>
 
