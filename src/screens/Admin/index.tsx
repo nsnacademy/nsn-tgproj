@@ -198,37 +198,37 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
         <List>
           {challenges.map(ch => (
             <ChallengeCard key={ch.id}>
-              {/* ✅ ТОЛЬКО ЭТА ЧАСТЬ КЛИКАБЕЛЬНА */}
-              <ChallengeInfo
-                onClick={() => {
-                  console.log('[ADMIN] navigate to admin-challenge', ch.id);
-                  onNavigate('admin-challenge', ch.id);
-                }}
-              >
-                <ChallengeTitle>{ch.title}</ChallengeTitle>
-                <ChallengeMeta>
-                  {new Date(ch.start_at).toLocaleDateString()} →
-                  {ch.end_at
-                    ? ` ${new Date(ch.end_at).toLocaleDateString()}`
-                    : ' …'}
-                </ChallengeMeta>
-              </ChallengeInfo>
+  {/* ЛЕВАЯ ЧАСТЬ — ПЕРЕХОД */}
+  <ChallengeInfo
+    onClick={() => {
+      console.log('[ADMIN] card click → admin-challenge', ch.id);
+      onNavigate('admin-challenge', ch.id);
+    }}
+  >
+    <ChallengeTitle>{ch.title}</ChallengeTitle>
+    <ChallengeMeta>
+      {new Date(ch.start_at).toLocaleDateString()} →
+      {ch.end_at
+        ? ` ${new Date(ch.end_at).toLocaleDateString()}`
+        : ' …'}
+    </ChallengeMeta>
+  </ChallengeInfo>
 
-              <CardActions>
-                <ShareButton
-                  type="button"
-                  onClick={e => openInvite(e, ch.id)}
-                >
-                  🔗
-                </ShareButton>
+  {/* ПРАВАЯ ЧАСТЬ — ТОЛЬКО ДЕЙСТВИЯ */}
+  <CardActions>
+    <ShareButton
+      type="button"
+      onClick={e => openInvite(e, ch.id)}
+    >
+      🔗
+    </ShareButton>
 
-                {ch.pending_count > 0 && (
-                  <PendingBadge>
-                    {ch.pending_count}
-                  </PendingBadge>
-                )}
-              </CardActions>
-            </ChallengeCard>
+    {ch.pending_count > 0 && (
+      <PendingBadge>{ch.pending_count}</PendingBadge>
+    )}
+  </CardActions>
+</ChallengeCard>
+
           ))}
         </List>
       </Container>

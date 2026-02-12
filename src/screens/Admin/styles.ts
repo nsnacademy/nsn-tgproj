@@ -52,7 +52,7 @@ export const ChallengeCard = styled.div`
   align-items: center;
   gap: 12px;
 
-  /* 🔥 ВАЖНО: сам контейнер НЕ ловит клики */
+  /* ❌ контейнер сам НЕ кликабельный */
   pointer-events: none;
 
   &:active {
@@ -71,11 +71,11 @@ export const ChallengeInfo = styled.div`
 
   cursor: pointer;
 
-  /* 🔥 ТОЛЬКО ЭТА ЧАСТЬ КЛИКАБЕЛЬНА */
+  /* ✅ ТОЛЬКО ЭТА ЧАСТЬ ЛОВИТ ТАП */
   pointer-events: auto;
 
-  &:hover {
-    opacity: 0.85;
+  &:active {
+    opacity: 0.8;
   }
 `;
 
@@ -100,7 +100,7 @@ export const CardActions = styled.div`
 
   flex-shrink: 0;
 
-  /* 🔥 КЛИКИ ТОЛЬКО ЗДЕСЬ */
+  /* ✅ кнопки кликабельны, но не перекрывают карточку */
   pointer-events: auto;
 `;
 
@@ -114,12 +114,12 @@ export const ShareButton = styled.button`
   color: #fff;
   font-size: 15px;
 
-  cursor: pointer;
-  touch-action: manipulation;
-
   display: flex;
   align-items: center;
   justify-content: center;
+
+  cursor: pointer;
+  touch-action: manipulation;
 
   &:active {
     transform: scale(0.9);
@@ -134,6 +134,7 @@ export const PendingBadge = styled.div`
   min-width: 28px;
   height: 28px;
   border-radius: 14px;
+
   background: #ff4d4f;
   color: #fff;
   font-size: 13px;
@@ -186,9 +187,16 @@ export const InviteInput = styled.input`
   width: 120px;
   padding: 8px 10px;
   border-radius: 10px;
+
   background: #000;
   color: #fff;
   border: 1px solid rgba(255,255,255,0.2);
+
+  outline: none;
+
+  &:focus {
+    border-color: #fff;
+  }
 `;
 
 export const InviteActions = styled.div`
@@ -199,8 +207,15 @@ export const InviteButton = styled.button`
   width: 100%;
   padding: 14px;
   border-radius: 14px;
+
   border: none;
   background: #fff;
   color: #000;
   font-weight: 600;
+
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.98);
+  }
 `;
