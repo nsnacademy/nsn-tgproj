@@ -149,89 +149,122 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   /* ================= JOIN ================= */
 
   async function joinChallenge() {
-    if (!accepted || joining || alreadyJoined) return;
+  if (!accepted || joining || alreadyJoined) return;
 
-    setJoining(true);
+  setJoining(true);
 
-    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    if (!tgUser) {
-      setJoining(false);
-      return;
-    }
+const tg = window.Telegram?.WebApp;
 
-    const { data: user } = await supabase
-      .from('users')
-      .select('id')
-      .eq('telegram_id', tgUser.id)
-      .single();
+const initData =
+  tg?.initDataUnsafe as {
+    user?: { id: number };
+    start_param?: string;
+  } | undefined;
 
-    if (!user) {
-      setJoining(false);
-      return;
-    }
+const tgUser = initData?.user;
+const startParam = initData?.start_param;
 
-    // 🔎 если уже есть participant → сразу в progress
-    const { data: existing } = await supabase
-      .from('participants')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('challenge_id', challengeId)
-      .maybeSingle();
+if (!tgUser) {
+  setJoining(false);
+  return;
+}
 
-    if (existing) {
-      setAlreadyJoined(true);
-      setJoining(false);
 
-      window.dispatchEvent(
-        new CustomEvent('navigate-to-progress', {
-          detail: {
-            challengeId,
-            participantId: existing.id,
-          },
-        })
-      );
-      return;
-    }
+  // 1️⃣ получаем пользователя
+  const { data: user } = await supabase
+    .from('users')
+    .select('id')
+    .eq('telegram_id', tgUser.id)
+    .single();
 
-    // ➕ создаём participant
-    const { error } = await supabase
-      .from('participants')
-      .insert({
-        user_id: user.id,
-        challenge_id: challengeId,
-      });
+  if (!user) {
+    setJoining(false);
+    return;
+  }
 
-    if (error) {
-      console.error(error);
-      setJoining(false);
-      return;
-    }
+  // 2️⃣ проверка — уже участвует?
+  const { data: existing } = await supabase
+    .from('participants')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('challenge_id', challengeId)
+    .maybeSingle();
 
-    // 🔁 получаем participant
-    const { data: participant } = await supabase
-      .from('participants')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('challenge_id', challengeId)
-      .single();
-
-    if (!participant) {
-      setJoining(false);
-      return;
-    }
-
+  if (existing) {
+    setAlreadyJoined(true);
     setJoining(false);
 
-    // 🔥 АВТОПЕРЕХОД В ChallengeProgress
     window.dispatchEvent(
       new CustomEvent('navigate-to-progress', {
         detail: {
           challengeId,
-          participantId: participant.id,
+          participantId: existing.id,
         },
       })
     );
+    return;
   }
+
+  // 3️⃣ определяем invite_id (если зашёл по ссылке)
+  let inviteId: string | null = null;
+
+  if (startParam?.startsWith('invite_')) {
+    const code = startParam.replace('invite_', '');
+
+    const { data: invite } = await supabase
+      .from('challenge_invites')
+      .select('id')
+      .eq('code', code)
+      .eq('challenge_id', challengeId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (invite) {
+      inviteId = invite.id;
+    }
+  }
+
+  // 4️⃣ создаём participant С invite_id
+  const { error } = await supabase
+    .from('participants')
+    .insert({
+      user_id: user.id,
+      challenge_id: challengeId,
+      invite_id: inviteId,
+    });
+
+  if (error) {
+    console.error('[JOIN] insert error', error);
+    setJoining(false);
+    return;
+  }
+
+  // 5️⃣ получаем participant
+  const { data: participant } = await supabase
+    .from('participants')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('challenge_id', challengeId)
+    .single();
+
+  if (!participant) {
+    setJoining(false);
+    return;
+  }
+
+  setJoining(false);
+
+  // 🔥 автопереход
+  window.dispatchEvent(
+    new CustomEvent('navigate-to-progress', {
+      detail: {
+        challengeId,
+        participantId: participant.id,
+      },
+    })
+  );
+}
+
 
   /* ================= UI LOGIC ================= */
 
