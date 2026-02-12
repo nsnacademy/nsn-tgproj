@@ -1,5 +1,9 @@
 import styled from 'styled-components';
 
+/* =========================
+   LAYOUT
+========================= */
+
 export const SafeArea = styled.div`
   min-height: 100vh;
   background: #000;
@@ -17,13 +21,17 @@ export const HeaderRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 `;
 
 export const Title = styled.h1`
   font-size: 22px;
   font-weight: 600;
 `;
+
+/* =========================
+   CONTENT
+========================= */
 
 export const Section = styled.div`
   background: rgba(255, 255, 255, 0.06);
@@ -54,9 +62,11 @@ export const Input = styled.input`
   width: 120px;
   padding: 8px 10px;
   border-radius: 10px;
+
   background: #000;
   color: #fff;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
   outline: none;
 
   &:focus {
@@ -64,14 +74,19 @@ export const Input = styled.input`
   }
 `;
 
+/* =========================
+   FOOTER
+========================= */
+
 export const Footer = styled.div`
   padding: 16px 20px 24px;
 `;
 
 export const Button = styled.button<{ $secondary?: boolean }>`
-  
+  width: 100%;
   padding: 14px;
   border-radius: 14px;
+
   border: none;
   font-weight: 600;
   font-size: 15px;
@@ -86,9 +101,17 @@ export const Button = styled.button<{ $secondary?: boolean }>`
   &:active {
     transform: scale(0.98);
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 `;
 
-/* 🔥 Toggle ТОЛЬКО ТУТ */
+/* =========================
+   TOGGLE (ТОЛЬКО ТУТ)
+========================= */
+
 export const Toggle = styled.div<{
   $active: boolean;
   $disabled?: boolean;
@@ -109,13 +132,14 @@ export const Toggle = styled.div<{
   opacity: ${({ $disabled }) =>
     $disabled ? 0.4 : 1};
 
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, opacity 0.2s ease;
 `;
 
 export const ToggleKnob = styled.div<{ $active: boolean }>`
   width: 20px;
   height: 20px;
   border-radius: 50%;
+
   background: ${({ $active }) =>
     $active ? '#000' : '#fff'};
 
