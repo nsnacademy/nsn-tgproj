@@ -45,11 +45,8 @@ type ChallengeFromDB = {
   duration_days: number;
   start_mode: 'now' | 'date';
   start_date: string | null;
-  creator: {
-    username: string | null;
-  }[] | null;
+  creator_username: string | null;
 };
-
 
 type Challenge = {
   id: string;
@@ -69,29 +66,26 @@ export function Create({ screen, onNavigate }: CreateProps) {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
 
+  /* =========================
+     LOAD DATA
+  ========================= */
+
   useEffect(() => {
     load();
   }, []);
 
-  /* =========================
-     LOAD — НЕ ИЗМЕНЯЛ
-  ========================= */
-
   async function load() {
     const { data, error } = await supabase
-  .from('challenges')
-  .select(`
-    id,
-    title,
-    report_mode,
-    duration_days,
-    start_mode,
-    start_date,
-    creator:users!challenges_creator_id_fkey (
-      username
-    )
-  `);
-
+      .from('challenges_with_creator')
+      .select(`
+        id,
+        title,
+        report_mode,
+        duration_days,
+        start_mode,
+        start_date,
+        creator_username
+      `);
 
     if (!data || error) {
       console.error('[CREATE] load error', error);
@@ -104,15 +98,12 @@ export function Create({ screen, onNavigate }: CreateProps) {
         c.start_date &&
         new Date(c.start_date) > new Date();
 
-      const reportLabel =
-        c.report_mode === 'simple' ? 'Отметка' : 'Результат';
-
       return {
         id: c.id,
         title: c.title,
-        username: c.creator?.[0]?.username ?? 'unknown',
-
-        reportType: reportLabel,
+        username: c.creator_username ?? 'unknown',
+        reportType:
+          c.report_mode === 'simple' ? 'Отметка' : 'Результат',
         duration: c.duration_days,
         status: isFuture ? 'Скоро' : 'Идёт',
       };
@@ -139,20 +130,14 @@ export function Create({ screen, onNavigate }: CreateProps) {
       <FixedTop>
         <TopBar>
           <SearchField $active={keyboardOpen || query.length > 0}>
-            <svg
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="8" cy="8" r="6" />
               <line x1="13" y1="13" x2="17" y2="17" />
             </svg>
 
             <SearchInput
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Поиск вызовов"
               onFocus={() => setKeyboardOpen(true)}
               onBlur={() => setKeyboardOpen(false)}
@@ -171,10 +156,8 @@ export function Create({ screen, onNavigate }: CreateProps) {
         </TopBar>
       </FixedTop>
 
-      {/* OFFSET */}
       <TopOffset />
 
-      {/* SCROLL */}
       <ScrollContainer>
         <List>
           {filtered.map(c => (
@@ -186,7 +169,6 @@ export function Create({ screen, onNavigate }: CreateProps) {
                     @{c.username} · {c.reportType}
                   </CardMeta>
                 </div>
-
                 <Status>{c.status}</Status>
               </CardHeader>
 
