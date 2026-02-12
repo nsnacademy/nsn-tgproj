@@ -139,18 +139,21 @@ export const NavItem = styled.div<{ $active?: boolean }>`
   justify-content: center;
 
   background: ${({ $active }) =>
-    $active ? 'rgba(255,255,255,0.15)' : 'transparent'};
+    $active ? 'rgba(255,255,255,0.28)' : 'transparent'};
+
   color: ${({ $active }) =>
     $active ? '#fff' : 'rgba(255,255,255,0.65)'};
-  
+
+  box-shadow: ${({ $active }) =>
+    $active ? '0 0 0 6px rgba(255,255,255,0.06)' : 'none'};
+
+  transform: ${({ $active }) =>
+    $active ? 'scale(1.08)' : 'scale(1)'};
+
   transition: all 0.2s ease;
   cursor: pointer;
-
-  &:hover {
-    background: ${({ $active }) =>
-      $active ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'};
-  }
 `;
+
 
 
 /* === LIST === */
