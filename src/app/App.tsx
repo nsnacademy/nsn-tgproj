@@ -16,7 +16,10 @@ import Admin from '../screens/Admin';
 import AdminChallenge from '../screens/AdminChallenge';
 import InviteSettings from '../screens/InviteSettings';
 
-/* === ЭКРАНЫ === */
+/* =========================
+   SCREENS
+========================= */
+
 type Screen =
   | 'splash'
   | 'home'
@@ -30,7 +33,7 @@ type Screen =
   | 'profile'
   | 'admin'
   | 'admin-challenge'
-  | 'invite-settings'; // ✅ НОВЫЙ ЭКРАН
+  | 'invite-settings';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -51,7 +54,10 @@ function App() {
 
   const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
-  /* === INIT TELEGRAM === */
+  /* =========================
+     INIT TELEGRAM
+  ========================= */
+
   useEffect(() => {
     console.log('[APP] init telegram');
 
@@ -62,20 +68,28 @@ function App() {
       tg.ready();
       tg.expand();
 
-      // TS-safe
+      // TS-safe вызов (чтобы не падал билд)
       (tg as any).disableClosingConfirmation?.();
     }
   }, []);
 
-  /* === SCREEN SYNC === */
+  /* =========================
+     SCREEN SYNC
+  ========================= */
+
   useEffect(() => {
     console.log('[APP] screen changed →', screen);
 
     const tg = window.Telegram?.WebApp;
-    if (tg) tg.expand();
+    if (tg) {
+      tg.expand();
+    }
   }, [screen]);
 
-  /* === НАВИГАЦИЯ === */
+  /* =========================
+     NAVIGATION
+  ========================= */
+
   const navigate = (
     next: Screen,
     challengeId?: string,
@@ -94,6 +108,7 @@ function App() {
       setSelectedParticipantId(participantId);
     }
 
+    // при выходе из отчёта — чистим дату
     if (next !== 'challenge-report') {
       setReportDate(null);
     }
@@ -101,7 +116,10 @@ function App() {
     setScreen(next);
   };
 
-  /* === ОТКРЫТЬ ОТЧЁТ === */
+  /* =========================
+     OPEN REPORT
+  ========================= */
+
   const openReport = (data: {
     challengeId: string;
     participantId: string;
@@ -126,6 +144,10 @@ function App() {
     setHomeRefreshKey(k => k + 1);
     setScreen('home');
   };
+
+  /* =========================
+     RENDER
+  ========================= */
 
   return (
     <>
@@ -194,11 +216,17 @@ function App() {
         )}
 
       {screen === 'profile' && (
-        <Profile screen={screen} onNavigate={navigate} />
+        <Profile
+          screen={screen}
+          onNavigate={navigate}
+        />
       )}
 
       {screen === 'admin' && (
-        <Admin screen={screen} onNavigate={navigate} />
+        <Admin
+          screen={screen}
+          onNavigate={navigate}
+        />
       )}
 
       {screen === 'admin-challenge' && selectedChallengeId && (
@@ -208,7 +236,6 @@ function App() {
         />
       )}
 
-      {/* ✅ НОВЫЙ ЭКРАН INVITE */}
       {screen === 'invite-settings' && selectedChallengeId && (
         <InviteSettings
           challengeId={selectedChallengeId}
