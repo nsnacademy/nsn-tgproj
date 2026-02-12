@@ -15,7 +15,6 @@ import {
   ShareButton,
   CardActions,
 
-  /* INVITE SETTINGS */
   InviteOverlay,
   InviteCard,
   InviteTitle,
@@ -73,6 +72,8 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
   useEffect(() => {
     async function init() {
+      console.log('[ADMIN] init');
+
       const user = await getCurrentUser();
       if (!user) return onNavigate('profile');
 
@@ -84,7 +85,12 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
         { p_creator_id: user.id }
       );
 
-      if (error) return;
+      if (error) {
+        console.error('[ADMIN] load error', error);
+        return;
+      }
+
+      console.log('[ADMIN] challenges loaded', data);
       setChallenges(data ?? []);
       setAccessChecked(true);
     }
@@ -92,13 +98,15 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
     init();
   }, [onNavigate]);
 
-  // 🔗 OPEN INVITE SETTINGS
+  // 🔗 INVITE
   const openInvite = async (
     e: React.MouseEvent,
     challengeId: string
   ) => {
     e.preventDefault();
     e.stopPropagation();
+
+    console.log('[ADMIN] openInvite click', challengeId);
 
     const user = await getCurrentUser();
     if (!user) return;
@@ -137,6 +145,8 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   const updateInvite = async (patch: Partial<InviteState>) => {
     if (!invite) return;
 
+    console.log('[ADMIN] updateInvite', patch);
+
     const { data } = await supabase
       .from('challenge_invites')
       .update(patch)
@@ -149,13 +159,19 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
   const copyLink = async () => {
     if (!invite) return;
+
     const link = `https://t.me/YOUR_BOT_USERNAME?startapp=invite_${invite.code}`;
     await navigator.clipboard.writeText(link);
+
+    console.log('[ADMIN] invite link copied', link);
     alert('Ссылка скопирована');
   };
 
   const onToggleBack = () => {
     if (locked) return;
+
+    console.log('[ADMIN] exit admin mode');
+
     setAdminMode(false);
     setLocked(true);
 
@@ -181,13 +197,14 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
         <List>
           {challenges.map(ch => (
-            <ChallengeCard
-              key={ch.id}
-              onClick={() =>
-                onNavigate('admin-challenge', ch.id)
-              }
-            >
-              <ChallengeInfo>
+            <ChallengeCard key={ch.id}>
+              {/* ✅ ТОЛЬКО ЭТА ЧАСТЬ КЛИКАБЕЛЬНА */}
+              <ChallengeInfo
+                onClick={() => {
+                  console.log('[ADMIN] navigate to admin-challenge', ch.id);
+                  onNavigate('admin-challenge', ch.id);
+                }}
+              >
                 <ChallengeTitle>{ch.title}</ChallengeTitle>
                 <ChallengeMeta>
                   {new Date(ch.start_at).toLocaleDateString()} →
@@ -199,6 +216,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
               <CardActions>
                 <ShareButton
+                  type="button"
                   onClick={e => openInvite(e, ch.id)}
                 >
                   🔗
