@@ -124,25 +124,22 @@ useEffect(() => {
   /* ========================================================= */
 
   async function publishChallenge() {
-  if (submitting) return; // ⛔ защита от повторного клика
+  if (submitting) return;
   setSubmitting(true);
 
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
   if (!tgUser) {
-    alert('Telegram user not found');
     setSubmitting(false);
     return;
   }
 
-  const { data: user, error: userError } = await supabase
+  const { data: user } = await supabase
     .from('users')
     .select('id')
     .eq('telegram_id', tgUser.id)
     .single();
 
-  if (userError || !user) {
-    console.error(userError);
-    alert('User not found in database');
+  if (!user) {
     setSubmitting(false);
     return;
   }
@@ -176,20 +173,18 @@ useEffect(() => {
   };
 
   /* === CREATE CHALLENGE === */
-  const { data: challenge, error } = await supabase
+  const { data: challenge } = await supabase
     .from('challenges')
     .insert(payload)
     .select('id')
     .single();
 
-  if (error || !challenge) {
-    console.error(error);
-    alert('Ошибка при создании вызова');
+  if (!challenge) {
     setSubmitting(false);
     return;
   }
 
-  /* === SAVE PRIZES (КЛЮЧЕВОЕ ИЗМЕНЕНИЕ) === */
+  /* === SAVE PRIZES === */
   if (hasRating) {
     const prizesPayload = rewards
       .filter(r => r.value.trim().length > 0)
@@ -201,16 +196,9 @@ useEffect(() => {
       }));
 
     if (prizesPayload.length > 0) {
-      const { error: prizesError } = await supabase
+      await supabase
         .from('challenge_prizes')
         .insert(prizesPayload);
-
-      if (prizesError) {
-        console.error(prizesError);
-        alert('Ошибка при сохранении призов');
-        setSubmitting(false);
-        return;
-      }
     }
   }
 
@@ -222,16 +210,25 @@ useEffect(() => {
       challenge_id: challenge.id,
     });
 
-  if (participantError) {
-    console.error(participantError);
-    alert('Вызов создан, но не удалось добавить участника');
-    setSubmitting(false);
-    return;
+  // 🔕 ВАЖНО:
+  // Если participant уже существует (23505) — ЭТО НОРМА
+  // Никаких alert, никакого UI шума
+  if (
+    participantError &&
+    participantError.code !== '23505'
+  ) {
+    console.warn(
+      '[publishChallenge] participant insert error',
+      participantError
+    );
   }
 
   setSubmitting(false);
+
+  // ✅ ВСЕГДА просто возвращаемся домой
   onNavigate('home');
 }
+
 
 
   /* ==================== PREVIEW ==================== */
