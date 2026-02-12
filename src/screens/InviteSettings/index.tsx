@@ -27,8 +27,6 @@ type Invite = {
   id: string;
   code: string;
   is_active: boolean;
-  max_uses: number | null;
-  uses_count: number;
 };
 
 export default function InviteSettings({
@@ -38,8 +36,13 @@ export default function InviteSettings({
   const [invite, setInvite] = useState<Invite | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 🔥 ЛИМИТ ВЫЗОВА
+  const [limitEnabled, setLimitEnabled] = useState(false);
+  const [maxParticipants, setMaxParticipants] = useState<number | ''>('');
+  const [participantsCount, setParticipantsCount] = useState(0);
+
   /* =========================
-     LOAD / CREATE INVITE
+     LOAD
   ========================= */
 
   useEffect(() => {
@@ -47,14 +50,15 @@ export default function InviteSettings({
       const user = await getCurrentUser();
       if (!user) return;
 
-      const { data: existing } = await supabase
+      // 1️⃣ INVITE (как было)
+      const { data: existingInvite } = await supabase
         .from('challenge_invites')
         .select('*')
         .eq('challenge_id', challengeId)
         .limit(1)
         .maybeSingle();
 
-      let inviteData = existing;
+      let inviteData = existingInvite;
 
       if (!inviteData) {
         const { data: code } = await supabase.rpc(
@@ -76,6 +80,29 @@ export default function InviteSettings({
       }
 
       setInvite(inviteData);
+
+      // 2️⃣ CHALLENGE LIMIT
+      // 2️⃣ CHALLENGE LIMIT
+const { data: challenge } = await supabase
+  .from('challenges')
+  .select('max_participants')
+  .eq('id', challengeId)
+  .single();
+
+if (challenge && challenge.max_participants !== null) {
+  setLimitEnabled(true);
+  setMaxParticipants(challenge.max_participants);
+}
+
+
+      // 3️⃣ COUNT PARTICIPANTS
+      const { count } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('challenge_id', challengeId);
+
+      setParticipantsCount(count ?? 0);
+
       setLoading(false);
     }
 
@@ -97,6 +124,42 @@ export default function InviteSettings({
       .single();
 
     setInvite(data);
+  };
+
+  const updateChallengeLimit = async (value: number | null) => {
+    await supabase
+      .from('challenges')
+      .update({ max_participants: value })
+      .eq('id', challengeId);
+  };
+
+  const toggleLimit = async () => {
+    if (limitEnabled) {
+      // выключаем лимит
+      setLimitEnabled(false);
+      setMaxParticipants('');
+      await updateChallengeLimit(null);
+    } else {
+      // включаем лимит
+      setLimitEnabled(true);
+      const initial = participantsCount || 1;
+      setMaxParticipants(initial);
+      await updateChallengeLimit(initial);
+    }
+  };
+
+  const onChangeLimit = async (value: string) => {
+    if (value === '') {
+      setMaxParticipants('');
+      await updateChallengeLimit(null);
+      return;
+    }
+
+    const num = Number(value);
+    if (Number.isNaN(num) || num < participantsCount) return;
+
+    setMaxParticipants(num);
+    await updateChallengeLimit(num);
   };
 
   const copyLink = async () => {
@@ -125,17 +188,13 @@ export default function InviteSettings({
   return (
     <SafeArea>
       <Container>
-        {/* HEADER */}
         <HeaderRow>
-          <BackButton onClick={onBack}>
-            ← Назад
-          </BackButton>
-
+          <BackButton onClick={onBack}>← Назад</BackButton>
           <Title>Приглашение</Title>
         </HeaderRow>
 
         <Section>
-          {/* TOGGLE */}
+          {/* INVITE TOGGLE */}
           <Row>
             <Label>Ссылка активна</Label>
             <Toggle
@@ -148,7 +207,6 @@ export default function InviteSettings({
             </Toggle>
           </Row>
 
-          {/* COPY LINK */}
           <PrimaryButton
             disabled={!invite.is_active}
             onClick={copyLink}
@@ -156,29 +214,34 @@ export default function InviteSettings({
             Скопировать ссылку
           </PrimaryButton>
 
+          {/* 🔥 LIMIT TOGGLE */}
           <Row>
-            <Label>Лимит участников</Label>
+            <Label>Лимит участников (на вызов)</Label>
+            <Toggle
+              $active={limitEnabled}
+              onClick={toggleLimit}
+            >
+              <ToggleKnob $active={limitEnabled} />
+            </Toggle>
+          </Row>
+
+          <Row>
+            <Label>Максимум</Label>
             <Input
               type="number"
+              disabled={!limitEnabled}
               placeholder="Без лимита"
-              value={invite.max_uses ?? ''}
-              onChange={e =>
-                updateInvite({
-                  max_uses:
-                    e.target.value === ''
-                      ? null
-                      : Number(e.target.value),
-                })
-              }
+              value={maxParticipants}
+              onChange={e => onChangeLimit(e.target.value)}
             />
           </Row>
 
           <Row>
             <Label>Уже присоединились</Label>
             <Value>
-              {invite.uses_count}
-              {invite.max_uses
-                ? ` / ${invite.max_uses}`
+              {participantsCount}
+              {limitEnabled && maxParticipants
+                ? ` / ${maxParticipants}`
                 : ''}
             </Value>
           </Row>
