@@ -53,12 +53,16 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   const [joining, setJoining] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
 
+  // 🔥 НОВОЕ
+  const [participantsCount, setParticipantsCount] = useState(0);
+
   /* ================= LOAD ================= */
 
   useEffect(() => {
     async function load() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
+      // 1️⃣ грузим челлендж
       const { data, error } = await supabase
         .from('challenges')
         .select(`
@@ -92,28 +96,30 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         title: data.title,
         description: data.description,
         rules: data.rules,
-
         start_mode: data.start_mode,
         start_date: data.start_date,
         duration_days: data.duration_days,
-
         report_mode: data.report_mode,
         metric_name: data.metric_name,
-
         has_goal: data.has_goal,
         goal_value: data.goal_value,
-
         has_limit: data.has_limit,
         limit_per_day: data.limit_per_day,
-
         has_proof: data.has_proof,
         proof_types: data.proof_types,
-
         has_rating: data.has_rating,
         username: data.users?.[0]?.username ?? 'unknown',
       });
 
-      // 👉 Проверка: уже участвует?
+      // 2️⃣ считаем участников (ГЛОБАЛЬНО ДЛЯ ЧЕЛЛЕНДЖА)
+      const { count } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('challenge_id', challengeId);
+
+      setParticipantsCount(count ?? 0);
+
+      // 3️⃣ проверка: уже участвует?
       if (tgUser) {
         const { data: user } = await supabase
           .from('users')
@@ -148,160 +154,115 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
 
   /* ================= JOIN ================= */
 
+  const limitReached =
+    challenge.has_limit &&
+    challenge.limit_per_day !== null &&
+    participantsCount >= challenge.limit_per_day;
+
   async function joinChallenge() {
-  if (!accepted || joining || alreadyJoined) return;
+    if (!accepted || joining || alreadyJoined || limitReached) return;
 
-  setJoining(true);
+    setJoining(true);
 
-const tg = window.Telegram?.WebApp;
+    const tg = window.Telegram?.WebApp;
+    const initData = tg?.initDataUnsafe as {
+      user?: { id: number };
+      start_param?: string;
+    };
 
-const initData =
-  tg?.initDataUnsafe as {
-    user?: { id: number };
-    start_param?: string;
-  } | undefined;
+    const tgUser = initData?.user;
+    const startParam = initData?.start_param;
 
-const tgUser = initData?.user;
-const startParam = initData?.start_param;
+    if (!tgUser) {
+      setJoining(false);
+      return;
+    }
 
-if (!tgUser) {
-  setJoining(false);
-  return;
-}
-
-
-  // 1️⃣ получаем пользователя
-  const { data: user } = await supabase
-    .from('users')
-    .select('id')
-    .eq('telegram_id', tgUser.id)
-    .single();
-
-  if (!user) {
-    setJoining(false);
-    return;
-  }
-
-  // 2️⃣ проверка — уже участвует?
-  const { data: existing } = await supabase
-    .from('participants')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('challenge_id', challengeId)
-    .maybeSingle();
-
-  if (existing) {
-    setAlreadyJoined(true);
-    setJoining(false);
-
-    window.dispatchEvent(
-      new CustomEvent('navigate-to-progress', {
-        detail: {
-          challengeId,
-          participantId: existing.id,
-        },
-      })
-    );
-    return;
-  }
-
-  // 3️⃣ определяем invite_id (если зашёл по ссылке)
-  let inviteId: string | null = null;
-
-  if (startParam?.startsWith('invite_')) {
-    const code = startParam.replace('invite_', '');
-
-    const { data: invite } = await supabase
-      .from('challenge_invites')
+    const { data: user } = await supabase
+      .from('users')
       .select('id')
-      .eq('code', code)
+      .eq('telegram_id', tgUser.id)
+      .single();
+
+    if (!user) {
+      setJoining(false);
+      return;
+    }
+
+    // если уже есть
+    const { data: existing } = await supabase
+      .from('participants')
+      .select('id')
+      .eq('user_id', user.id)
       .eq('challenge_id', challengeId)
-      .eq('is_active', true)
       .maybeSingle();
 
-    if (invite) {
-      inviteId = invite.id;
+    if (existing) {
+      setAlreadyJoined(true);
+      setJoining(false);
+
+      window.dispatchEvent(
+        new CustomEvent('navigate-to-progress', {
+          detail: {
+            challengeId,
+            participantId: existing.id,
+          },
+        })
+      );
+      return;
+    }
+
+    // invite_id если пришёл по ссылке
+    let inviteId: string | null = null;
+
+    if (startParam?.startsWith('invite_')) {
+      const code = startParam.replace('invite_', '');
+
+      const { data: invite } = await supabase
+        .from('challenge_invites')
+        .select('id')
+        .eq('code', code)
+        .eq('challenge_id', challengeId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (invite) inviteId = invite.id;
+    }
+
+    const { error } = await supabase
+      .from('participants')
+      .insert({
+        user_id: user.id,
+        challenge_id: challengeId,
+        invite_id: inviteId,
+      });
+
+    if (error) {
+      console.error(error);
+      setJoining(false);
+      return;
+    }
+
+    const { data: participant } = await supabase
+      .from('participants')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('challenge_id', challengeId)
+      .single();
+
+    setJoining(false);
+
+    if (participant) {
+      window.dispatchEvent(
+        new CustomEvent('navigate-to-progress', {
+          detail: {
+            challengeId,
+            participantId: participant.id,
+          },
+        })
+      );
     }
   }
-
-  // 4️⃣ создаём participant С invite_id
-  const { error } = await supabase
-    .from('participants')
-    .insert({
-      user_id: user.id,
-      challenge_id: challengeId,
-      invite_id: inviteId,
-    });
-
-  if (error) {
-    console.error('[JOIN] insert error', error);
-    setJoining(false);
-    return;
-  }
-
-  // 5️⃣ получаем participant
-  const { data: participant } = await supabase
-    .from('participants')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('challenge_id', challengeId)
-    .single();
-
-  if (!participant) {
-    setJoining(false);
-    return;
-  }
-
-  setJoining(false);
-
-  // 🔥 автопереход
-  window.dispatchEvent(
-    new CustomEvent('navigate-to-progress', {
-      detail: {
-        challengeId,
-        participantId: participant.id,
-      },
-    })
-  );
-}
-
-
-  /* ================= UI LOGIC ================= */
-
-  const now = new Date();
-
-  const startDate =
-    challenge.start_mode === 'date' && challenge.start_date
-      ? new Date(challenge.start_date)
-      : null;
-
-  const endDate =
-    startDate
-      ? new Date(
-          startDate.getTime() +
-            challenge.duration_days * 24 * 60 * 60 * 1000
-        )
-      : null;
-
-  const status =
-    startDate && startDate > now
-      ? 'Скоро'
-      : endDate && endDate < now
-      ? 'Завершён'
-      : 'Идёт';
-
-  const startDateLabel =
-    startDate &&
-    startDate.toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-
-  const reportExplanation =
-    challenge.report_mode === 'simple'
-      ? 'Каждый день нужно отметить выполнение'
-      : 'Каждый день вводится число, результат суммируется';
 
   /* ================= RENDER ================= */
 
@@ -324,22 +285,17 @@ if (!tgUser) {
       </Card>
 
       <Card>
-        <Row><b>Статус:</b> {status}</Row>
-
-        {startDateLabel && (
-          <Row><b>Старт:</b> {startDateLabel}</Row>
-        )}
-
-        <Divider />
-
-        <Row>
-          <b>Тип отчёта:</b>{' '}
-          {challenge.report_mode === 'simple'
-            ? 'Отметка выполнения'
-            : `Результат (${challenge.metric_name})`}
+        <Row><b>Участники:</b>{' '}
+          {challenge.has_limit && challenge.limit_per_day
+            ? `${participantsCount} / ${challenge.limit_per_day}`
+            : participantsCount}
         </Row>
 
-        <Row>{reportExplanation}</Row>
+        {limitReached && (
+          <Row style={{ color: '#ff4d4f' }}>
+            Лимит участников достигнут
+          </Row>
+        )}
       </Card>
 
       <CheckboxRow onClick={() => setAccepted(!accepted)}>
@@ -351,11 +307,13 @@ if (!tgUser) {
         <BackButton onClick={onNavigateHome}>Назад</BackButton>
 
         <JoinButton
-          disabled={!accepted || joining || alreadyJoined}
+          disabled={!accepted || joining || alreadyJoined || limitReached}
           onClick={joinChallenge}
         >
           {alreadyJoined
             ? 'Вы участвуете'
+            : limitReached
+            ? 'Мест нет'
             : joining
             ? 'Подключение…'
             : 'Присоединиться'}
