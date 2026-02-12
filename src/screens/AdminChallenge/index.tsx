@@ -70,6 +70,8 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   const [reports, setReports] = useState<Report[]>([]);
   const [dayIndex, setDayIndex] = useState(0);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+
 
 
   // 👉 состояние для отклонения
@@ -346,15 +348,18 @@ if (Object.keys(urls).length > 0) {
                           />
                         ) : (
                           <img
-                            key={i}
-                            src={url}
-                            alt="proof"
-                            style={{
-                              width: '100%',
-                              borderRadius: 12,
-                              objectFit: 'cover',
-                            }}
-                          />
+  key={i}
+  src={url}
+  alt="proof"
+  onClick={() => setFullscreenImage(url)}
+  style={{
+    width: '100%',
+    borderRadius: 12,
+    objectFit: 'cover',
+    cursor: 'zoom-in',
+  }}
+/>
+
                         );
                       })}
                     </div>
@@ -445,6 +450,34 @@ if (Object.keys(urls).length > 0) {
         )}
       </Content>
     </ScrollContent>
+    {fullscreenImage && (
+  <div
+    onClick={() => setFullscreenImage(null)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.9)',
+      zIndex: 9999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 20,
+    }}
+  >
+    <img
+      src={fullscreenImage}
+      alt="fullscreen"
+      onClick={e => e.stopPropagation()}
+      style={{
+        maxWidth: '100%',
+        maxHeight: '100%',
+        borderRadius: 12,
+        objectFit: 'contain',
+      }}
+    />
+  </div>
+)}
+
   </SafeArea>
 );
 
