@@ -35,14 +35,14 @@ type Challenge = {
   has_goal: boolean;
   goal_value: string | null;
 
-  has_limit: boolean;
-  limit_per_day: number | null;
-
   has_proof: boolean;
   proof_types: string[] | null;
 
   has_rating: boolean;
   username: string;
+
+  // ✅ ВАЖНО
+  max_participants: number | null;
 };
 
 export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
@@ -53,7 +53,6 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   const [joining, setJoining] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
 
-  // 🔥 НОВОЕ
   const [participantsCount, setParticipantsCount] = useState(0);
 
   /* ================= LOAD ================= */
@@ -76,11 +75,10 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
           metric_name,
           has_goal,
           goal_value,
-          has_limit,
-          limit_per_day,
           has_proof,
           proof_types,
           has_rating,
+          max_participants,
           users:creator_id ( username )
         `)
         .eq('id', challengeId)
@@ -103,15 +101,14 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         metric_name: data.metric_name,
         has_goal: data.has_goal,
         goal_value: data.goal_value,
-        has_limit: data.has_limit,
-        limit_per_day: data.limit_per_day,
         has_proof: data.has_proof,
         proof_types: data.proof_types,
         has_rating: data.has_rating,
+        max_participants: data.max_participants,
         username: data.users?.[0]?.username ?? 'unknown',
       });
 
-      // 2️⃣ считаем участников (ГЛОБАЛЬНО ДЛЯ ЧЕЛЛЕНДЖА)
+      // 2️⃣ считаем участников
       const { count } = await supabase
         .from('participants')
         .select('*', { count: 'exact', head: true })
@@ -152,12 +149,13 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
     return <SafeArea />;
   }
 
-  /* ================= JOIN ================= */
+  /* ================= LIMIT LOGIC ================= */
 
   const limitReached =
-    challenge.has_limit &&
-    challenge.limit_per_day !== null &&
-    participantsCount >= challenge.limit_per_day;
+    challenge.max_participants !== null &&
+    participantsCount >= challenge.max_participants;
+
+  /* ================= JOIN ================= */
 
   async function joinChallenge() {
     if (!accepted || joining || alreadyJoined || limitReached) return;
@@ -165,10 +163,9 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
     setJoining(true);
 
     const tg = window.Telegram?.WebApp;
-    const initData = tg?.initDataUnsafe as {
-      user?: { id: number };
-      start_param?: string;
-    };
+    const initData = tg?.initDataUnsafe as
+      | { user?: { id: number }; start_param?: string }
+      | undefined;
 
     const tgUser = initData?.user;
     const startParam = initData?.start_param;
@@ -189,30 +186,6 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
       return;
     }
 
-    // если уже есть
-    const { data: existing } = await supabase
-      .from('participants')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('challenge_id', challengeId)
-      .maybeSingle();
-
-    if (existing) {
-      setAlreadyJoined(true);
-      setJoining(false);
-
-      window.dispatchEvent(
-        new CustomEvent('navigate-to-progress', {
-          detail: {
-            challengeId,
-            participantId: existing.id,
-          },
-        })
-      );
-      return;
-    }
-
-    // invite_id если пришёл по ссылке
     let inviteId: string | null = null;
 
     if (startParam?.startsWith('invite_')) {
@@ -229,13 +202,11 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
       if (invite) inviteId = invite.id;
     }
 
-    const { error } = await supabase
-      .from('participants')
-      .insert({
-        user_id: user.id,
-        challenge_id: challengeId,
-        invite_id: inviteId,
-      });
+    const { error } = await supabase.from('participants').insert({
+      user_id: user.id,
+      challenge_id: challengeId,
+      invite_id: inviteId,
+    });
 
     if (error) {
       console.error(error);
@@ -243,25 +214,13 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
       return;
     }
 
-    const { data: participant } = await supabase
-      .from('participants')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('challenge_id', challengeId)
-      .single();
-
     setJoining(false);
 
-    if (participant) {
-      window.dispatchEvent(
-        new CustomEvent('navigate-to-progress', {
-          detail: {
-            challengeId,
-            participantId: participant.id,
-          },
-        })
-      );
-    }
+    window.dispatchEvent(
+      new CustomEvent('navigate-to-progress', {
+        detail: { challengeId },
+      })
+    );
   }
 
   /* ================= RENDER ================= */
@@ -275,7 +234,6 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
 
       <Card>
         <Row><b>Описание:</b> {challenge.description}</Row>
-
         {challenge.rules && (
           <>
             <Divider />
@@ -285,15 +243,16 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
       </Card>
 
       <Card>
-        <Row><b>Участники:</b>{' '}
-          {challenge.has_limit && challenge.limit_per_day
-            ? `${participantsCount} / ${challenge.limit_per_day}`
+        <Row>
+          <b>Участники:</b>{' '}
+          {challenge.max_participants
+            ? `${participantsCount} / ${challenge.max_participants}`
             : participantsCount}
         </Row>
 
         {limitReached && (
-          <Row style={{ color: '#ff4d4f' }}>
-            Лимит участников достигнут
+          <Row style={{ color: '#ff6b6b' }}>
+            Мест больше нет
           </Row>
         )}
       </Card>
