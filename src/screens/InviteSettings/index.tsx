@@ -49,36 +49,54 @@ export default function InviteSettings({
         const user = await getCurrentUser();
         if (!user) return;
 
-        const { data: existing } = await supabase
+        // 1️⃣ пробуем загрузить существующий инвайт
+        const { data: existing, error: loadError } = await supabase
           .from('challenge_invites')
           .select('*')
           .eq('challenge_id', challengeId)
           .limit(1)
           .maybeSingle();
 
+        if (loadError) {
+          console.error('[INVITE] load existing error', loadError);
+          return;
+        }
+
         let inviteData = existing;
 
+        // 2️⃣ если нет — создаём новый
         if (!inviteData) {
-          const { data: code, error: rpcError } =
-            await supabase.rpc('create_challenge_invite', {
+          const {
+            data: code,
+            error: rpcError,
+          } = await supabase.rpc(
+            'create_challenge_invite',
+            {
               p_challenge_id: challengeId,
               p_created_by: user.id,
-            });
+              p_max_uses: null, // 🔥 КЛЮЧЕВАЯ ПРАВКА
+            }
+          );
 
           if (rpcError) {
             console.error('[INVITE] create error', rpcError);
             return;
           }
 
-          const { data: created, error: loadError } =
-            await supabase
-              .from('challenge_invites')
-              .select('*')
-              .eq('code', code)
-              .single();
+          const {
+            data: created,
+            error: createdError,
+          } = await supabase
+            .from('challenge_invites')
+            .select('*')
+            .eq('code', code)
+            .single();
 
-          if (loadError) {
-            console.error('[INVITE] load created error', loadError);
+          if (createdError) {
+            console.error(
+              '[INVITE] load created error',
+              createdError
+            );
             return;
           }
 
