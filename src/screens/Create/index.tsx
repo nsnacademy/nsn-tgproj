@@ -210,9 +210,10 @@ export function Create({ screen, onNavigate }: CreateProps) {
 
         {/* CREATE */}
         <NavItem
-          $active={screen === 'create'}
-          onClick={() => onNavigate('create')}
-        >
+  $active={screen === 'create' || screen === 'create-flow'}
+  onClick={() => onNavigate('create')}
+>
+
           <svg
             width="24"
             height="24"
