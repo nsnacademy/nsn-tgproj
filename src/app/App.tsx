@@ -49,9 +49,29 @@ function App() {
 
   const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
+  /* === INIT TELEGRAM === */
   useEffect(() => {
+    console.log('[APP] init telegram');
+
     saveTelegramUser();
+
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      tg.disableClosingConfirmation();
+    }
   }, []);
+
+  /* 🔥 КРИТИЧНО: ЛОГ И СИНХРОНИЗАЦИЯ ЭКРАНА */
+  useEffect(() => {
+    console.log('[APP] screen changed →', screen);
+
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.expand();
+    }
+  }, [screen]);
 
   /* === НАВИГАЦИЯ === */
   const navigate = (
@@ -59,6 +79,11 @@ function App() {
     challengeId?: string,
     participantId?: string
   ) => {
+    console.log('[APP] navigate →', next, {
+      challengeId,
+      participantId,
+    });
+
     if (challengeId !== undefined) {
       setSelectedChallengeId(challengeId);
     }
@@ -67,7 +92,6 @@ function App() {
       setSelectedParticipantId(participantId);
     }
 
-    // ⬅️ при выходе из отчёта — чистим дату
     if (next !== 'challenge-report') {
       setReportDate(null);
     }
@@ -77,13 +101,13 @@ function App() {
 
   /* === ОТКРЫТЬ ОТЧЁТ === */
   const openReport = (data: {
-  challengeId: string;
-  participantId: string;
-  reportDate: string;
-  reportMode: 'simple' | 'result';
-  metricName: string | null;
-}) => {
-
+    challengeId: string;
+    participantId: string;
+    reportDate: string;
+    reportMode: 'simple' | 'result';
+    metricName: string | null;
+  }) => {
+    console.log('[APP] openReport', data);
 
     setSelectedChallengeId(data.challengeId);
     setSelectedParticipantId(data.participantId);
@@ -96,6 +120,7 @@ function App() {
   };
 
   const goHomeAndRefresh = () => {
+    console.log('[APP] goHomeAndRefresh');
     setHomeRefreshKey(k => k + 1);
     setScreen('home');
   };
@@ -146,7 +171,6 @@ function App() {
           />
         )}
 
-      {/* ✅ ВАЖНО: reportDate ОБЯЗАТЕЛЕН */}
       {screen === 'challenge-report' &&
         selectedChallengeId &&
         selectedParticipantId &&
