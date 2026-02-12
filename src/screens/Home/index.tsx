@@ -80,6 +80,8 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
   const [items, setItems] = useState<ChallengeItem[]>([]);
 
   async function load() {
+    console.log('[HOME] load called');
+
     setLoading(true);
 
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -112,13 +114,17 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
       return;
     }
 
+    console.log('[HOME] items from rpc', data);
     setItems(data ?? []);
     setLoading(false);
   }
 
   useEffect(() => {
+  if (screen === 'home') {
     load();
-  }, [refreshKey]);
+  }
+}, [screen, refreshKey]);
+
 
   const active = items.filter(i => !i.challenge_finished);
   const completed = items.filter(i => i.challenge_finished);
