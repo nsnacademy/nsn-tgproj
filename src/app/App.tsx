@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { saveTelegramUser } from '../shared/lib/supabase';
+import { saveTelegramUser, supabase } from '../shared/lib/supabase';
 import { GlobalStyles } from '../shared/config/globalStyles';
 
 import { Splash } from '../screens/Splash';
@@ -54,6 +54,9 @@ function App() {
 
   const [homeRefreshKey, setHomeRefreshKey] = useState(0);
 
+  // защита от повторного invite
+  const inviteHandledRef = useRef(false);
+
   /* =========================
      INIT TELEGRAM
   ========================= */
@@ -67,11 +70,48 @@ function App() {
     if (tg) {
       tg.ready();
       tg.expand();
-
-      // TS-safe вызов (чтобы не падал билд)
       (tg as any).disableClosingConfirmation?.();
     }
   }, []);
+
+  /* =========================
+   HANDLE INVITE (start_param)
+========================= */
+
+useEffect(() => {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return;
+
+  const unsafeData = tg.initDataUnsafe as any;
+  const startParam = unsafeData?.start_param;
+
+  console.log('[APP] start_param:', startParam);
+
+  if (!startParam) return;
+  if (inviteHandledRef.current) return;
+
+  if (startParam.startsWith('invite_')) {
+    inviteHandledRef.current = true;
+
+    const code = startParam.replace('invite_', '');
+    console.log('[APP] invite detected:', code);
+
+    supabase
+      .rpc('get_challenge_by_invite', { p_code: code })
+      .then(({ data, error }) => {
+        if (error || !data) {
+          console.error('[APP] invalid invite', error);
+          return;
+        }
+
+        console.log('[APP] invite → challengeId', data);
+
+        setSelectedChallengeId(data);
+        setScreen('challenge-details');
+      });
+  }
+}, []);
+
 
   /* =========================
      SCREEN SYNC
@@ -81,9 +121,7 @@ function App() {
     console.log('[APP] screen changed →', screen);
 
     const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.expand();
-    }
+    if (tg) tg.expand();
   }, [screen]);
 
   /* =========================
@@ -108,7 +146,6 @@ function App() {
       setSelectedParticipantId(participantId);
     }
 
-    // при выходе из отчёта — чистим дату
     if (next !== 'challenge-report') {
       setReportDate(null);
     }
@@ -216,17 +253,11 @@ function App() {
         )}
 
       {screen === 'profile' && (
-        <Profile
-          screen={screen}
-          onNavigate={navigate}
-        />
+        <Profile screen={screen} onNavigate={navigate} />
       )}
 
       {screen === 'admin' && (
-        <Admin
-          screen={screen}
-          onNavigate={navigate}
-        />
+        <Admin screen={screen} onNavigate={navigate} />
       )}
 
       {screen === 'admin-challenge' && selectedChallengeId && (
