@@ -5,14 +5,8 @@ export const SafeArea = styled.div`
   min-height: 100vh;
   background: #000;
   color: #fff;
-
   padding-top: 100px;
-  padding-bottom: 110px; /* ⬅ место под BottomNav */
-
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 `;
-
 
 /* === TOP BAR === */
 export const TopBar = styled.div`
@@ -117,63 +111,44 @@ export const ActionButton = styled.div`
 `;
 
 /* === BOTTOM NAV === */
-export const BottomNav = styled.div<{ $hidden?: boolean }>`
+export const BottomNav = styled.div`
   position: fixed;
   left: 16px;
   right: 16px;
   bottom: 18px;
 
   height: 68px;
-  background: #000;
+  background: rgba(0,0,0,0.9);
   border-radius: 34px;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
 
   display: flex;
-  align-items: center;
   justify-content: space-around;
-
-  transition:
-    transform 0.25s ease,
-    opacity 0.2s ease;
-
-  transform: ${({ $hidden }) =>
-    $hidden ? 'translateY(120%)' : 'translateY(0)'};
-
-  opacity: ${({ $hidden }) => ($hidden ? 0 : 1)};
-  pointer-events: ${({ $hidden }) => ($hidden ? 'none' : 'auto')};
+  align-items: center;
+  z-index: 1000;
 `;
 
-/* === NAV ITEM === */
 export const NavItem = styled.div<{ $active?: boolean }>`
   width: 48px;
   height: 48px;
+  border-radius: 50%;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  cursor: pointer;
-  user-select: none;
-
+  background: ${({ $active }) =>
+    $active ? 'rgba(255,255,255,0.15)' : 'transparent'};
   color: ${({ $active }) =>
     $active ? '#fff' : 'rgba(255,255,255,0.65)'};
+  
+  transition: all 0.2s ease;
+  cursor: pointer;
 
-  transition: color 0.2s ease;
-
-  svg {
-    width: 28px;
-    height: 28px;
-
-    transform: scale(${({ $active }) => ($active ? 1.3 : 1)});
-    transform-origin: center;
-
-    transition:
-      transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
-      opacity 0.15s ease;
-  }
-
-  &:active svg {
-    transform: scale(0.9);
-    opacity: 0.7;
+  &:hover {
+    background: ${({ $active }) =>
+      $active ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'};
   }
 `;
 
