@@ -54,7 +54,10 @@ type ChallengeFromDB = {
   start_mode: 'now' | 'date';
   start_date: string | null;
   creator_username: string | null;
+  is_finished: boolean;
 };
+
+
 
 type Challenge = {
   id: string;
@@ -82,23 +85,29 @@ export function Create({ screen, onNavigate }: CreateProps) {
   ========================= */
 
   useEffect(() => {
+  if (screen === 'create') {
     load();
-  }, []);
+  }
+}, [screen]);
+
 
   async function load() {
     setLoading(true);
-    
     const { data, error } = await supabase
-      .from('challenges_with_creator')
-      .select(`
-        id,
-        title,
-        report_mode,
-        duration_days,
-        start_mode,
-        start_date,
-        creator_username
-      `);
+  .from('challenges_with_creator')
+  .select(`
+    id,
+    title,
+    report_mode,
+    duration_days,
+    start_mode,
+    start_date,
+    creator_username,
+    is_finished
+  `)
+  .eq('is_finished', false);
+
+
 
     if (!data || error) {
       console.error('[CREATE] load error', error);
