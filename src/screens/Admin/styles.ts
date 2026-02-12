@@ -75,3 +75,19 @@ export const PendingBadge = styled.div`
   align-items: center;
   justify-content: center;
 `;
+
+export const ShareButton = styled.div`
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+
+  &:hover {
+    background: rgba(255,255,255,0.2);
+  }
+`;
