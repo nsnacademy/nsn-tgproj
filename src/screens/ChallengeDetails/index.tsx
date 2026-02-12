@@ -41,7 +41,7 @@ type Challenge = {
   has_rating: boolean;
   username: string;
 
-  // ✅ ВАЖНО
+  // ✅ лимит на ВЕСЬ вызов
   max_participants: number | null;
 };
 
@@ -61,7 +61,7 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
     async function load() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
-      // 1️⃣ грузим челлендж
+      /* 1️⃣ грузим сам вызов */
       const { data, error } = await supabase
         .from('challenges')
         .select(`
@@ -85,7 +85,7 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         .single();
 
       if (error || !data) {
-        console.error(error);
+        console.error('[LOAD challenge]', error);
         setLoading(false);
         return;
       }
@@ -108,15 +108,19 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         username: data.users?.[0]?.username ?? 'unknown',
       });
 
-      // 2️⃣ считаем участников
-      const { count } = await supabase
+      /* 2️⃣ считаем участников (ВАЖНО: exact + head) */
+      const { count, error: countError } = await supabase
         .from('participants')
         .select('*', { count: 'exact', head: true })
         .eq('challenge_id', challengeId);
 
+      if (countError) {
+        console.error('[COUNT participants]', countError);
+      }
+
       setParticipantsCount(count ?? 0);
 
-      // 3️⃣ проверка: уже участвует?
+      /* 3️⃣ проверяем — пользователь уже участвует? */
       if (tgUser) {
         const { data: user } = await supabase
           .from('users')
@@ -175,6 +179,7 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
       return;
     }
 
+    /* получаем user */
     const { data: user } = await supabase
       .from('users')
       .select('id')
@@ -186,6 +191,7 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
       return;
     }
 
+    /* определяем invite (если пришёл по ссылке) */
     let inviteId: string | null = null;
 
     if (startParam?.startsWith('invite_')) {
@@ -202,6 +208,7 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
       if (invite) inviteId = invite.id;
     }
 
+    /* вставляем participant */
     const { error } = await supabase.from('participants').insert({
       user_id: user.id,
       challenge_id: challengeId,
@@ -209,13 +216,14 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
     });
 
     if (error) {
-      console.error(error);
+      console.error('[JOIN] insert error', error);
       setJoining(false);
       return;
     }
 
     setJoining(false);
 
+    /* автопереход */
     window.dispatchEvent(
       new CustomEvent('navigate-to-progress', {
         detail: { challengeId },
@@ -234,6 +242,7 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
 
       <Card>
         <Row><b>Описание:</b> {challenge.description}</Row>
+
         {challenge.rules && (
           <>
             <Divider />
@@ -245,7 +254,7 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
       <Card>
         <Row>
           <b>Участники:</b>{' '}
-          {challenge.max_participants
+          {challenge.max_participants !== null
             ? `${participantsCount} / ${challenge.max_participants}`
             : participantsCount}
         </Row>
