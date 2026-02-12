@@ -98,14 +98,19 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
       .single();
 
     if (!user) {
-      setItems([]);
-      setLoading(false);
-      return;
-    }
+  setItems([]);
+  setLoading(false);
+  return;
+}
 
-    const { data, error } = await supabase.rpc('get_home_challenges', {
-      p_user_id: user.id,
-    });
+/* 🔥 ВАЖНО: автозавершение просроченных вызовов */
+await supabase.rpc('finish_expired_challenges');
+
+/* 🔥 теперь грузим Home */
+const { data, error } = await supabase.rpc('get_home_challenges', {
+  p_user_id: user.id,
+});
+
 
     if (error) {
       console.error('[HOME] rpc error', error);
