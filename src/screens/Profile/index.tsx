@@ -7,7 +7,6 @@ import {
   Text,
   Toggle,
   ToggleKnob,
-  HeaderRow,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -26,24 +25,17 @@ type ProfileProps = {
 export default function Profile({ screen, onNavigate }: ProfileProps) {
   const [adminMode, setAdminMode] = useState(false);
   const [locked, setLocked] = useState(false);
-
-  // 🔍 ШАГ 6 — ПРОВЕРКА: является ли пользователь создателем вызова
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
 
   useEffect(() => {
     async function checkAccess() {
       const user = await getCurrentUser();
-      console.log('[PROFILE] current user:', user);
-
       if (!user) {
         setIsCreator(false);
-        console.log('[PROFILE] is creator: false (no user)');
         return;
       }
 
       const creator = await checkIsCreator(user.id);
-      console.log('[PROFILE] is creator:', creator);
-
       setIsCreator(creator);
     }
 
@@ -51,9 +43,8 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   }, []);
 
   const onToggleAdmin = () => {
-    if (locked) return;
+    if (locked || !isCreator) return;
 
-    // ⚠️ ПОКА НЕ БЛОКИРУЕМ — только проверяем факт
     setAdminMode(true);
     setLocked(true);
 
@@ -66,8 +57,15 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   return (
     <SafeArea>
       <Container>
-        {/* 🔝 HEADER */}
-        <HeaderRow>
+        {/* HEADER */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 12,
+          }}
+        >
           <Title>Профиль</Title>
 
           <Toggle
@@ -76,19 +74,25 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           >
             <ToggleKnob $active={adminMode} />
           </Toggle>
-        </HeaderRow>
+        </div>
 
         <Text>
           Включите админ-режим для модерации вызовов
         </Text>
 
-        {/* 🧪 ВРЕМЕННО: МОЖНО УБРАТЬ ПОСЛЕ ПРОВЕРКИ */}
-        <Text style={{ marginTop: 12, fontSize: 12, opacity: 0.6 }}>
+        {/* DEBUG (можно удалить позже) */}
+        <Text
+          style={{
+            marginTop: 12,
+            fontSize: 12,
+            opacity: 0.6,
+          }}
+        >
           isCreator: {String(isCreator)}
         </Text>
       </Container>
 
-      {/* ⬇️ НИЖНЯЯ НАВИГАЦИЯ */}
+      {/* BOTTOM NAV */}
       <BottomNav>
         <NavItem
           $active={screen === 'home'}
