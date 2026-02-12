@@ -469,15 +469,15 @@ if (Object.keys(urls).length > 0) {
       onClick={() => setFullscreenImage(null)}
       style={{
         position: 'absolute',
-        top: 16,
+        top: 112,
         right: 16,
         width: 36,
         height: 36,
         borderRadius: '50%',
         border: 'none',
-        background: 'rgba(0,0,0,0.6)',
+        background: 'rgba(198, 66, 66, 0.6)',
         color: '#fff',
-        fontSize: 24,
+        fontSize: 26,
         cursor: 'pointer',
       }}
     >
