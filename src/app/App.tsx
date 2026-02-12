@@ -51,17 +51,20 @@ function App() {
 
   /* === INIT TELEGRAM === */
   useEffect(() => {
-    console.log('[APP] init telegram');
+  console.log('[APP] init telegram');
 
-    saveTelegramUser();
+  saveTelegramUser();
 
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-      tg.disableClosingConfirmation();
-    }
-  }, []);
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+
+    // ⚠️ ВАЖНО: TypeScript-safe вызов
+    (tg as any).disableClosingConfirmation?.();
+  }
+}, []);
+
 
   /* 🔥 КРИТИЧНО: ЛОГ И СИНХРОНИЗАЦИЯ ЭКРАНА */
   useEffect(() => {
