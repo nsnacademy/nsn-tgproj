@@ -1,9 +1,5 @@
 import styled from 'styled-components';
 
-/* =========================
-   LAYOUT
-========================= */
-
 export const SafeArea = styled.div`
   min-height: 100vh;
   background: #000;
@@ -14,21 +10,20 @@ export const SafeArea = styled.div`
 
 export const Container = styled.div`
   flex: 1;
-  padding: 90px 20px 20px;
+  padding: 90px 20px 140px;
 `;
 
 export const HeaderRow = styled.div`
-  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 `;
 
 export const Title = styled.h1`
   font-size: 22px;
   font-weight: 600;
 `;
-
-/* =========================
-   CONTENT
-========================= */
 
 export const Section = styled.div`
   background: rgba(255, 255, 255, 0.06);
@@ -43,7 +38,6 @@ export const Row = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
 `;
 
 export const Label = styled.div`
@@ -60,11 +54,9 @@ export const Input = styled.input`
   width: 120px;
   padding: 8px 10px;
   border-radius: 10px;
-
   background: #000;
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-
+  border: 1px solid rgba(255,255,255,0.2);
   outline: none;
 
   &:focus {
@@ -72,22 +64,14 @@ export const Input = styled.input`
   }
 `;
 
-/* =========================
-   FOOTER
-========================= */
-
 export const Footer = styled.div`
   padding: 16px 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 `;
 
 export const Button = styled.button<{ $secondary?: boolean }>`
   width: 100%;
   padding: 14px;
   border-radius: 14px;
-
   border: none;
   font-weight: 600;
   font-size: 15px;
@@ -102,4 +86,42 @@ export const Button = styled.button<{ $secondary?: boolean }>`
   &:active {
     transform: scale(0.98);
   }
+`;
+
+/* 🔥 Toggle ТОЛЬКО ТУТ */
+export const Toggle = styled.div<{
+  $active: boolean;
+  $disabled?: boolean;
+}>`
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+
+  background: ${({ $active }) =>
+    $active ? '#fff' : 'rgba(255,255,255,0.3)'};
+
+  cursor: ${({ $disabled }) =>
+    $disabled ? 'not-allowed' : 'pointer'};
+
+  opacity: ${({ $disabled }) =>
+    $disabled ? 0.4 : 1};
+
+  transition: all 0.2s ease;
+`;
+
+export const ToggleKnob = styled.div<{ $active: boolean }>`
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: ${({ $active }) =>
+    $active ? '#000' : '#fff'};
+
+  transform: translateX(
+    ${({ $active }) => ($active ? '18px' : '0')}
+  );
+
+  transition: transform 0.2s ease;
 `;

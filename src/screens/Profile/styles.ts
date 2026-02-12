@@ -31,16 +31,15 @@ export const Text = styled.p`
   line-height: 1.5;
 `;
 
-export const Toggle = styled.div<{ $active: boolean }>`
-  width: 46px;
-  height: 26px;
-  border-radius: 13px;
-  background: ${({ $active }) =>
-    $active ? '#fff' : 'rgba(255,255,255,0.3)'};
-  position: relative;
-  cursor: pointer;
-  transition: all 0.2s ease;
+export const Toggle = styled.div<{
+  $active: boolean;
+  $disabled?: boolean;
+}>`
+  opacity: ${({ $disabled }) => ($disabled ? 0.4 : 1)};
+  pointer-events: ${({ $disabled }) =>
+    $disabled ? 'none' : 'auto'};
 `;
+
 
 export const ToggleKnob = styled.div<{ $active: boolean }>`
   width: 22px;
@@ -52,3 +51,4 @@ export const ToggleKnob = styled.div<{ $active: boolean }>`
   left: ${({ $active }) => ($active ? '22px' : '2px')};
   transition: all 0.2s ease;
 `;
+

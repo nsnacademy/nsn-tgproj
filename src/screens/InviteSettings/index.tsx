@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-
 import {
   SafeArea,
   Container,
@@ -12,9 +11,10 @@ import {
   Input,
   Button,
   Footer,
+  Toggle,
+  ToggleKnob,
 } from './styles';
 
-import { Toggle, ToggleKnob } from '../Profile/styles';
 import { supabase, getCurrentUser } from '../../shared/lib/supabase';
 
 type InviteSettingsProps = {
@@ -37,120 +37,50 @@ export default function InviteSettings({
   const [invite, setInvite] = useState<Invite | null>(null);
   const [loading, setLoading] = useState(true);
 
-  /* =========================
-     LOAD / CREATE INVITE
-  ========================= */
-
   useEffect(() => {
     async function load() {
-      console.log('[INVITE] load settings', challengeId);
+      const user = await getCurrentUser();
+      if (!user) return;
 
-      try {
-        const user = await getCurrentUser();
-        if (!user) return;
+      const { data: existing } = await supabase
+        .from('challenge_invites')
+        .select('*')
+        .eq('challenge_id', challengeId)
+        .maybeSingle();
 
-        // 1️⃣ пробуем загрузить существующий инвайт
-        const { data: existing, error: loadError } = await supabase
+      let inviteData = existing;
+
+      if (!inviteData) {
+        const { data: code } = await supabase.rpc(
+          'create_challenge_invite',
+          {
+            p_challenge_id: challengeId,
+            p_created_by: user.id,
+            p_max_uses: null,
+          }
+        );
+
+        const { data: created } = await supabase
           .from('challenge_invites')
           .select('*')
-          .eq('challenge_id', challengeId)
-          .limit(1)
-          .maybeSingle();
+          .eq('code', code)
+          .single();
 
-        if (loadError) {
-          console.error('[INVITE] load existing error', loadError);
-          return;
-        }
-
-        let inviteData = existing;
-
-        // 2️⃣ если нет — создаём новый
-        if (!inviteData) {
-          const {
-            data: code,
-            error: rpcError,
-          } = await supabase.rpc(
-            'create_challenge_invite',
-            {
-              p_challenge_id: challengeId,
-              p_created_by: user.id,
-              p_max_uses: null, // 🔥 КЛЮЧЕВАЯ ПРАВКА
-            }
-          );
-
-          if (rpcError) {
-            console.error('[INVITE] create error', rpcError);
-            return;
-          }
-
-          const {
-            data: created,
-            error: createdError,
-          } = await supabase
-            .from('challenge_invites')
-            .select('*')
-            .eq('code', code)
-            .single();
-
-          if (createdError) {
-            console.error(
-              '[INVITE] load created error',
-              createdError
-            );
-            return;
-          }
-
-          inviteData = created;
-        }
-
-        setInvite(inviteData);
-      } catch (e) {
-        console.error('[INVITE] fatal error', e);
-      } finally {
-        setLoading(false);
+        inviteData = created;
       }
+
+      setInvite(inviteData);
+      setLoading(false);
     }
 
     load();
   }, [challengeId]);
 
-  /* =========================
-     ACTIONS
-  ========================= */
+  if (loading || !invite) return null;
 
-  const updateInvite = async (patch: Partial<Invite>) => {
-    if (!invite) return;
-
-    console.log('[INVITE] update', patch);
-
-    const { data, error } = await supabase
-      .from('challenge_invites')
-      .update(patch)
-      .eq('id', invite.id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('[INVITE] update error', error);
-      return;
-    }
-
-    setInvite(data);
-  };
-
-  const copyLink = async () => {
-    if (!invite) return;
-
-    const link = `https://t.me/Projects365_bot?startapp=invite_${invite.code}`;
-
-    await navigator.clipboard.writeText(link);
-
-    alert('Ссылка приглашения скопирована');
-  };
-
-  /* =========================
-     RENDER
-  ========================= */
+  const limitReached =
+    invite.max_uses !== null &&
+    invite.uses_count >= invite.max_uses;
 
   return (
     <SafeArea>
@@ -162,60 +92,68 @@ export default function InviteSettings({
           <Title>Приглашение</Title>
         </HeaderRow>
 
-        {loading && (
-          <Section>
-            <Label>Загрузка…</Label>
-          </Section>
-        )}
+        <Section>
+          <Row>
+            <Label>Ссылка активна</Label>
+            <Toggle
+              $active={invite.is_active}
+              $disabled={limitReached}
+              onClick={() => {
+                if (limitReached) return;
+                supabase
+                  .from('challenge_invites')
+                  .update({ is_active: !invite.is_active })
+                  .eq('id', invite.id)
+                  .then(({ data }) => {
+                    if (data) setInvite(data[0]);
+                  });
+              }}
+            >
+              <ToggleKnob $active={invite.is_active} />
+            </Toggle>
+          </Row>
 
-        {!loading && invite && (
-          <Section>
-            <Row>
-              <Label>Ссылка активна</Label>
-              <Toggle
-                $active={invite.is_active}
-                onClick={() =>
-                  updateInvite({
-                    is_active: !invite.is_active,
-                  })
-                }
-              >
-                <ToggleKnob $active={invite.is_active} />
-              </Toggle>
-            </Row>
-
-            <Row>
-              <Label>Лимит участников</Label>
-              <Input
-                type="number"
-                placeholder="Без лимита"
-                value={invite.max_uses ?? ''}
-                onChange={e =>
-                  updateInvite({
+          <Row>
+            <Label>Лимит участников</Label>
+            <Input
+              type="number"
+              placeholder="Без лимита"
+              value={invite.max_uses ?? ''}
+              onChange={e =>
+                supabase
+                  .from('challenge_invites')
+                  .update({
                     max_uses:
                       e.target.value === ''
                         ? null
                         : Number(e.target.value),
                   })
-                }
-              />
-            </Row>
+                  .eq('id', invite.id)
+                  .then(({ data }) => {
+                    if (data) setInvite(data[0]);
+                  })
+              }
+            />
+          </Row>
 
-            <Row>
-              <Label>Уже присоединились</Label>
-              <Value>
-                {invite.uses_count}
-                {invite.max_uses
-                  ? ` / ${invite.max_uses}`
-                  : ''}
-              </Value>
-            </Row>
-          </Section>
-        )}
+          <Row>
+            <Label>Уже присоединились</Label>
+            <Value>
+              {invite.uses_count}
+              {invite.max_uses ? ` / ${invite.max_uses}` : ''}
+            </Value>
+          </Row>
+        </Section>
       </Container>
 
       <Footer>
-        <Button onClick={copyLink}>
+        <Button
+          onClick={() =>
+            navigator.clipboard.writeText(
+              `https://t.me/Projects365_bot?startapp=invite_${invite.code}`
+            )
+          }
+        >
           Скопировать ссылку
         </Button>
       </Footer>
