@@ -44,7 +44,6 @@ type Challenge = {
   has_rating: boolean;
   username: string;
 
-  // ✅ ДОБАВЛЕНО
   max_participants: number | null;
 };
 
@@ -56,7 +55,6 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   const [joining, setJoining] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
 
-  // ✅ ДОБАВЛЕНО
   const [participantsCount, setParticipantsCount] = useState(0);
 
   /* ================= LOAD ================= */
@@ -65,7 +63,6 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
     async function load() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
-      // 1️⃣ грузим вызов
       const { data, error } = await supabase
         .from('challenges')
         .select(`
@@ -100,31 +97,22 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         title: data.title,
         description: data.description,
         rules: data.rules,
-
         start_mode: data.start_mode,
         start_date: data.start_date,
         duration_days: data.duration_days,
-
         report_mode: data.report_mode,
         metric_name: data.metric_name,
-
         has_goal: data.has_goal,
         goal_value: data.goal_value,
-
         has_limit: data.has_limit,
         limit_per_day: data.limit_per_day,
-
         has_proof: data.has_proof,
         proof_types: data.proof_types,
-
         has_rating: data.has_rating,
-        username: data.users?.[0]?.username ?? 'unknown',
-
-        // ✅
         max_participants: data.max_participants,
+        username: data.users?.[0]?.username ?? 'unknown',
       });
 
-      // 2️⃣ считаем участников ВЫЗОВА
       const { count } = await supabase
         .from('participants')
         .select('*', { count: 'exact', head: true })
@@ -132,7 +120,6 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
 
       setParticipantsCount(count ?? 0);
 
-      // 3️⃣ проверка: уже участвует?
       if (tgUser) {
         const { data: user } = await supabase
           .from('users')
@@ -165,11 +152,19 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
     return <SafeArea />;
   }
 
-  /* ================= LIMIT ================= */
+  /* ================= SAFE DESTRUCTURE ================= */
+
+  const {
+    title,
+    username,
+    description,
+    rules,
+    max_participants,
+  } = challenge;
 
   const limitReached =
-    challenge.max_participants !== null &&
-    participantsCount >= challenge.max_participants;
+    max_participants !== null &&
+    participantsCount >= max_participants;
 
   /* ================= JOIN ================= */
 
@@ -258,9 +253,7 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
 
     window.dispatchEvent(
       new CustomEvent('navigate-to-progress', {
-        detail: {
-          challengeId,
-        },
+        detail: { challengeId },
       })
     );
   }
@@ -270,17 +263,17 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   return (
     <SafeArea>
       <Header>
-        <Title>{challenge.title}</Title>
-        <Username>@{challenge.username}</Username>
+        <Title>{title}</Title>
+        <Username>@{username}</Username>
       </Header>
 
       <Card>
-        <Row><b>Описание:</b> {challenge.description}</Row>
+        <Row><b>Описание:</b> {description}</Row>
 
-        {challenge.rules && (
+        {rules && (
           <>
             <Divider />
-            <Row><b>Условия:</b> {challenge.rules}</Row>
+            <Row><b>Условия:</b> {rules}</Row>
           </>
         )}
       </Card>
@@ -288,8 +281,8 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
       <Card>
         <Row>
           <b>Участники:</b>{' '}
-          {challenge.max_participants !== null
-            ? `${participantsCount} / ${challenge.max_participants}`
+          {max_participants !== null
+            ? `${participantsCount} / ${max_participants}`
             : participantsCount}
         </Row>
 
