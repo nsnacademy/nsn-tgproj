@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { saveTelegramUser, supabase } from '../shared/lib/supabase';
+import { CreateFlowPaid } from '../screens/CreateFlowPaid';
+
 import { GlobalStyles } from '../shared/config/globalStyles';
 
 import { Splash } from '../screens/Splash';
@@ -262,20 +264,18 @@ function App() {
       )}
 
       {screen === 'create-flow-paid' && (
-        <div
-          style={{
-            minHeight: '100vh',
-            background: '#000',
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 18,
-          }}
-        >
-          CreateFlowPaid (в разработке)
-        </div>
-      )}
+  <CreateFlowPaid
+    onNavigate={navigate}
+  />
+)}
+
+         
+
+      {screen === 'create-flow-paid' && (
+  <CreateFlowPaid onNavigate={navigate} />
+)}
+
+
     </>
   );
 }
