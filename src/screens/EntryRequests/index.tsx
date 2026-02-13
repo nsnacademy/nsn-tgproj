@@ -29,7 +29,7 @@ type Request = {
   created_at: string;
   users: {
     telegram_id: string;
-    telegram_username: string | null;
+    username: string | null;        // 👈 изменено с telegram_username на username
     first_name: string | null;
   };
 };
@@ -99,9 +99,10 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
     const userIds = requestsData.map(r => r.user_id);
 
     // 5️⃣ Загружаем информацию о пользователях отдельным запросом
+    //    👇 ИСПРАВЛЕНО: используем поле 'username' как в БД
     const { data: users } = await supabase
       .from('users')
-      .select('id, telegram_id, telegram_username, first_name')
+      .select('id, telegram_id, username, first_name')
       .in('id', userIds);
 
     // 6️⃣ Создаем Map для быстрого доступа к пользователям по ID
@@ -117,7 +118,7 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
       created_at: item.created_at,
       users: usersMap.get(item.user_id) ?? {
         telegram_id: '',
-        telegram_username: null,
+        username: null,              // 👈 изменено с telegram_username на username
         first_name: null,
       },
     }));
@@ -159,16 +160,10 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
     setProcessing(null);
   };
 
+  // 👇 ИСПРАВЛЕНО: используем правильное поле username
   const getDisplayName = (user: Request['users']) => {
-    // Сначала пробуем username
-    if (user.telegram_username) {
-      return `@${user.telegram_username}`;
-    }
-    // Если нет username, используем first_name
-    if (user.first_name) {
-      return user.first_name;
-    }
-    // В крайнем случае показываем ID
+    if (user.username) return `@${user.username}`;
+    if (user.first_name) return user.first_name;
     return `ID: ${user.telegram_id}`;
   };
 
