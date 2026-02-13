@@ -5,7 +5,7 @@ export const SafeArea = styled.div`
   background: #000;
   color: #fff;
   padding: 16px;
-  padding-bottom: 100px;
+  padding-bottom: 110px;
 `;
 
 export const Header = styled.div`
@@ -54,8 +54,24 @@ export const Footer = styled.div`
   border-top: 1px solid #222;
 `;
 
+export const FooterRow = styled.div`
+  display: flex;
+  gap: 12px;
+`;
+
+export const BackButton = styled.button`
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #333;
+  font-size: 15px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+`;
+
 export const NextButton = styled.button`
-  width: 100%;
+  flex: 2;
   padding: 14px;
   border-radius: 12px;
   border: none;

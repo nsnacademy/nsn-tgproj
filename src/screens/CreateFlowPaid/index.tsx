@@ -6,7 +6,9 @@ import {
   Subtitle,
   Card,
   Footer,
+  BackButton,
   NextButton,
+  FooterRow,
 } from './styles';
 
 import type { Screen } from '../../app/App';
@@ -56,16 +58,23 @@ export function CreateFlowPaid({ onNavigate }: Props) {
       </Card>
 
       <Footer>
-        <NextButton
-          disabled={!mode}
-          onClick={() => {
-            // ⛔ ПОКА НЕТ СЛЕДУЮЩИХ ЭКРАНОВ
-            // временно возвращаемся в create-flow
-            onNavigate('create-flow');
-          }}
-        >
-          Продолжить
-        </NextButton>
+        <FooterRow>
+          <BackButton
+            onClick={() => onNavigate('create-flow')}
+          >
+            Назад
+          </BackButton>
+
+          <NextButton
+            disabled={!mode}
+            onClick={() => {
+              // ⛔ пока нет следующих экранов
+              onNavigate('create-flow');
+            }}
+          >
+            Продолжить
+          </NextButton>
+        </FooterRow>
       </Footer>
     </SafeArea>
   );
