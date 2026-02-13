@@ -55,7 +55,13 @@ type ChallengeFromDB = {
   start_date: string | null;
   creator_username: string | null;
   is_finished: boolean;
+
+  entry_type: 'free' | 'paid' | 'condition';
+  entry_price: string | null;
+  entry_currency: string | null;
+  entry_condition: string | null;
 };
+
 
 
 
@@ -68,6 +74,10 @@ type Challenge = {
   duration: number;
   status: 'Идёт' | 'Скоро';
   statusIcon: JSX.Element;
+  entryType: 'free' | 'paid' | 'condition';
+  entryLabel?: string;
+  entryBadge?: 'paid' | 'condition';
+
 };
 
 /* =========================
@@ -103,9 +113,14 @@ export function Create({ screen, onNavigate }: CreateProps) {
     start_mode,
     start_date,
     creator_username,
-    is_finished
+    is_finished,
+    entry_type,
+    entry_price,
+    entry_currency,
+    entry_condition
   `)
   .eq('is_finished', false);
+
 
 
 
@@ -116,46 +131,67 @@ export function Create({ screen, onNavigate }: CreateProps) {
     }
 
     const mapped: Challenge[] = data.map((c: ChallengeFromDB) => {
-      const isFuture =
-        c.start_mode === 'date' &&
-        c.start_date &&
-        new Date(c.start_date) > new Date();
+  const isFuture =
+    c.start_mode === 'date' &&
+    c.start_date &&
+    new Date(c.start_date) > new Date();
 
-      return {
-        id: c.id,
-        title: c.title,
-        username: c.creator_username ?? 'unknown',
-        reportType: c.report_mode === 'simple' ? 'Ежедневный' : 'Целевой',
-        reportIcon: c.report_mode === 'simple' ? (
-          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="7" cy="7" r="6" />
-            <path d="M4 7l2 2 3-3" />
-          </svg>
-        ) : (
-          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="2" y="2" width="10" height="10" rx="2" />
-            <line x1="7" y1="4" x2="7" y2="10" />
-            <line x1="4" y1="7" x2="10" y2="7" />
-          </svg>
-        ),
-        duration: c.duration_days,
-        status: isFuture ? 'Скоро' : 'Идёт',
-        statusIcon: isFuture ? (
-          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="6" cy="6" r="5" />
-            <path d="M6 3v3l2 2" />
-          </svg>
-        ) : (
-          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="6" cy="6" r="5" />
-            <path d="M6 3v3l2 2" />
-          </svg>
-        ),
-      };
-    });
+  let entryLabel: string | undefined;
+  let entryBadge: 'paid' | 'condition' | undefined;
 
-    setChallenges(mapped);
-    setLoading(false);
+  if (c.entry_type === 'paid') {
+    entryBadge = 'paid';
+    entryLabel = `${c.entry_price} ${c.entry_currency?.toUpperCase()}`;
+  }
+
+  if (c.entry_type === 'condition') {
+    entryBadge = 'condition';
+    entryLabel = 'По условию';
+  }
+
+  return {
+    id: c.id,
+    title: c.title,
+    username: c.creator_username ?? 'unknown',
+
+    reportType: c.report_mode === 'simple' ? 'Ежедневный' : 'Целевой',
+    reportIcon:
+      c.report_mode === 'simple' ? (
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="7" cy="7" r="6" />
+          <path d="M4 7l2 2 3-3" />
+        </svg>
+      ) : (
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="2" y="2" width="10" height="10" rx="2" />
+          <line x1="7" y1="4" x2="7" y2="10" />
+          <line x1="4" y1="7" x2="10" y2="7" />
+        </svg>
+      ),
+
+    duration: c.duration_days,
+    status: isFuture ? 'Скоро' : 'Идёт',
+    statusIcon: isFuture ? (
+      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="6" cy="6" r="5" />
+        <path d="M6 3v3l2 2" />
+      </svg>
+    ) : (
+      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="6" cy="6" r="5" />
+        <path d="M6 3v3l2 2" />
+      </svg>
+    ),
+
+    entryType: c.entry_type,
+    entryLabel,
+    entryBadge,
+  };
+});
+
+setChallenges(mapped);
+setLoading(false);
+
   }
 
   /* =========================
