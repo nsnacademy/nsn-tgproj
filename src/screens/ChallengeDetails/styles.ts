@@ -5,6 +5,10 @@ export const SafeArea = styled.div`
   height: 100vh;
   background: #000;
   color: #fff;
+
+  display: flex;
+  flex-direction: column;
+
   overflow: hidden;
 `;
 
@@ -25,8 +29,10 @@ export const Header = styled.div`
 
 /* === SCROLLABLE CONTENT === */
 export const Content = styled.div`
+  flex: 1;                 /* 🔥 КЛЮЧЕВОЕ */
   overflow-y: auto;
-  padding: 0 24px 140px; /* место под кнопки */
+
+  padding: 0 24px 140px;   /* место под Footer */
 `;
 
 /* === TITLE === */
