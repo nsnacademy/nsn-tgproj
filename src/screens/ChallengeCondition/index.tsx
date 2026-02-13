@@ -3,10 +3,12 @@ import { supabase } from '../../shared/lib/supabase';
 import {
   SafeArea,
   Header,
+  HeaderRow,
   BackButton,
   Title,
   Content,
   Card,
+  CardTitle,
   Field,
   Label,
   Value,
@@ -24,7 +26,6 @@ import {
 type Props = {
   challengeId: string;
   onBack: () => void;
-  // onNavigateHome удален, так как не используется
 };
 
 type ChallengeData = {
@@ -70,10 +71,9 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
   }
 
   const handleSendRequest = async () => {
-    // Здесь будет логика отправки запроса
     setRequestSent(true);
     
-    // Пока просто имитируем отправку
+    // Здесь будет логика отправки запроса
     setTimeout(() => {
       setRequestSent(false);
     }, 3000);
@@ -83,12 +83,14 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
     return (
       <SafeArea>
         <Header>
-          <BackButton onClick={onBack}>
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </BackButton>
-          <Title>Загрузка...</Title>
+          <HeaderRow>
+            <BackButton onClick={onBack}>
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </BackButton>
+            <Title>Загрузка...</Title>
+          </HeaderRow>
         </Header>
       </SafeArea>
     );
@@ -98,12 +100,14 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
     return (
       <SafeArea>
         <Header>
-          <BackButton onClick={onBack}>
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </BackButton>
-          <Title>Вызов не найден</Title>
+          <HeaderRow>
+            <BackButton onClick={onBack}>
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </BackButton>
+            <Title>Вызов не найден</Title>
+          </HeaderRow>
         </Header>
       </SafeArea>
     );
@@ -112,17 +116,20 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
   return (
     <SafeArea>
       <Header>
-        <BackButton onClick={onBack}>
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </BackButton>
-        <Title>Условия входа</Title>
+        <HeaderRow>
+          <BackButton onClick={onBack}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </BackButton>
+          <Title>Условия входа</Title>
+        </HeaderRow>
       </Header>
 
       <Content>
         <Card>
-          <Title>{challenge.title}</Title>
+          <CardTitle>{challenge.title}</CardTitle>
+          
           <Field>
             <Label>Описание</Label>
             <Value>{challenge.description}</Value>
