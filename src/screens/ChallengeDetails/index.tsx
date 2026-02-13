@@ -33,7 +33,7 @@ type Challenge = {
   metric_name: string | null;
 
   has_goal: boolean;
-  goal_value: string | null;
+  goal_value: number | null;
 
   has_limit: boolean;
   limit_per_day: number | null;
@@ -45,10 +45,18 @@ type Challenge = {
   username: string;
 
   max_participants: number | null;
+  chat_link: string | null;
+};
+
+type Prize = {
+  place: number;
+  title: string;
+  description: string | null;
 };
 
 export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const [prizes, setPrizes] = useState<Prize[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [accepted, setAccepted] = useState(false);
@@ -56,8 +64,6 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   const [alreadyJoined, setAlreadyJoined] = useState(false);
 
   const [participantsCount, setParticipantsCount] = useState(0);
-
-  /* ================= LOAD ================= */
 
   useEffect(() => {
     async function load() {
@@ -82,6 +88,7 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
           proof_types,
           has_rating,
           max_participants,
+          chat_link,
           users:creator_id ( username )
         `)
         .eq('id', challengeId)
@@ -110,8 +117,20 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         proof_types: data.proof_types,
         has_rating: data.has_rating,
         max_participants: data.max_participants,
+        chat_link: data.chat_link,
         username: data.users?.[0]?.username ?? 'unknown',
       });
+
+      // 🔹 Награды
+      if (data.has_rating) {
+        const { data: prizesData } = await supabase
+          .from('challenge_prizes')
+          .select('place, title, description')
+          .eq('challenge_id', challengeId)
+          .order('place', { ascending: true });
+
+        setPrizes(prizesData || []);
+      }
 
       const { count } = await supabase
         .from('participants')
@@ -152,27 +171,15 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
     return <SafeArea />;
   }
 
-  /* ================= LIMIT ================= */
-
   const limitReached =
     challenge.max_participants !== null &&
     participantsCount >= challenge.max_participants;
 
-  /* ================= JOIN ================= */
-
   async function joinChallenge() {
     if (!accepted || joining || alreadyJoined || limitReached) return;
-
     setJoining(true);
 
-    const tg = window.Telegram?.WebApp;
-    const initData = tg?.initDataUnsafe as
-      | { user?: { id: number }; start_param?: string }
-      | undefined;
-
-    const tgUser = initData?.user;
-    const startParam = initData?.start_param;
-
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (!tgUser) {
       setJoining(false);
       return;
@@ -199,75 +206,36 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
     if (existing) {
       setAlreadyJoined(true);
       setJoining(false);
-
       window.dispatchEvent(
         new CustomEvent('navigate-to-progress', {
-          detail: {
-            challengeId,
-            participantId: existing.id,
-          },
+          detail: { challengeId, participantId: existing.id },
         })
       );
       return;
     }
 
-    let inviteId: string | null = null;
+    await supabase.from('participants').insert({
+      user_id: user.id,
+      challenge_id: challengeId,
+    });
 
-    if (startParam?.startsWith('invite_')) {
-      const code = startParam.replace('invite_', '');
-
-      const { data: invite } = await supabase
-        .from('challenge_invites')
-        .select('id')
-        .eq('code', code)
-        .eq('challenge_id', challengeId)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (invite) inviteId = invite.id;
-    }
-
-    const { error } = await supabase
-      .from('participants')
-      .insert({
-        user_id: user.id,
-        challenge_id: challengeId,
-        invite_id: inviteId,
-      });
-
-    if (error) {
-      console.error('[JOIN] insert error', error);
-      setJoining(false);
-      return;
-    }
-
-    // 🔴 ВАЖНО: получаем participantId
-    const { data: participant, error: fetchError } = await supabase
+    const { data: participant } = await supabase
       .from('participants')
       .select('id')
       .eq('user_id', user.id)
       .eq('challenge_id', challengeId)
       .single();
 
-    if (fetchError || !participant) {
-      console.error('[JOIN] fetch participant error', fetchError);
-      setJoining(false);
-      return;
-    }
-
     setJoining(false);
 
-    window.dispatchEvent(
-      new CustomEvent('navigate-to-progress', {
-        detail: {
-          challengeId,
-          participantId: participant.id,
-        },
-      })
-    );
+    if (participant) {
+      window.dispatchEvent(
+        new CustomEvent('navigate-to-progress', {
+          detail: { challengeId, participantId: participant.id },
+        })
+      );
+    }
   }
-
-  /* ================= UI ================= */
 
   return (
     <SafeArea>
@@ -276,9 +244,9 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         <Username>@{challenge.username}</Username>
       </Header>
 
+      {/* Описание */}
       <Card>
         <Row><b>Описание:</b> {challenge.description}</Row>
-
         {challenge.rules && (
           <>
             <Divider />
@@ -287,6 +255,81 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         )}
       </Card>
 
+      {/* Сроки */}
+      <Card>
+        <Row>
+          <b>Старт:</b>{' '}
+          {challenge.start_mode === 'now'
+            ? 'Сразу после публикации'
+            : challenge.start_date}
+        </Row>
+        <Divider />
+        <Row><b>Длительность:</b> {challenge.duration_days} дней</Row>
+      </Card>
+
+      {/* Формат */}
+      <Card>
+        <Row>
+          <b>Формат:</b>{' '}
+          {challenge.report_mode === 'simple'
+            ? 'Ежедневная отметка'
+            : `Результат (${challenge.metric_name})`}
+        </Row>
+
+        {challenge.has_goal && (
+          <>
+            <Divider />
+            <Row>
+              <b>Цель:</b> {challenge.goal_value} {challenge.metric_name}
+            </Row>
+          </>
+        )}
+
+        {challenge.has_limit && (
+          <>
+            <Divider />
+            <Row><b>Лимит:</b> {challenge.limit_per_day} в день</Row>
+          </>
+        )}
+
+        {challenge.has_proof && challenge.proof_types && (
+          <>
+            <Divider />
+            <Row>
+              <b>Подтверждение:</b> {challenge.proof_types.join(', ')}
+            </Row>
+          </>
+        )}
+      </Card>
+
+      {/* Награды */}
+      {challenge.has_rating && prizes.length > 0 && (
+        <Card>
+          <Row><b>Награды:</b></Row>
+
+          {prizes.map((prize, index) => (
+            <div key={prize.place}>
+              {index > 0 && <Divider />}
+              <Row>
+                <b>
+                  {prize.place === 1 && '🥇'}
+                  {prize.place === 2 && '🥈'}
+                  {prize.place === 3 && '🥉'}
+                  {prize.place > 3 && `#${prize.place}`} место:
+                </b>{' '}
+                {prize.title}
+              </Row>
+              {prize.description && (
+                <Row style={{ opacity: 0.7 }}>
+                  {prize.description}
+                </Row>
+              )}
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {/* Участники */}
       <Card>
         <Row>
           <b>Участники:</b>{' '}
@@ -296,11 +339,19 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         </Row>
 
         {limitReached && (
-          <Row style={{ color: '#ff6b6b' }}>
-            Мест больше нет
-          </Row>
+          <Row style={{ color: '#ff6b6b' }}>Мест больше нет</Row>
         )}
       </Card>
+
+      {/* Чат */}
+      {challenge.chat_link && (
+        <Card>
+          <Row><b>Чат вызова:</b></Row>
+          <JoinButton onClick={() => window.open(challenge.chat_link!, '_blank')}>
+            Перейти в чат
+          </JoinButton>
+        </Card>
+      )}
 
       <CheckboxRow onClick={() => setAccepted(!accepted)}>
         <input type="checkbox" checked={accepted} readOnly />
@@ -309,7 +360,6 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
 
       <Footer>
         <BackButton onClick={onNavigateHome}>Назад</BackButton>
-
         <JoinButton
           disabled={!accepted || joining || alreadyJoined || limitReached}
           onClick={joinChallenge}
