@@ -2,21 +2,16 @@ import styled from 'styled-components';
 
 /* === SAFE AREA === */
 export const SafeArea = styled.div`
-  height: 100vh;
+  min-height: 100vh;
   background: #000;
   color: #fff;
-
-  display: flex;
-  flex-direction: column;
-
-  overflow: hidden;
 `;
 
-/* === FIXED HEADER === */
+/* === HEADER (липкий, как ты хотел) === */
 export const Header = styled.div`
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 20;
 
   background: linear-gradient(
     to bottom,
@@ -27,12 +22,9 @@ export const Header = styled.div`
   padding: 24px 24px 16px;
 `;
 
-/* === SCROLLABLE CONTENT === */
+/* === CONTENT (обычный поток, скроллится весь экран) === */
 export const Content = styled.div`
-  flex: 1;                 /* 🔥 КЛЮЧЕВОЕ */
-  overflow-y: auto;
-
-  padding: 70 24px 140px;   /* место под Footer */
+  padding: 16px 24px 32px;
 `;
 
 /* === TITLE === */
@@ -88,24 +80,14 @@ export const CheckboxRow = styled.div`
   }
 `;
 
-/* === FOOTER === */
+/* === FOOTER (БОЛЬШЕ НЕ FIXED) === */
 export const Footer = styled.div`
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-
   display: flex;
   gap: 12px;
-  padding: 16px 24px 24px;
-
-  background: linear-gradient(
-    to top,
-    rgba(0,0,0,0.98),
-    rgba(0,0,0,0)
-  );
+  margin-top: 24px;
 `;
 
+/* === BUTTONS === */
 export const BackButton = styled.button`
   flex: 1;
   height: 52px;
