@@ -7,13 +7,23 @@ import {
   BackButton,
   Title,
   Section,
+  SectionHeader,
+  SectionTitle,
   Row,
   Label,
   Value,
   Input,
   PrimaryButton,
+  DangerButton,
   Toggle,
   ToggleKnob,
+  UserList,
+  UserCard,
+  UserInfo,
+  Username,
+  UserRole,
+  RemoveButton,
+  EmptyUsers,
 } from './styles';
 
 import { supabase, getCurrentUser } from '../../shared/lib/supabase';
@@ -21,6 +31,7 @@ import { supabase, getCurrentUser } from '../../shared/lib/supabase';
 type InviteSettingsProps = {
   challengeId: string;
   onBack: () => void;
+  onNavigateToRequests?: () => void; // для перехода к заявкам
 };
 
 type Invite = {
@@ -29,9 +40,31 @@ type Invite = {
   is_active: boolean;
 };
 
+type Participant = {
+  id: string;
+  user_id: string;
+  users: {
+    telegram_username: string | null;
+    first_name: string | null;
+    telegram_id: string;
+  }; // 👈 объект, не массив
+};
+
+// 👇 Вспомогательный тип для сырых данных из Supabase
+type RawParticipant = {
+  id: string;
+  user_id: string;
+  users: {
+    telegram_username: string | null;
+    first_name: string | null;
+    telegram_id: string;
+  }[];
+};
+
 export default function InviteSettings({
   challengeId,
   onBack,
+  onNavigateToRequests,
 }: InviteSettingsProps) {
   const [invite, setInvite] = useState<Invite | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +74,11 @@ export default function InviteSettings({
   const [maxParticipants, setMaxParticipants] = useState<number | ''>('');
   const [participantsCount, setParticipantsCount] = useState(0);
 
+  // 👥 УЧАСТНИКИ
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [entryType, setEntryType] = useState<'free' | 'paid' | 'condition'>('free');
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+
   /* =========================
      LOAD
   ========================= */
@@ -49,6 +87,21 @@ export default function InviteSettings({
     async function load() {
       const user = await getCurrentUser();
       if (!user) return;
+
+      // 0️⃣ CHALLENGE INFO
+      const { data: challenge } = await supabase
+        .from('challenges')
+        .select('max_participants, entry_type')
+        .eq('id', challengeId)
+        .single();
+
+      if (challenge) {
+        setEntryType(challenge.entry_type);
+        if (challenge.max_participants !== null) {
+          setLimitEnabled(true);
+          setMaxParticipants(challenge.max_participants);
+        }
+      }
 
       // 1️⃣ INVITE
       const { data: existingInvite } = await supabase
@@ -81,25 +134,53 @@ export default function InviteSettings({
 
       setInvite(inviteData);
 
-      // 2️⃣ CHALLENGE LIMIT
-      const { data: challenge } = await supabase
-        .from('challenges')
-        .select('max_participants')
-        .eq('id', challengeId)
-        .single();
-
-      if (challenge && challenge.max_participants !== null) {
-        setLimitEnabled(true);
-        setMaxParticipants(challenge.max_participants);
-      }
-
-      // 3️⃣ COUNT PARTICIPANTS
+      // 2️⃣ COUNT PARTICIPANTS
       const { count } = await supabase
         .from('participants')
         .select('*', { count: 'exact', head: true })
         .eq('challenge_id', challengeId);
 
       setParticipantsCount(count ?? 0);
+
+      // 3️⃣ LOAD PARTICIPANTS LIST
+      const { data: participantsData } = await supabase
+        .from('participants')
+        .select(`
+          id,
+          user_id,
+          users (
+            telegram_username,
+            first_name,
+            telegram_id
+          )
+        `)
+        .eq('challenge_id', challengeId);
+
+      // 👇 ПРАВИЛЬНАЯ ТРАНСФОРМАЦИЯ
+      if (participantsData) {
+        const transformed = (participantsData as RawParticipant[]).map(item => ({
+          id: item.id,
+          user_id: item.user_id,
+          users: item.users[0] || {  // берем первый элемент массива
+            telegram_username: null,
+            first_name: null,
+            telegram_id: '',
+          },
+        }));
+        setParticipants(transformed);
+      }
+
+      // 4️⃣ COUNT PENDING REQUESTS (для paid/condition)
+      if (challenge?.entry_type !== 'free') {
+        const { count: requestsCount } = await supabase
+          .from('entry_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('challenge_id', challengeId)
+          .eq('status', 'pending');
+
+        setPendingRequestsCount(requestsCount ?? 0);
+      }
+
       setLoading(false);
     }
 
@@ -107,7 +188,7 @@ export default function InviteSettings({
   }, [challengeId]);
 
   /* =========================
-     ACTIONS
+     INVITE ACTIONS
   ========================= */
 
   const updateInvite = async (patch: Partial<Invite>) => {
@@ -122,6 +203,17 @@ export default function InviteSettings({
 
     setInvite(data);
   };
+
+  const copyLink = async () => {
+    if (!invite || !invite.is_active) return;
+
+    const link = `https://t.me/Projects365_bot?startapp=invite_${invite.code}`;
+    await navigator.clipboard.writeText(link);
+  };
+
+  /* =========================
+     LIMIT ACTIONS
+  ========================= */
 
   const updateChallengeLimit = async (value: number | null) => {
     await supabase
@@ -157,15 +249,37 @@ export default function InviteSettings({
     await updateChallengeLimit(num);
   };
 
-  const copyLink = async () => {
-    if (!invite || !invite.is_active) return;
+  /* =========================
+     USER MANAGEMENT
+  ========================= */
 
-    const link = `https://t.me/Projects365_bot?startapp=invite_${invite.code}`;
-    await navigator.clipboard.writeText(link);
+  const removeParticipant = async (participantId: string, userId: string) => {
+    const confirmed = window.confirm(
+      'Вы уверены, что хотите удалить участника из вызова?'
+    );
+
+    if (!confirmed) return;
+
+    // Удаляем из participants
+    await supabase
+      .from('participants')
+      .delete()
+      .eq('id', participantId);
+
+    // Если была заявка — удаляем или помечаем
+    await supabase
+      .from('entry_requests')
+      .delete()
+      .eq('challenge_id', challengeId)
+      .eq('user_id', userId);
+
+    // Обновляем список
+    setParticipants(prev => prev.filter(p => p.id !== participantId));
+    setParticipantsCount(prev => prev - 1);
   };
 
   /* =========================
-     🔥 DELETE CHALLENGE
+     DELETE CHALLENGE
   ========================= */
 
   const deleteChallenge = async () => {
@@ -201,6 +315,12 @@ export default function InviteSettings({
     onBack();
   };
 
+  const getUsername = (user: Participant['users']) => {
+    if (user.telegram_username) return `@${user.telegram_username}`;
+    if (user.first_name) return user.first_name;
+    return `ID: ${user.telegram_id}`;
+  };
+
   /* =========================
      RENDER
   ========================= */
@@ -222,11 +342,15 @@ export default function InviteSettings({
       <Container>
         <HeaderRow>
           <BackButton onClick={onBack}>← Назад</BackButton>
-          <Title>Приглашение</Title>
+          <Title>Управление вызовом</Title>
         </HeaderRow>
 
+        {/* 🔗 ПРИГЛАШЕНИЕ */}
         <Section>
-          {/* INVITE */}
+          <SectionHeader>
+            <SectionTitle>🔗 Приглашение</SectionTitle>
+          </SectionHeader>
+
           <Row>
             <Label>Ссылка активна</Label>
             <Toggle
@@ -245,10 +369,16 @@ export default function InviteSettings({
           >
             Скопировать ссылку
           </PrimaryButton>
+        </Section>
 
-          {/* LIMIT */}
+        {/* 📊 ЛИМИТ УЧАСТНИКОВ */}
+        <Section>
+          <SectionHeader>
+            <SectionTitle>📊 Лимит участников</SectionTitle>
+          </SectionHeader>
+
           <Row>
-            <Label>Лимит участников (на вызов)</Label>
+            <Label>Ограничить</Label>
             <Toggle
               $active={limitEnabled}
               onClick={toggleLimit}
@@ -279,17 +409,52 @@ export default function InviteSettings({
           </Row>
         </Section>
 
-        {/* 🔥 DELETE */}
+        {/* 👥 УЧАСТНИКИ */}
         <Section>
-          <PrimaryButton
-            style={{
-              background: '#ff3b30',
-              color: '#fff',
-            }}
-            onClick={deleteChallenge}
-          >
+          <SectionHeader>
+            <SectionTitle>👥 Участники ({participantsCount})</SectionTitle>
+            
+            {/* Кнопка заявок (только для paid/condition) */}
+            {entryType !== 'free' && onNavigateToRequests && (
+              <PrimaryButton 
+                onClick={onNavigateToRequests}
+                style={{ width: 'auto', padding: '8px 16px' }}
+              >
+                Заявки {pendingRequestsCount > 0 && `(${pendingRequestsCount})`}
+              </PrimaryButton>
+            )}
+          </SectionHeader>
+
+          {participants.length === 0 ? (
+            <EmptyUsers>
+              Пока нет участников
+            </EmptyUsers>
+          ) : (
+            <UserList>
+              {participants.map(p => (
+                <UserCard key={p.id}>
+                  <UserInfo>
+                    <Username>{getUsername(p.users)}</Username>
+                    <UserRole>участник</UserRole>
+                  </UserInfo>
+                  <RemoveButton onClick={() => removeParticipant(p.id, p.user_id)}>
+                    ✕
+                  </RemoveButton>
+                </UserCard>
+              ))}
+            </UserList>
+          )}
+        </Section>
+
+        {/* 🗑️ УДАЛЕНИЕ ВЫЗОВА */}
+        <Section>
+          <SectionHeader>
+            <SectionTitle>🗑️ Опасная зона</SectionTitle>
+          </SectionHeader>
+          
+          <DangerButton onClick={deleteChallenge}>
             Удалить вызов
-          </PrimaryButton>
+          </DangerButton>
         </Section>
       </Container>
     </SafeArea>

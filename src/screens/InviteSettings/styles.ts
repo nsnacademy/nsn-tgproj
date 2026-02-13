@@ -160,3 +160,126 @@ export const ToggleKnob = styled.div<{
 
   transition: transform 0.2s ease;
 `;
+
+/* =========================
+   SECTION HEADER
+========================= */
+
+export const SectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+`;
+
+export const SectionTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+`;
+
+/* =========================
+   USER MANAGEMENT
+========================= */
+
+export const UserList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+`;
+
+export const UserCard = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+`;
+
+export const UserInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+export const Username = styled.span`
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+`;
+
+export const UserRole = styled.span`
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+`;
+
+export const RemoveButton = styled.button`
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 59, 48, 0.1);
+  color: #FF3B30;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 59, 48, 0.2);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+export const EmptyUsers = styled.div`
+  padding: 24px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+`;
+
+/* =========================
+   DANGER BUTTON
+========================= */
+
+export const DangerButton = styled(PrimaryButton)`
+  background: #ff3b30;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #ff5a4a;
+  }
+`;

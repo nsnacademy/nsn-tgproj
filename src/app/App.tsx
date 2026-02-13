@@ -19,7 +19,7 @@ import AdminChallenge from '../screens/AdminChallenge';
 import InviteSettings from '../screens/InviteSettings';
 import ChallengePaid from '../screens/ChallengePaid';
 import ChallengeCondition from '../screens/ChallengeCondition';
-
+import EntryRequests from '../screens/EntryRequests'; // 👈 НОВЫЙ ЭКРАН
 
 /* =========================
    SCREENS
@@ -40,7 +40,8 @@ export type Screen =
   | 'profile'
   | 'admin'
   | 'admin-challenge'
-  | 'invite-settings';
+  | 'invite-settings'
+  | 'entry-requests'; // 👈 НОВЫЙ ТИП
 
 function App() {
   const [screen, setScreen] = useState<Screen>('splash');
@@ -214,18 +215,18 @@ function App() {
       )}
 
       {screen === 'challenge-paid' && selectedChallengeId && (
-  <ChallengePaid
-    challengeId={selectedChallengeId}
-    onBack={() => navigate('create')}
-  />
-)}
+        <ChallengePaid
+          challengeId={selectedChallengeId}
+          onBack={() => navigate('create')}
+        />
+      )}
 
-{screen === 'challenge-condition' && selectedChallengeId && (
-  <ChallengeCondition
-    challengeId={selectedChallengeId}
-    onBack={() => navigate('create')}
-  />
-)}
+      {screen === 'challenge-condition' && selectedChallengeId && (
+        <ChallengeCondition
+          challengeId={selectedChallengeId}
+          onBack={() => navigate('create')}
+        />
+      )}
 
       {screen === 'challenge-progress' &&
         selectedChallengeId &&
@@ -276,13 +277,23 @@ function App() {
         <AdminChallenge
           challengeId={selectedChallengeId}
           onBack={() => navigate('admin')}
+          onNavigate={(screen: Screen, id?: string) => navigate(screen, id)} // 👈 ПРОП ДЛЯ НАВИГАЦИИ
         />
       )}
 
       {screen === 'invite-settings' && selectedChallengeId && (
         <InviteSettings
           challengeId={selectedChallengeId}
-          onBack={() => navigate('admin')}
+          onBack={() => navigate('admin-challenge', selectedChallengeId)}
+          onNavigateToRequests={() => navigate('entry-requests', selectedChallengeId)} // 👈 ПРОП ДЛЯ ЗАЯВОК
+        />
+      )}
+
+      {/* 👇 НОВЫЙ ЭКРАН ЗАЯВОК */}
+      {screen === 'entry-requests' && selectedChallengeId && (
+        <EntryRequests
+          challengeId={selectedChallengeId}
+          onBack={() => navigate('invite-settings', selectedChallengeId)}
         />
       )}
     </>
