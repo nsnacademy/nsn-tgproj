@@ -84,8 +84,11 @@ export const CheckboxRow = styled.div`
 export const Footer = styled.div`
   display: flex;
   gap: 12px;
-  margin-top: 44px; /* было 24px → подняли кнопки выше на 20px */
+
+  margin-top: 0;
+  margin-bottom: 20px; /* ⬆️ поднимаем кнопки от низа экрана */
 `;
+
 
 
 /* === BUTTONS === */
