@@ -61,6 +61,7 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   const [loading, setLoading] = useState(true);
 
   const [accepted, setAccepted] = useState(false);
+  
   const [joining, setJoining] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
 
@@ -124,27 +125,31 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         return;
       }
 
-      setChallenge({
-        title: data.title,
-        description: data.description,
-        rules: data.rules,
-        start_mode: data.start_mode,
-        start_date: data.start_date,
-        duration_days: data.duration_days,
-        report_mode: data.report_mode,
-        metric_name: data.metric_name,
-        has_goal: data.has_goal,
-        goal_value: data.goal_value,
-        has_limit: data.has_limit,
-        limit_per_day: data.limit_per_day,
-        has_proof: data.has_proof,
-        proof_types: data.proof_types,
-        has_rating: data.has_rating,
-        max_participants: data.max_participants,
-        chat_link: data.chat_link,
-        username: data.users?.[0]?.username ?? 'unknown',
+      const creator = data.users as unknown as { username: string } | null;
 
-      });
+setChallenge({
+  title: data.title,
+  description: data.description,
+  rules: data.rules,
+  start_mode: data.start_mode,
+  start_date: data.start_date,
+  duration_days: data.duration_days,
+  report_mode: data.report_mode,
+  metric_name: data.metric_name,
+  has_goal: data.has_goal,
+  goal_value: data.goal_value,
+  has_limit: data.has_limit,
+  limit_per_day: data.limit_per_day,
+  has_proof: data.has_proof,
+  proof_types: data.proof_types,
+  has_rating: data.has_rating,
+  max_participants: data.max_participants,
+  chat_link: data.chat_link,
+
+  // ✅ ТЕПЕРЬ РАБОТАЕТ И В RUNTIME И В TS
+  username: creator?.username ?? 'unknown',
+});
+
 
       /* === Награды === */
       if (data.has_rating) {
