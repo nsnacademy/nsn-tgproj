@@ -71,12 +71,49 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
   }
 
   const handleSendRequest = async () => {
+    if (requestSent) return;
+
     setRequestSent(true);
-    
-    // Здесь будет логика отправки запроса
-    setTimeout(() => {
+
+    // 1️⃣ получаем Telegram user
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (!tgUser) {
       setRequestSent(false);
-    }, 3000);
+      return;
+    }
+
+    // 2️⃣ находим user.id в нашей таблице users
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('telegram_id', tgUser.id)
+      .single();
+
+    if (userError || !user) {
+      console.error('[CONDITION REQUEST] user not found', userError);
+      setRequestSent(false);
+      return;
+    }
+
+    // 3️⃣ создаём заявку
+    const { error: insertError } = await supabase
+      .from('entry_requests')
+      .insert({
+        challenge_id: challengeId,
+        user_id: user.id,
+        status: 'pending',
+      });
+
+    if (insertError) {
+      // если заявка уже есть — это ОК
+      if (insertError.code !== '23505') {
+        console.error('[CONDITION REQUEST] insert error', insertError);
+        setRequestSent(false);
+        return;
+      }
+    }
+
+    // 4️⃣ успех — оставляем requestSent = true
   };
 
   if (loading) {
