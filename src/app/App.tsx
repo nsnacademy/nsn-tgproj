@@ -214,20 +214,18 @@ function App() {
       )}
 
       {screen === 'challenge-paid' && selectedChallengeId && (
-        <ChallengePaid
-          challengeId={selectedChallengeId}
-          onBack={() => navigate('create')}
-          onNavigateHome={goHomeAndRefresh}
-        />
-      )}
+  <ChallengePaid
+    challengeId={selectedChallengeId}
+    onBack={() => navigate('create')}
+  />
+)}
 
-      {screen === 'challenge-condition' && selectedChallengeId && (
-        <ChallengeCondition
-          challengeId={selectedChallengeId}
-          onBack={() => navigate('create')}
-          onNavigateHome={goHomeAndRefresh}
-        />
-      )}
+{screen === 'challenge-condition' && selectedChallengeId && (
+  <ChallengeCondition
+    challengeId={selectedChallengeId}
+    onBack={() => navigate('create')}
+  />
+)}
 
       {screen === 'challenge-progress' &&
         selectedChallengeId &&

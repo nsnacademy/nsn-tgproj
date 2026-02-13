@@ -23,7 +23,7 @@ import {
 type Props = {
   challengeId: string;
   onBack: () => void;
-  onNavigateHome: () => void;
+  // onNavigateHome удален, так как не используется
 };
 
 type ChallengeData = {
@@ -37,7 +37,7 @@ type ChallengeData = {
   creator_username: string;
 };
 
-export default function ChallengePaid({ challengeId, onBack, onNavigateHome }: Props) {
+export default function ChallengePaid({ challengeId, onBack }: Props) {
   const [challenge, setChallenge] = useState<ChallengeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [requestSent, setRequestSent] = useState(false);

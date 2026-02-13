@@ -24,7 +24,7 @@ import {
 type Props = {
   challengeId: string;
   onBack: () => void;
-  onNavigateHome: () => void;
+  // onNavigateHome удален, так как не используется
 };
 
 type ChallengeData = {
