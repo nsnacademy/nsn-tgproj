@@ -33,9 +33,8 @@ export function CreateFlowPaid({ onNavigate }: Props) {
 
   const handleContinue = () => {
     if (mode) {
-      // Здесь будет логика для разных типов вызовов
       console.log('Selected mode:', mode);
-      onNavigate('create-flow'); // Временно возвращаем назад
+      onNavigate('create-flow');
     }
   };
 
@@ -43,7 +42,7 @@ export function CreateFlowPaid({ onNavigate }: Props) {
     <SafeArea>
       <Header>
         <BackButton onClick={() => onNavigate('create-flow')}>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </BackButton>
@@ -59,13 +58,13 @@ export function CreateFlowPaid({ onNavigate }: Props) {
           onClick={() => setMode('paid')}
         >
           <OptionIcon $color="#FFD700">
-            <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="16" cy="10" r="6" />
-              <path d="M4 24c1.5-4 5-6 12-6s10.5 2 12 6" />
-              <circle cx="16" cy="16" r="14" strokeWidth="1.5" />
-              <line x1="10" y1="14" x2="22" y2="14" />
-              <line x1="10" y1="18" x2="22" y2="18" />
-              <line x1="16" y1="10" x2="16" y2="22" />
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M3 18c1.2-3 4-4.5 9-4.5s7.8 1.5 9 4.5" />
+              <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
+              <line x1="8" y1="11" x2="16" y2="11" />
+              <line x1="8" y1="14" x2="16" y2="14" />
+              <line x1="12" y1="8" x2="12" y2="16" />
             </svg>
           </OptionIcon>
           
@@ -85,10 +84,10 @@ export function CreateFlowPaid({ onNavigate }: Props) {
           onClick={() => setMode('condition')}
         >
           <OptionIcon $color="#4CAF50">
-            <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="6" y="6" width="20" height="20" rx="4" />
-              <path d="M10 16l4 4 8-8" />
-              <circle cx="22" cy="10" r="2" fill="currentColor" />
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="5" y="5" width="14" height="14" rx="3" />
+              <path d="M8 13l3 3 5-6" />
+              <circle cx="18" cy="8" r="1.5" fill="currentColor" />
             </svg>
           </OptionIcon>
           
@@ -109,10 +108,10 @@ export function CreateFlowPaid({ onNavigate }: Props) {
           $disabled
         >
           <OptionIcon $color="#666">
-            <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="16" cy="16" r="12" />
-              <line x1="16" y1="8" x2="16" y2="24" />
-              <line x1="8" y1="16" x2="24" y2="16" />
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="9" />
+              <line x1="12" y1="7" x2="12" y2="17" />
+              <line x1="7" y1="12" x2="17" y2="12" />
             </svg>
           </OptionIcon>
           
@@ -135,7 +134,7 @@ export function CreateFlowPaid({ onNavigate }: Props) {
             onClick={() => onNavigate('create-flow')}
           >
             <ButtonText>
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
               Назад
@@ -150,7 +149,7 @@ export function CreateFlowPaid({ onNavigate }: Props) {
             <ButtonText>
               Продолжить
               {mode && (
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               )}
