@@ -18,7 +18,7 @@ export const SafeArea = styled.div`
    HEADER
 ====================== */
 export const Header = styled.div`
-  padding: 90px 16px 12px;
+  padding: 100px 16px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -29,25 +29,7 @@ export const Header = styled.div`
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 `;
 
-export const BackButton = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 6px;
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.12);
-    transform: translateX(-2px);
-  }
-`;
 
 export const HeaderTitle = styled.div`
   font-size: 18px;

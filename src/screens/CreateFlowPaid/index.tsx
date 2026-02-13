@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   SafeArea,
   FixedHeader,
-  BackButton,
+  
   HeaderTitle,
   HeaderSubtitle,
   ProgressBar,
@@ -147,11 +147,7 @@ export function CreateFlowPaid({ onNavigate }: Props) {
   return (
     <SafeArea>
       <FixedHeader>
-        <BackButton onClick={handleBack}>
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </BackButton>
+        
         <HeaderTitle>{getStepTitle()}</HeaderTitle>
         <HeaderSubtitle>
           {getStepSubtitle()}
