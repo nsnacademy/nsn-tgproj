@@ -16,7 +16,7 @@ export const SafeArea = styled.div`
 export const Header = styled.div`
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 50;
 
   background: linear-gradient(
     to bottom,
@@ -32,7 +32,7 @@ export const Content = styled.div`
   flex: 1;                 /* 🔥 КЛЮЧЕВОЕ */
   overflow-y: auto;
 
-  padding: 0 24px 140px;   /* место под Footer */
+  padding: 70 24px 140px;   /* место под Footer */
 `;
 
 /* === TITLE === */

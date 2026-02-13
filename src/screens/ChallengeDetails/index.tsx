@@ -6,7 +6,7 @@ import {
   Header,
   Title,
   Username,
-  Content,        // ✅ ДОБАВЛЕНО
+  Content,
   Card,
   Row,
   Divider,
@@ -121,7 +121,8 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         has_rating: data.has_rating,
         max_participants: data.max_participants,
         chat_link: data.chat_link,
-        username: data.users?.[0]?.username ?? 'unknown', // ✅ реальный username
+        username: data.users?.[0]?.username ?? 'unknown',
+
       });
 
       /* === Награды === */
@@ -173,8 +174,6 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   if (loading || !challenge) {
     return <SafeArea />;
   }
-
-  /* ================= LIMIT ================= */
 
   const limitReached =
     challenge.max_participants !== null &&
@@ -248,15 +247,14 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
 
   return (
     <SafeArea>
-      {/* 🔒 FIXED HEADER */}
+      {/* HEADER */}
       <Header>
         <Title>{challenge.title}</Title>
         <Username>@{challenge.username}</Username>
       </Header>
 
-      {/* 🔽 SCROLLABLE CONTENT */}
+      {/* CONTENT */}
       <Content>
-        {/* Описание */}
         <Card>
           <Row><b>Описание:</b> {challenge.description}</Row>
           {challenge.rules && (
@@ -267,7 +265,6 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
           )}
         </Card>
 
-        {/* Сроки */}
         <Card>
           <Row>
             <b>Старт:</b>{' '}
@@ -279,7 +276,6 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
           <Row><b>Длительность:</b> {challenge.duration_days} дней</Row>
         </Card>
 
-        {/* Формат */}
         <Card>
           <Row>
             <b>Формат:</b>{' '}
@@ -314,11 +310,9 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
           )}
         </Card>
 
-        {/* Награды */}
         {challenge.has_rating && prizes.length > 0 && (
           <Card>
             <Row><b>Награды:</b></Row>
-
             {prizes.map((prize, index) => (
               <div key={prize.place}>
                 {index > 0 && <Divider />}
@@ -331,17 +325,11 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
                   </b>{' '}
                   {prize.title}
                 </Row>
-                {prize.description && (
-                  <Row style={{ opacity: 0.7 }}>
-                    {prize.description}
-                  </Row>
-                )}
               </div>
             ))}
           </Card>
         )}
 
-        {/* Участники */}
         <Card>
           <Row>
             <b>Участники:</b>{' '}
@@ -349,21 +337,17 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
               ? `${participantsCount} / ${challenge.max_participants}`
               : participantsCount}
           </Row>
-
-          {limitReached && (
-            <Row style={{ color: '#ff6b6b' }}>Мест больше нет</Row>
-          )}
         </Card>
 
-        {/* Чат */}
-        {challenge.chat_link && (
-          <Card>
-            <Row><b>Чат вызова:</b></Row>
-            <JoinButton onClick={() => window.open(challenge.chat_link!, '_blank')}>
-              Перейти в чат
-            </JoinButton>
-          </Card>
-        )}
+        {/* ✅ ЧАТ — ТОЛЬКО ИНФО */}
+        <Card>
+          <Row><b>Чат вызова:</b></Row>
+          <Row style={{ opacity: 0.7 }}>
+            {challenge.chat_link
+              ? 'Чат вызова есть. Он появится после присоединения.'
+              : 'Чат для этого вызова не создан.'}
+          </Row>
+        </Card>
 
         <CheckboxRow onClick={() => setAccepted(!accepted)}>
           <input type="checkbox" checked={accepted} readOnly />
@@ -371,7 +355,7 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         </CheckboxRow>
       </Content>
 
-      {/* 🔽 FIXED FOOTER */}
+      {/* FOOTER */}
       <Footer>
         <BackButton onClick={onNavigateHome}>Назад</BackButton>
         <JoinButton
