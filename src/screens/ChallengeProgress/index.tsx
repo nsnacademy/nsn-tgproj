@@ -99,6 +99,8 @@ type ChallengeData = {
   has_rating: boolean;
   duration_days: number;
   start_at: string;
+
+  chat_link: string | null;
 };
 
 
@@ -166,7 +168,8 @@ export default function ChallengeProgress({
     limit_per_day,
     has_rating,
     duration_days,
-    start_at
+    start_at,
+    chat_link
   `)
   .eq('id', challengeId)
   .single();
@@ -618,6 +621,29 @@ if (!todayReport) {
             </ParticipantCount>
           </ParticipantsSection>
         </Section>
+
+        {/* Чат вызова */}
+{challenge.chat_link && (
+  <Section>
+    <PrimaryButton
+      onClick={() => {
+        (window.Telegram?.WebApp as any)?.openLink(
+  challenge.chat_link
+);
+
+      }}
+    >
+      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 3L10 14l-3-3" />
+          <path d="M21 3l-7 18-4-7-7-4 18-7z" />
+        </svg>
+        Перейти в чат вызова
+      </span>
+    </PrimaryButton>
+  </Section>
+)}
+
 
         {/* Рейтинг */}
         {challenge.has_rating && rating.length > 0 && (
