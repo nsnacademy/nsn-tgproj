@@ -85,8 +85,9 @@ export const Footer = styled.div`
   display: flex;
   gap: 12px;
 
-  margin-top: 0;
-  margin-bottom: 20px; /* ⬆️ поднимаем кнопки от низа экрана */
+  margin-top: 1px;
+
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
 `;
 
 
