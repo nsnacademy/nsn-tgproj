@@ -499,3 +499,34 @@ export const ScrollContent = styled.div`
   /* Скрываем скроллбар для Firefox */
   scrollbar-width: none;
 `;
+
+export const RewardRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  
+  span {
+    min-width: 70px;
+    font-size: 13px;
+    opacity: 0.8;
+  }
+`;
+
+export const AddButton = styled.button`
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 8px;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+`;
