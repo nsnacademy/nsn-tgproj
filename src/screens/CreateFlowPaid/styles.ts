@@ -18,7 +18,7 @@ export const SafeArea = styled.div`
    HEADER
 ====================== */
 export const Header = styled.div`
-  padding: 50px 16px 12px;
+  padding: 90px 16px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -503,7 +503,7 @@ export const ScrollContent = styled.div`
   flex-direction: column;
   gap: 12px;
   flex: 1;
-  margin-top: 120px; /* Высота фиксированного хедера */
+  margin-top: 170px; /* Высота фиксированного хедера */
   margin-bottom: 80px; /* Высота футера */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
