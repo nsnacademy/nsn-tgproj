@@ -6,6 +6,7 @@ import {
   Header,
   Title,
   Username,
+  Content,        // ✅ ДОБАВЛЕНО
   Card,
   Row,
   Divider,
@@ -65,6 +66,8 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
 
   const [participantsCount, setParticipantsCount] = useState(0);
 
+  /* ================= LOAD ================= */
+
   useEffect(() => {
     async function load() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -118,10 +121,10 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
         has_rating: data.has_rating,
         max_participants: data.max_participants,
         chat_link: data.chat_link,
-        username: data.users?.[0]?.username ?? 'unknown',
+        username: data.users?.[0]?.username ?? 'unknown', // ✅ реальный username
       });
 
-      // 🔹 Награды
+      /* === Награды === */
       if (data.has_rating) {
         const { data: prizesData } = await supabase
           .from('challenge_prizes')
@@ -171,9 +174,13 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
     return <SafeArea />;
   }
 
+  /* ================= LIMIT ================= */
+
   const limitReached =
     challenge.max_participants !== null &&
     participantsCount >= challenge.max_participants;
+
+  /* ================= JOIN ================= */
 
   async function joinChallenge() {
     if (!accepted || joining || alreadyJoined || limitReached) return;
@@ -237,127 +244,134 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
     }
   }
 
+  /* ================= UI ================= */
+
   return (
     <SafeArea>
+      {/* 🔒 FIXED HEADER */}
       <Header>
         <Title>{challenge.title}</Title>
         <Username>@{challenge.username}</Username>
       </Header>
 
-      {/* Описание */}
-      <Card>
-        <Row><b>Описание:</b> {challenge.description}</Row>
-        {challenge.rules && (
-          <>
-            <Divider />
-            <Row><b>Условия:</b> {challenge.rules}</Row>
-          </>
-        )}
-      </Card>
-
-      {/* Сроки */}
-      <Card>
-        <Row>
-          <b>Старт:</b>{' '}
-          {challenge.start_mode === 'now'
-            ? 'Сразу после публикации'
-            : challenge.start_date}
-        </Row>
-        <Divider />
-        <Row><b>Длительность:</b> {challenge.duration_days} дней</Row>
-      </Card>
-
-      {/* Формат */}
-      <Card>
-        <Row>
-          <b>Формат:</b>{' '}
-          {challenge.report_mode === 'simple'
-            ? 'Ежедневная отметка'
-            : `Результат (${challenge.metric_name})`}
-        </Row>
-
-        {challenge.has_goal && (
-          <>
-            <Divider />
-            <Row>
-              <b>Цель:</b> {challenge.goal_value} {challenge.metric_name}
-            </Row>
-          </>
-        )}
-
-        {challenge.has_limit && (
-          <>
-            <Divider />
-            <Row><b>Лимит:</b> {challenge.limit_per_day} в день</Row>
-          </>
-        )}
-
-        {challenge.has_proof && challenge.proof_types && (
-          <>
-            <Divider />
-            <Row>
-              <b>Подтверждение:</b> {challenge.proof_types.join(', ')}
-            </Row>
-          </>
-        )}
-      </Card>
-
-      {/* Награды */}
-      {challenge.has_rating && prizes.length > 0 && (
+      {/* 🔽 SCROLLABLE CONTENT */}
+      <Content>
+        {/* Описание */}
         <Card>
-          <Row><b>Награды:</b></Row>
+          <Row><b>Описание:</b> {challenge.description}</Row>
+          {challenge.rules && (
+            <>
+              <Divider />
+              <Row><b>Условия:</b> {challenge.rules}</Row>
+            </>
+          )}
+        </Card>
 
-          {prizes.map((prize, index) => (
-            <div key={prize.place}>
-              {index > 0 && <Divider />}
+        {/* Сроки */}
+        <Card>
+          <Row>
+            <b>Старт:</b>{' '}
+            {challenge.start_mode === 'now'
+              ? 'Сразу после публикации'
+              : challenge.start_date}
+          </Row>
+          <Divider />
+          <Row><b>Длительность:</b> {challenge.duration_days} дней</Row>
+        </Card>
+
+        {/* Формат */}
+        <Card>
+          <Row>
+            <b>Формат:</b>{' '}
+            {challenge.report_mode === 'simple'
+              ? 'Ежедневная отметка'
+              : `Результат (${challenge.metric_name})`}
+          </Row>
+
+          {challenge.has_goal && (
+            <>
+              <Divider />
               <Row>
-                <b>
-                  {prize.place === 1 && '🥇'}
-                  {prize.place === 2 && '🥈'}
-                  {prize.place === 3 && '🥉'}
-                  {prize.place > 3 && `#${prize.place}`} место:
-                </b>{' '}
-                {prize.title}
+                <b>Цель:</b> {challenge.goal_value} {challenge.metric_name}
               </Row>
-              {prize.description && (
-                <Row style={{ opacity: 0.7 }}>
-                  {prize.description}
+            </>
+          )}
+
+          {challenge.has_limit && (
+            <>
+              <Divider />
+              <Row><b>Лимит:</b> {challenge.limit_per_day} в день</Row>
+            </>
+          )}
+
+          {challenge.has_proof && challenge.proof_types && (
+            <>
+              <Divider />
+              <Row>
+                <b>Подтверждение:</b> {challenge.proof_types.join(', ')}
+              </Row>
+            </>
+          )}
+        </Card>
+
+        {/* Награды */}
+        {challenge.has_rating && prizes.length > 0 && (
+          <Card>
+            <Row><b>Награды:</b></Row>
+
+            {prizes.map((prize, index) => (
+              <div key={prize.place}>
+                {index > 0 && <Divider />}
+                <Row>
+                  <b>
+                    {prize.place === 1 && '🥇'}
+                    {prize.place === 2 && '🥈'}
+                    {prize.place === 3 && '🥉'}
+                    {prize.place > 3 && `#${prize.place}`} место:
+                  </b>{' '}
+                  {prize.title}
                 </Row>
-              )}
-            </div>
-          ))}
-        </Card>
-      )}
-
-      {/* Участники */}
-      <Card>
-        <Row>
-          <b>Участники:</b>{' '}
-          {challenge.max_participants !== null
-            ? `${participantsCount} / ${challenge.max_participants}`
-            : participantsCount}
-        </Row>
-
-        {limitReached && (
-          <Row style={{ color: '#ff6b6b' }}>Мест больше нет</Row>
+                {prize.description && (
+                  <Row style={{ opacity: 0.7 }}>
+                    {prize.description}
+                  </Row>
+                )}
+              </div>
+            ))}
+          </Card>
         )}
-      </Card>
 
-      {/* Чат */}
-      {challenge.chat_link && (
+        {/* Участники */}
         <Card>
-          <Row><b>Чат вызова:</b></Row>
-          <JoinButton onClick={() => window.open(challenge.chat_link!, '_blank')}>
-            Перейти в чат
-          </JoinButton>
+          <Row>
+            <b>Участники:</b>{' '}
+            {challenge.max_participants !== null
+              ? `${participantsCount} / ${challenge.max_participants}`
+              : participantsCount}
+          </Row>
+
+          {limitReached && (
+            <Row style={{ color: '#ff6b6b' }}>Мест больше нет</Row>
+          )}
         </Card>
-      )}
 
-      <CheckboxRow onClick={() => setAccepted(!accepted)}>
-        <input type="checkbox" checked={accepted} readOnly />
-        <span>Я ознакомился с условиями</span>
-      </CheckboxRow>
+        {/* Чат */}
+        {challenge.chat_link && (
+          <Card>
+            <Row><b>Чат вызова:</b></Row>
+            <JoinButton onClick={() => window.open(challenge.chat_link!, '_blank')}>
+              Перейти в чат
+            </JoinButton>
+          </Card>
+        )}
 
+        <CheckboxRow onClick={() => setAccepted(!accepted)}>
+          <input type="checkbox" checked={accepted} readOnly />
+          <span>Я ознакомился с условиями</span>
+        </CheckboxRow>
+      </Content>
+
+      {/* 🔽 FIXED FOOTER */}
       <Footer>
         <BackButton onClick={onNavigateHome}>Назад</BackButton>
         <JoinButton
