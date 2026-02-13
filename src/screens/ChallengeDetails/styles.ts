@@ -19,7 +19,7 @@ export const Header = styled.div`
     rgba(0,0,0,0.85)
   );
 
-  padding: 24px 24px 16px;
+  padding: 70px 24px 16px;
 `;
 
 /* === CONTENT (обычный поток, скроллится весь экран) === */
@@ -84,8 +84,9 @@ export const CheckboxRow = styled.div`
 export const Footer = styled.div`
   display: flex;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 44px; /* было 24px → подняли кнопки выше на 20px */
 `;
+
 
 /* === BUTTONS === */
 export const BackButton = styled.button`
