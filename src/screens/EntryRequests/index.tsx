@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../shared/lib/supabase'; // 👈 убрали getCurrentUser, он не используется
+import { supabase } from '../../shared/lib/supabase';
 import {
   SafeArea,
   Container,
@@ -31,7 +31,7 @@ type Request = {
     telegram_id: string;
     telegram_username: string | null;
     first_name: string | null;
-  }; // 👈 теперь это объект, не массив
+  };
 };
 
 type ChallengeInfo = {
@@ -39,17 +39,12 @@ type ChallengeInfo = {
   entry_type: 'free' | 'paid' | 'condition';
 };
 
-// 👇 Вспомогательный тип для сырых данных из Supabase
+// Тип для сырых данных заявок (без users)
 type RawRequest = {
   id: string;
   user_id: string;
   status: string;
   created_at: string;
-  users: {
-    telegram_id: string;
-    telegram_username: string | null;
-    first_name: string | null;
-  }[];
 };
 
 export default function EntryRequests({ challengeId, onBack }: Props) {
@@ -64,7 +59,7 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
   }, [challengeId]);
 
   async function loadData() {
-    // Загружаем информацию о вызове
+    // 1️⃣ Загружаем информацию о вызове
     const { data: challengeData } = await supabase
       .from('challenges')
       .select('max_participants, entry_type')
@@ -73,7 +68,7 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
 
     setChallenge(challengeData);
 
-    // Считаем текущих участников
+    // 2️⃣ Считаем текущих участников
     const { count } = await supabase
       .from('participants')
       .select('*', { count: 'exact', head: true })
@@ -81,42 +76,53 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
 
     setParticipantsCount(count ?? 0);
 
-    // Загружаем заявки
+    // 3️⃣ Загружаем заявки (без join)
     const { data: requestsData } = await supabase
       .from('entry_requests')
       .select(`
         id,
         user_id,
         status,
-        created_at,
-        users (
-          telegram_id,
-          telegram_username,
-          first_name
-        )
+        created_at
       `)
       .eq('challenge_id', challengeId)
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
 
-    // 👇 ПРАВИЛЬНАЯ ТРАНСФОРМАЦИЯ с типизацией
-    if (requestsData) {
-      const transformed = (requestsData as RawRequest[]).map(item => ({
-        id: item.id,
-        user_id: item.user_id,
-        status: item.status as 'pending' | 'approved' | 'rejected',
-        created_at: item.created_at,
-        users: item.users[0] || {  // берем первый элемент массива
-          telegram_id: '',
-          telegram_username: null,
-          first_name: null,
-        },
-      }));
-      setRequests(transformed);
-    } else {
+    if (!requestsData || requestsData.length === 0) {
       setRequests([]);
+      setLoading(false);
+      return;
     }
 
+    // 4️⃣ Получаем ID всех пользователей из заявок
+    const userIds = requestsData.map(r => r.user_id);
+
+    // 5️⃣ Загружаем информацию о пользователях отдельным запросом
+    const { data: users } = await supabase
+      .from('users')
+      .select('id, telegram_id, telegram_username, first_name')
+      .in('id', userIds);
+
+    // 6️⃣ Создаем Map для быстрого доступа к пользователям по ID
+    const usersMap = new Map(
+      (users ?? []).map(u => [u.id, u])
+    );
+
+    // 7️⃣ Склеиваем заявки с пользователями
+    const transformed = (requestsData as RawRequest[]).map(item => ({
+      id: item.id,
+      user_id: item.user_id,
+      status: item.status as 'pending' | 'approved' | 'rejected',
+      created_at: item.created_at,
+      users: usersMap.get(item.user_id) ?? {
+        telegram_id: '',
+        telegram_username: null,
+        first_name: null,
+      },
+    }));
+
+    setRequests(transformed);
     setLoading(false);
   }
 
