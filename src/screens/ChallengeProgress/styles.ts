@@ -43,7 +43,7 @@ export const SafeArea = styled.div`
   flex-direction: column;
   padding-bottom: 100px;
   position: relative;
-  overflow: hidden;
+  
 `;
 
 export const LoadingState = styled.div`
@@ -62,11 +62,12 @@ export const Header = styled.div`
   align-items: center;
   gap: 12px;
   background: #000;
+
   position: sticky;
-  top: 15;
+  top: 0;
   z-index: 100;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 `;
+
 
 export const BackButton = styled.button`
   width: 40px;
@@ -732,8 +733,8 @@ export const DisabledButton = styled(PrimaryButton)`
 `;
 
 export const ScrollArea = styled.div`
-  flex: 1;
+  flex: 1;                 // 🔥 важно
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 120px;
+  padding-bottom: 120px;   // чтобы контент не ушёл под кнопку
 `;
