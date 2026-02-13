@@ -159,9 +159,16 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
     setProcessing(null);
   };
 
-  const getUsername = (user: Request['users']) => {
-    if (user.telegram_username) return `@${user.telegram_username}`;
-    if (user.first_name) return user.first_name;
+  const getDisplayName = (user: Request['users']) => {
+    // Сначала пробуем username
+    if (user.telegram_username) {
+      return `@${user.telegram_username}`;
+    }
+    // Если нет username, используем first_name
+    if (user.first_name) {
+      return user.first_name;
+    }
+    // В крайнем случае показываем ID
     return `ID: ${user.telegram_id}`;
   };
 
@@ -210,7 +217,7 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
               {requests.map(request => (
                 <RequestCard key={request.id}>
                   <UserInfo>
-                    <Username>{getUsername(request.users)}</Username>
+                    <Username>{getDisplayName(request.users)}</Username>
                   </UserInfo>
                   <ApproveButton
                     onClick={() => handleApprove(request.id, request.user_id)}
