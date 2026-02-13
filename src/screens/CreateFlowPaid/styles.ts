@@ -476,3 +476,44 @@ export const RuleText = styled.div`
   font-weight: 500;
   opacity: 0.9;
 `;
+
+/* ======================
+   HEADER - FIXED
+====================== */
+export const FixedHeader = styled.div`
+  padding: 50px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+`;
+
+/* ======================
+   SCROLL CONTENT
+====================== */
+export const ScrollContent = styled.div`
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  margin-top: 120px; /* Высота фиксированного хедера */
+  margin-bottom: 80px; /* Высота футера */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  /* Скрываем скроллбар для Chrome/Safari */
+  &::-webkit-scrollbar {
+    width: 0;
+    background: transparent;
+  }
+  
+  /* Скрываем скроллбар для Firefox */
+  scrollbar-width: none;
+`;

@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import {
   SafeArea,
-  Header,
+  FixedHeader,
   BackButton,
   HeaderTitle,
   HeaderSubtitle,
-  Content,
+  ProgressBar,
+  ProgressStep,
+  StepIndicator,
+  StepNumber,
+  StepLabel,
+  ScrollContent,
   OptionCard,
   OptionIcon,
   OptionContent,
@@ -32,11 +37,6 @@ import {
   FooterRow,
   Button,
   ButtonText,
-  ProgressBar,
-  ProgressStep,
-  StepIndicator,
-  StepNumber,
-  StepLabel,
 } from './styles';
 
 import type { Screen } from '../../app/App';
@@ -146,7 +146,7 @@ export function CreateFlowPaid({ onNavigate }: Props) {
 
   return (
     <SafeArea>
-      <Header>
+      <FixedHeader>
         <BackButton onClick={handleBack}>
           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M15 18l-6-6 6-6" />
@@ -161,7 +161,7 @@ export function CreateFlowPaid({ onNavigate }: Props) {
           <ProgressBar>
             <ProgressStep $active>
               <StepIndicator $active>
-                <StepNumber>✓</StepNumber>
+                <StepNumber>1</StepNumber>
               </StepIndicator>
               <StepLabel>Тип</StepLabel>
             </ProgressStep>
@@ -171,24 +171,17 @@ export function CreateFlowPaid({ onNavigate }: Props) {
               </StepIndicator>
               <StepLabel>Настройки</StepLabel>
             </ProgressStep>
-            <ProgressStep>
-              <StepIndicator>
-                <StepNumber>3</StepNumber>
-              </StepIndicator>
-              <StepLabel>Готово</StepLabel>
-            </ProgressStep>
           </ProgressBar>
         )}
-      </Header>
+      </FixedHeader>
 
-      <Content>
+      <ScrollContent>
         {step === 1 ? (
           <>
             <OptionCard
               $active={mode === 'paid'}
               onClick={() => {
                 setMode('paid');
-                // Автоматически не переходим, ждем кнопку
               }}
             >
               <OptionIcon $color="#FFD700">
@@ -217,7 +210,6 @@ export function CreateFlowPaid({ onNavigate }: Props) {
               $active={mode === 'condition'}
               onClick={() => {
                 setMode('condition');
-                // Автоматически не переходим, ждем кнопку
               }}
             >
               <OptionIcon $color="#4CAF50">
@@ -452,7 +444,7 @@ export function CreateFlowPaid({ onNavigate }: Props) {
             )}
           </>
         )}
-      </Content>
+      </ScrollContent>
 
       <Footer>
         <FooterRow>
