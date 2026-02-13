@@ -259,3 +259,220 @@ export const ButtonText = styled.span`
   align-items: center;
   gap: 6px;
 `;
+
+/* ======================
+   PROGRESS BAR
+====================== */
+export const ProgressBar = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  gap: 8px;
+`;
+
+export const ProgressStep = styled.div<{ $active?: boolean }>`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+`;
+
+export const StepIndicator = styled.div<{ $active?: boolean }>`
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  background: ${({ $active }) => 
+    $active 
+      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+      : 'rgba(255, 255, 255, 0.1)'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid ${({ $active }) => 
+    $active 
+      ? 'rgba(255, 255, 255, 0.3)' 
+      : 'rgba(255, 255, 255, 0.1)'};
+`;
+
+export const StepNumber = styled.span``;
+
+export const StepLabel = styled.span`
+  font-size: 10px;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+/* ======================
+   FORM SECTIONS
+====================== */
+export const FormSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+export const FormTitle = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.95;
+`;
+
+export const FormDescription = styled.div`
+  font-size: 12px;
+  opacity: 0.6;
+  margin-bottom: 8px;
+`;
+
+export const InputField = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+export const InputLabel = styled.div`
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.8;
+`;
+
+export const InputWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+`;
+
+export const Input = styled.input<{ $hasValue?: boolean }>`
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid ${({ $hasValue }) => 
+    $hasValue ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
+  border-radius: 12px;
+  color: #fff;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+`;
+
+export const CurrencySelect = styled.select`
+  position: absolute;
+  right: 8px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+  }
+  
+  option {
+    background: #000;
+  }
+`;
+
+export const Textarea = styled.textarea`
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  
+  &:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+`;
+
+export const ContactInput = styled.div`
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0 12px;
+  
+  &:focus-within {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  input {
+    border: none;
+    background: transparent;
+    padding: 12px 0;
+    
+    &:focus {
+      background: transparent;
+    }
+  }
+`;
+
+export const InfoBox = styled.div`
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  margin: 8px 0;
+`;
+
+export const InfoIcon = styled.span`
+  font-size: 16px;
+`;
+
+export const InfoText = styled.div`
+  font-size: 12px;
+  opacity: 0.8;
+  line-height: 1.4;
+`;
+
+export const RuleBox = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  margin-top: 16px;
+`;
+
+export const RuleIcon = styled.span`
+  font-size: 20px;
+`;
+
+export const RuleText = styled.div`
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.9;
+`;
