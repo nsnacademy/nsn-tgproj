@@ -9,10 +9,10 @@ export const SafeArea = styled.div`
 `;
 
 export const Header = styled.div`
-  padding: 50px 16px 12px;
+  padding: 33px 11px 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   background: #000;
   position: sticky;
   top: 0;
@@ -21,9 +21,9 @@ export const Header = styled.div`
 `;
 
 export const BackButton = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: 21px;
+  height: 21px;
+  border-radius: 7px;
   background: rgba(255, 255, 255, 0.08);
   border: none;
   color: #fff;
@@ -32,32 +32,37 @@ export const BackButton = styled.button`
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
+
+  svg {
+    width: 13px;
+    height: 13px;
+  }
 
   &:hover {
     background: rgba(255, 255, 255, 0.12);
-    transform: translateX(-2px);
+    transform: translateX(-1px);
   }
 `;
 
 export const Title = styled.div`
-  font-size: 20px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.3;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 `;
 
 export const Content = styled.div`
-  padding: 16px;
+  padding: 11px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 11px;
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 100px;
+  padding-bottom: 67px;
   
   &::-webkit-scrollbar {
-    width: 4px;
+    width: 3px;
   }
   
   &::-webkit-scrollbar-track {
@@ -66,34 +71,34 @@ export const Content = styled.div`
   
   &::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+    border-radius: 3px;
   }
 `;
 
 export const Card = styled.div`
   background: rgba(255, 255, 255, 0.06);
-  border-radius: 20px;
-  padding: 20px;
+  border-radius: 13px;
+  padding: 13px;
   border: 1px solid rgba(155, 89, 182, 0.15);
   backdrop-filter: blur(10px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.2);
 `;
 
 export const Field = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: 13px;
 `;
 
 export const Label = styled.div`
-  font-size: 12px;
+  font-size: 8px;
   font-weight: 500;
   opacity: 0.6;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 `;
 
 export const Value = styled.div`
-  font-size: 16px;
+  font-size: 11px;
   line-height: 1.5;
   opacity: 0.9;
   word-break: break-word;
@@ -102,19 +107,19 @@ export const Value = styled.div`
 export const ConditionBox = styled.div`
   background: rgba(155, 89, 182, 0.1);
   border: 1px solid rgba(155, 89, 182, 0.2);
-  border-radius: 12px;
-  padding: 20px;
-  margin: 20px 0;
+  border-radius: 8px;
+  padding: 13px;
+  margin: 13px 0;
   
   ${Label} {
     color: #9B59B6;
     opacity: 1;
-    font-size: 14px;
-    margin-bottom: 12px;
+    font-size: 9px;
+    margin-bottom: 8px;
   }
   
   ${Value} {
-    font-size: 18px;
+    font-size: 12px;
     font-weight: 600;
     color: #9B59B6;
     line-height: 1.6;
@@ -124,17 +129,18 @@ export const ConditionBox = styled.div`
 export const ContactInfo = styled.div`
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(155, 89, 182, 0.2);
-  border-radius: 12px;
-  padding: 16px;
-  margin: 20px 0;
+  border-radius: 8px;
+  padding: 11px;
+  margin: 13px 0;
   
   ${Label} {
     color: #9B59B6;
     opacity: 1;
+    font-size: 8px;
   }
   
   ${Value} {
-    font-size: 18px;
+    font-size: 12px;
     font-weight: 600;
     color: #9B59B6;
   }
@@ -142,33 +148,33 @@ export const ContactInfo = styled.div`
 
 export const LimitBadge = styled.div`
   display: inline-block;
-  padding: 8px 16px;
+  padding: 5px 11px;
   background: rgba(155, 89, 182, 0.15);
   border: 1px solid rgba(155, 89, 182, 0.3);
-  border-radius: 30px;
-  font-size: 14px;
+  border-radius: 20px;
+  font-size: 9px;
   font-weight: 500;
   color: #9B59B6;
-  margin: 10px 0;
+  margin: 7px 0;
 `;
 
 export const RuleBox = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  gap: 8px;
+  padding: 11px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  margin-top: 16px;
+  border-radius: 8px;
+  margin-top: 11px;
 `;
 
 export const RuleIcon = styled.span`
-  font-size: 24px;
+  font-size: 16px;
 `;
 
 export const RuleText = styled.div`
-  font-size: 14px;
+  font-size: 9px;
   font-weight: 500;
   opacity: 0.9;
   line-height: 1.4;
@@ -179,7 +185,7 @@ export const Footer = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 16px 20px 30px;
+  padding: 11px 13px 20px;
   background: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(20px);
   border-top: 1px solid rgba(155, 89, 182, 0.15);
@@ -188,24 +194,24 @@ export const Footer = styled.div`
 
 export const Button = styled.button`
   width: 100%;
-  height: 52px;
-  border-radius: 26px;
+  height: 35px;
+  border-radius: 17px;
   border: none;
   background: #9B59B6;
   color: #fff;
-  font-size: 16px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 16px rgba(155, 89, 182, 0.3);
+  box-shadow: 0 3px 11px rgba(155, 89, 182, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
 
   &:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     background: #AE6DC9;
-    box-shadow: 0 8px 24px rgba(155, 89, 182, 0.4);
+    box-shadow: 0 5px 16px rgba(155, 89, 182, 0.4);
   }
 
   &:active {
