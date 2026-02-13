@@ -29,8 +29,7 @@ type Request = {
   created_at: string;
   users: {
     telegram_id: string;
-    username: string | null;
-    first_name: string | null;
+    username: string | null;        // 👈 только username, без first_name
   };
 };
 
@@ -122,9 +121,10 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
     console.log('🔢 [ENTRY_REQUESTS] ID пользователей из заявок:', userIds);
 
     // 5️⃣ Загружаем информацию о пользователях отдельным запросом
+    //    👇 ТОЛЬКО id, telegram_id, username (first_name больше не нужен)
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('id, telegram_id, username, first_name')
+      .select('id, telegram_id, username')
       .in('id', userIds);
 
     if (usersError) {
@@ -138,9 +138,7 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
         console.log(`👤 Пользователь ${u.id}:`, {
           telegram_id: u.telegram_id,
           username: u.username,
-          first_name: u.first_name,
           hasUsername: !!u.username,
-          hasFirstName: !!u.first_name
         });
       });
     }
@@ -162,7 +160,6 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
         найденUser: !!userData,
         userData: userData,
         итоговыйUsername: userData?.username || null,
-        итоговыйFirstName: userData?.first_name || null
       });
 
       return {
@@ -173,21 +170,19 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
         users: userData ?? {
           telegram_id: '',
           username: null,
-          first_name: null,
         },
       };
     });
 
     console.log('✅ [ENTRY_REQUESTS] Трансформированные данные:', transformed);
     
-    // Проверяем конкретно username в итоговых данных
+    // Проверяем username в итоговых данных
     transformed.forEach((t, index) => {
       console.log(`📊 [ENTRY_REQUESTS] Итоговая заявка ${index + 1}:`, {
         id: t.id,
         username: t.users.username,
-        first_name: t.users.first_name,
         telegram_id: t.users.telegram_id,
-        displayName: t.users.username ? `@${t.users.username}` : (t.users.first_name || `ID: ${t.users.telegram_id}`)
+        displayName: t.users.username ? `@${t.users.username}` : `ID: ${t.users.telegram_id}`
       });
     });
 
@@ -261,6 +256,7 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
     console.log('✅ [ENTRY_REQUESTS] Обработка approve завершена');
   };
 
+  // 👇 УПРОЩЕННАЯ функция отображения (только username или ID)
   const getDisplayName = (user: Request['users']) => {
     console.log('🔍 [getDisplayName] Получен user:', user);
     
@@ -268,10 +264,7 @@ export default function EntryRequests({ challengeId, onBack }: Props) {
       console.log('✅ Используем username:', user.username);
       return `@${user.username}`;
     }
-    if (user.first_name) {
-      console.log('✅ Используем first_name:', user.first_name);
-      return user.first_name;
-    }
+    
     console.log('⚠️ Используем telegram_id:', user.telegram_id);
     return `ID: ${user.telegram_id}`;
   };
