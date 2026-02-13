@@ -93,6 +93,7 @@ export function CreateFlowPaid({ onNavigate }: Props) {
     } else {
       // Здесь будет создание вызова
       console.log('Creating challenge with:', mode === 'paid' ? paidForm : conditionForm);
+      // Пока просто возвращаемся назад для теста
       onNavigate('create-flow');
     }
   };
@@ -106,7 +107,9 @@ export function CreateFlowPaid({ onNavigate }: Props) {
   };
 
   const isStepValid = () => {
-    if (step === 1) return mode !== null;
+    if (step === 1) {
+      return mode !== null;
+    }
     
     if (mode === 'paid') {
       return paidForm.amount && paidForm.contact;
@@ -120,10 +123,24 @@ export function CreateFlowPaid({ onNavigate }: Props) {
   };
 
   const getStepTitle = () => {
-    if (step === 1) return 'Выберите тип доступа';
+    if (step === 1) return 'Закрытый вызов';
     
-    if (mode === 'paid') return '💰 Настройка платного входа';
-    if (mode === 'condition') return '🔒 Настройка условий доступа';
+    if (mode === 'paid') return '💰 Платный вход';
+    if (mode === 'condition') return '🔒 Доступ по условию';
+    return '';
+  };
+
+  const getStepSubtitle = () => {
+    if (step === 1) {
+      return 'Выберите, как участники смогут вступить';
+    }
+    
+    if (mode === 'paid') {
+      return 'Настройте параметры платного входа';
+    }
+    if (mode === 'condition') {
+      return 'Опишите условия доступа';
+    }
     return '';
   };
 
@@ -137,9 +154,7 @@ export function CreateFlowPaid({ onNavigate }: Props) {
         </BackButton>
         <HeaderTitle>{getStepTitle()}</HeaderTitle>
         <HeaderSubtitle>
-          {step === 1 
-            ? 'Выберите, как участники смогут вступить' 
-            : 'Заполните необходимые данные'}
+          {getStepSubtitle()}
         </HeaderSubtitle>
         
         {step === 2 && (
@@ -171,7 +186,10 @@ export function CreateFlowPaid({ onNavigate }: Props) {
           <>
             <OptionCard
               $active={mode === 'paid'}
-              onClick={() => setMode('paid')}
+              onClick={() => {
+                setMode('paid');
+                // Автоматически не переходим, ждем кнопку
+              }}
             >
               <OptionIcon $color="#FFD700">
                 <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -197,7 +215,10 @@ export function CreateFlowPaid({ onNavigate }: Props) {
 
             <OptionCard
               $active={mode === 'condition'}
-              onClick={() => setMode('condition')}
+              onClick={() => {
+                setMode('condition');
+                // Автоматически не переходим, ждем кнопку
+              }}
             >
               <OptionIcon $color="#4CAF50">
                 <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
