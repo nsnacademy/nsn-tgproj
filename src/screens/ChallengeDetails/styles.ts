@@ -85,10 +85,12 @@ export const Footer = styled.div`
   display: flex;
   gap: 12px;
 
-  margin-top: 1px;
+  padding: 0 16px;
+  margin-top: -10px;
 
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
 `;
+
 
 
 
