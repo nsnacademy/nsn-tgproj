@@ -69,6 +69,27 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   /* ================= LOAD ================= */
 
   useEffect(() => {
+  // 🔗 обработка реферальной ссылки
+  const initData = window.Telegram?.WebApp?.initDataUnsafe as
+    | { start_param?: string }
+    | undefined;
+
+  const startParam = initData?.start_param;
+
+  if (startParam && startParam.startsWith('challenge_')) {
+    const idFromLink = startParam.replace('challenge_', '');
+
+    if (idFromLink && idFromLink !== challengeId) {
+      window.dispatchEvent(
+        new CustomEvent('navigate-to-challenge', {
+          detail: { challengeId: idFromLink },
+        })
+      );
+      return; // ⛔ важно: НЕ грузим текущий challenge
+    }
+  }
+
+
     async function load() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
