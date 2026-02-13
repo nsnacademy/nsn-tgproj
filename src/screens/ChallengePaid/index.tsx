@@ -15,7 +15,8 @@ import {
   RuleBox,
   RuleIcon,
   RuleText,
-  Button,
+  RequestButton,
+  RequestHint,
   Footer,
 } from './styles';
 
@@ -39,6 +40,7 @@ type ChallengeData = {
 export default function ChallengePaid({ challengeId, onBack, onNavigateHome }: Props) {
   const [challenge, setChallenge] = useState<ChallengeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [requestSent, setRequestSent] = useState(false);
 
   useEffect(() => {
     loadChallenge();
@@ -70,11 +72,34 @@ export default function ChallengePaid({ challengeId, onBack, onNavigateHome }: P
     setLoading(false);
   }
 
+  const handleSendRequest = async () => {
+    // Здесь будет логика отправки запроса
+    setRequestSent(true);
+    
+    // Пока просто имитируем отправку
+    setTimeout(() => {
+      setRequestSent(false);
+    }, 3000);
+  };
+
+  const getPaymentMethodLabel = (method: string) => {
+    switch (method) {
+      case 'transfer': return 'Перевод';
+      case 'agreement': return 'Договорённость';
+      case 'link': return 'Ссылка на оплату';
+      default: return method;
+    }
+  };
+
   if (loading) {
     return (
       <SafeArea>
         <Header>
-          <BackButton onClick={onBack}>←</BackButton>
+          <BackButton onClick={onBack}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </BackButton>
           <Title>Загрузка...</Title>
         </Header>
       </SafeArea>
@@ -85,21 +110,16 @@ export default function ChallengePaid({ challengeId, onBack, onNavigateHome }: P
     return (
       <SafeArea>
         <Header>
-          <BackButton onClick={onBack}>←</BackButton>
+          <BackButton onClick={onBack}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </BackButton>
           <Title>Вызов не найден</Title>
         </Header>
       </SafeArea>
     );
   }
-
-  const getPaymentMethodLabel = (method: string) => {
-    switch (method) {
-      case 'transfer': return 'Перевод';
-      case 'agreement': return 'Договорённость';
-      case 'link': return 'Ссылка на оплату';
-      default: return method;
-    }
-  };
 
   return (
     <SafeArea>
@@ -144,16 +164,23 @@ export default function ChallengePaid({ challengeId, onBack, onNavigateHome }: P
           <RuleBox>
             <RuleIcon>📋</RuleIcon>
             <RuleText>
-              После оплаты автор вручную подтвердит ваше участие
+              После оплаты нажмите кнопку ниже, чтобы отправить запрос автору
             </RuleText>
           </RuleBox>
         </Card>
       </Content>
 
       <Footer>
-        <Button onClick={onNavigateHome}>
-          Вернуться на главную
-        </Button>
+        <RequestButton 
+          onClick={handleSendRequest}
+          disabled={requestSent}
+          $isSent={requestSent}
+        >
+          {requestSent ? '✓ Запрос отправлен' : '📨 Отправить запрос на вступление'}
+        </RequestButton>
+        <RequestHint>
+          Автор проверит оплату и подтвердит ваше участие
+        </RequestHint>
       </Footer>
     </SafeArea>
   );

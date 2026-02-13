@@ -16,7 +16,8 @@ import {
   RuleIcon,
   RuleText,
   LimitBadge,
-  Button,
+  RequestButton,
+  RequestHint,
   Footer,
 } from './styles';
 
@@ -35,9 +36,10 @@ type ChallengeData = {
   creator_username: string;
 };
 
-export default function ChallengeCondition({ challengeId, onBack, onNavigateHome }: Props) {
+export default function ChallengeCondition({ challengeId, onBack }: Props) {
   const [challenge, setChallenge] = useState<ChallengeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [requestSent, setRequestSent] = useState(false);
 
   useEffect(() => {
     loadChallenge();
@@ -67,11 +69,25 @@ export default function ChallengeCondition({ challengeId, onBack, onNavigateHome
     setLoading(false);
   }
 
+  const handleSendRequest = async () => {
+    // Здесь будет логика отправки запроса
+    setRequestSent(true);
+    
+    // Пока просто имитируем отправку
+    setTimeout(() => {
+      setRequestSent(false);
+    }, 3000);
+  };
+
   if (loading) {
     return (
       <SafeArea>
         <Header>
-          <BackButton onClick={onBack}>←</BackButton>
+          <BackButton onClick={onBack}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </BackButton>
           <Title>Загрузка...</Title>
         </Header>
       </SafeArea>
@@ -82,7 +98,11 @@ export default function ChallengeCondition({ challengeId, onBack, onNavigateHome
     return (
       <SafeArea>
         <Header>
-          <BackButton onClick={onBack}>←</BackButton>
+          <BackButton onClick={onBack}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </BackButton>
           <Title>Вызов не найден</Title>
         </Header>
       </SafeArea>
@@ -127,16 +147,23 @@ export default function ChallengeCondition({ challengeId, onBack, onNavigateHome
           <RuleBox>
             <RuleIcon>🔒</RuleIcon>
             <RuleText>
-              После выполнения условия автор вручную решит, допустить вас или нет
+              После выполнения условия нажмите кнопку ниже, чтобы отправить запрос автору
             </RuleText>
           </RuleBox>
         </Card>
       </Content>
 
       <Footer>
-        <Button onClick={onNavigateHome}>
-          Вернуться на главную
-        </Button>
+        <RequestButton 
+          onClick={handleSendRequest}
+          disabled={requestSent}
+          $isSent={requestSent}
+        >
+          {requestSent ? '✓ Запрос отправлен' : '🔑 Отправить запрос на вступление'}
+        </RequestButton>
+        <RequestHint>
+          Автор проверит выполнение условия и подтвердит ваше участие
+        </RequestHint>
       </Footer>
     </SafeArea>
   );
