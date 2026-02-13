@@ -21,9 +21,12 @@ import {
   CardContent,
   CardRow,
   CardBadge,
+  EntryBadge,
+  PriceTag,
   Status,
   StatusBadge,
   MoreButton,
+  ConditionButton,
   EmptyState,
   EmptyIcon,
   EmptyText,
@@ -39,6 +42,8 @@ export type Screen =
   | 'create'
   | 'profile'
   | 'challenge-details'
+  | 'challenge-paid'
+  | 'challenge-condition'
   | 'create-flow';
 
 type CreateProps = {
@@ -57,13 +62,13 @@ type ChallengeFromDB = {
   is_finished: boolean;
 
   entry_type: 'free' | 'paid' | 'condition';
-  entry_price: string | null;
+  entry_price: number | null;
   entry_currency: string | null;
   entry_condition: string | null;
+  contact_info: string | null;
+  payment_method: string | null;
+  payment_description: string | null;
 };
-
-
-
 
 type Challenge = {
   id: string;
@@ -75,9 +80,12 @@ type Challenge = {
   status: 'Идёт' | 'Скоро';
   statusIcon: JSX.Element;
   entryType: 'free' | 'paid' | 'condition';
-  entryLabel?: string;
-  entryBadge?: 'paid' | 'condition';
-
+  entryPrice?: number;
+  entryCurrency?: string;
+  entryCondition?: string;
+  contactInfo?: string;
+  paymentMethod?: string;
+  paymentDescription?: string;
 };
 
 /* =========================
@@ -95,34 +103,33 @@ export function Create({ screen, onNavigate }: CreateProps) {
   ========================= */
 
   useEffect(() => {
-  if (screen === 'create') {
-    load();
-  }
-}, [screen]);
-
+    if (screen === 'create') {
+      load();
+    }
+  }, [screen]);
 
   async function load() {
     setLoading(true);
     const { data, error } = await supabase
-  .from('challenges_with_creator')
-  .select(`
-    id,
-    title,
-    report_mode,
-    duration_days,
-    start_mode,
-    start_date,
-    creator_username,
-    is_finished,
-    entry_type,
-    entry_price,
-    entry_currency,
-    entry_condition
-  `)
-  .eq('is_finished', false);
-
-
-
+      .from('challenges_with_creator')
+      .select(`
+        id,
+        title,
+        report_mode,
+        duration_days,
+        start_mode,
+        start_date,
+        creator_username,
+        is_finished,
+        entry_type,
+        entry_price,
+        entry_currency,
+        entry_condition,
+        contact_info,
+        payment_method,
+        payment_description
+      `)
+      .eq('is_finished', false);
 
     if (!data || error) {
       console.error('[CREATE] load error', error);
@@ -131,67 +138,57 @@ export function Create({ screen, onNavigate }: CreateProps) {
     }
 
     const mapped: Challenge[] = data.map((c: ChallengeFromDB) => {
-  const isFuture =
-    c.start_mode === 'date' &&
-    c.start_date &&
-    new Date(c.start_date) > new Date();
+      const isFuture =
+        c.start_mode === 'date' &&
+        c.start_date &&
+        new Date(c.start_date) > new Date();
 
-  let entryLabel: string | undefined;
-  let entryBadge: 'paid' | 'condition' | undefined;
+      return {
+        id: c.id,
+        title: c.title,
+        username: c.creator_username ?? 'unknown',
 
-  if (c.entry_type === 'paid') {
-    entryBadge = 'paid';
-    entryLabel = `${c.entry_price} ${c.entry_currency?.toUpperCase()}`;
-  }
+        reportType: c.report_mode === 'simple' ? 'Ежедневный' : 'Целевой',
+        reportIcon:
+          c.report_mode === 'simple' ? (
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="7" cy="7" r="6" />
+              <path d="M4 7l2 2 3-3" />
+            </svg>
+          ) : (
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="2" y="2" width="10" height="10" rx="2" />
+              <line x1="7" y1="4" x2="7" y2="10" />
+              <line x1="4" y1="7" x2="10" y2="7" />
+            </svg>
+          ),
 
-  if (c.entry_type === 'condition') {
-    entryBadge = 'condition';
-    entryLabel = 'По условию';
-  }
+        duration: c.duration_days,
+        status: isFuture ? 'Скоро' : 'Идёт',
+        statusIcon: isFuture ? (
+          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="6" cy="6" r="5" />
+            <path d="M6 3v3l2 2" />
+          </svg>
+        ) : (
+          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="6" cy="6" r="5" />
+            <path d="M6 3v3l2 2" />
+          </svg>
+        ),
 
-  return {
-    id: c.id,
-    title: c.title,
-    username: c.creator_username ?? 'unknown',
+        entryType: c.entry_type,
+        entryPrice: c.entry_price ?? undefined,
+        entryCurrency: c.entry_currency ?? undefined,
+        entryCondition: c.entry_condition ?? undefined,
+        contactInfo: c.contact_info ?? undefined,
+        paymentMethod: c.payment_method ?? undefined,
+        paymentDescription: c.payment_description ?? undefined,
+      };
+    });
 
-    reportType: c.report_mode === 'simple' ? 'Ежедневный' : 'Целевой',
-    reportIcon:
-      c.report_mode === 'simple' ? (
-        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="7" cy="7" r="6" />
-          <path d="M4 7l2 2 3-3" />
-        </svg>
-      ) : (
-        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="2" y="2" width="10" height="10" rx="2" />
-          <line x1="7" y1="4" x2="7" y2="10" />
-          <line x1="4" y1="7" x2="10" y2="7" />
-        </svg>
-      ),
-
-    duration: c.duration_days,
-    status: isFuture ? 'Скоро' : 'Идёт',
-    statusIcon: isFuture ? (
-      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="6" cy="6" r="5" />
-        <path d="M6 3v3l2 2" />
-      </svg>
-    ) : (
-      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="6" cy="6" r="5" />
-        <path d="M6 3v3l2 2" />
-      </svg>
-    ),
-
-    entryType: c.entry_type,
-    entryLabel,
-    entryBadge,
-  };
-});
-
-setChallenges(mapped);
-setLoading(false);
-
+    setChallenges(mapped);
+    setLoading(false);
   }
 
   /* =========================
@@ -201,6 +198,31 @@ setLoading(false);
   const filtered = challenges.filter(c =>
     c.title.toLowerCase().includes(query.toLowerCase())
   );
+
+  /* =========================
+     HANDLERS
+  ========================= */
+
+  const handleCardClick = (challenge: Challenge) => {
+    if (challenge.entryType === 'free') {
+      onNavigate('challenge-details', challenge.id);
+    } else if (challenge.entryType === 'paid') {
+      onNavigate('challenge-paid', challenge.id);
+    } else if (challenge.entryType === 'condition') {
+      onNavigate('challenge-condition', challenge.id);
+    }
+  };
+
+  const getEntryBadge = (type: 'free' | 'paid' | 'condition') => {
+    switch (type) {
+      case 'paid':
+        return { text: '💰 Платный', color: '#FFD700' };
+      case 'condition':
+        return { text: '🔒 По условию', color: '#9B59B6' };
+      default:
+        return null;
+    }
+  };
 
   /* =========================
      RENDER
@@ -275,68 +297,95 @@ setLoading(false);
               <EmptySubtext>Попробуйте изменить запрос</EmptySubtext>
             </EmptyState>
           ) : (
-            filtered.map(c => (
-              <Card key={c.id}>
-                <CardHeader>
-                  <div>
-                    <CardTitle>{c.title}</CardTitle>
-                    <CardMeta>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="7" cy="5" r="3" />
-                          <path d="M2 14c1-2 3-3 5-3s4 1 5 3" />
-                        </svg>
-                        @{c.username}
-                      </span>
-                    </CardMeta>
-                  </div>
-                  
-                  <Status>
-                    <StatusBadge $status={c.status === 'Идёт' ? 'active' : 'soon'}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {c.statusIcon}
-                        {c.status}
-                      </span>
-                    </StatusBadge>
-                  </Status>
-                </CardHeader>
-
-                <CardContent>
-                  <CardRow>
-                    <CardBadge>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {c.reportIcon}
-                        {c.reportType}
-                      </span>
-                    </CardBadge>
-                    
-                    <CardBadge>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="2" y="4" width="12" height="12" rx="2" />
-                          <line x1="6" y1="2" x2="6" y2="6" />
-                          <line x1="12" y1="2" x2="12" y2="6" />
-                        </svg>
-                        {c.duration} дней
-                      </span>
-                    </CardBadge>
-                  </CardRow>
-                </CardContent>
-
-                <MoreButton
-                  onClick={() =>
-                    onNavigate('challenge-details', c.id)
-                  }
+            filtered.map(c => {
+              const entryBadge = getEntryBadge(c.entryType);
+              
+              return (
+                <Card 
+                  key={c.id} 
+                  $entryType={c.entryType}
+                  onClick={() => handleCardClick(c)}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    Подробнее
-                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 3l6 6-6 6" />
-                    </svg>
-                  </span>
-                </MoreButton>
-              </Card>
-            ))
+                  <CardHeader>
+                    <div>
+                      <CardTitle>{c.title}</CardTitle>
+                      <CardMeta>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="7" cy="5" r="3" />
+                            <path d="M2 14c1-2 3-3 5-3s4 1 5 3" />
+                          </svg>
+                          @{c.username}
+                        </span>
+                      </CardMeta>
+                    </div>
+                    
+                    <Status>
+                      <StatusBadge $status={c.status === 'Идёт' ? 'active' : 'soon'}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {c.statusIcon}
+                          {c.status}
+                        </span>
+                      </StatusBadge>
+                    </Status>
+                  </CardHeader>
+
+                  <CardContent>
+                    <CardRow>
+                      {entryBadge && (
+                        <EntryBadge $color={entryBadge.color}>
+                          {entryBadge.text}
+                        </EntryBadge>
+                      )}
+                      
+                      <CardBadge>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {c.reportIcon}
+                          {c.reportType}
+                        </span>
+                      </CardBadge>
+                      
+                      <CardBadge>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="2" y="4" width="12" height="12" rx="2" />
+                            <line x1="6" y1="2" x2="6" y2="6" />
+                            <line x1="12" y1="2" x2="12" y2="6" />
+                          </svg>
+                          {c.duration} дней
+                        </span>
+                      </CardBadge>
+                    </CardRow>
+
+                    {c.entryType === 'paid' && c.entryPrice && c.entryCurrency && (
+                      <PriceTag>
+                        {c.entryPrice} {c.entryCurrency.toUpperCase()}
+                      </PriceTag>
+                    )}
+                  </CardContent>
+
+                  {c.entryType === 'free' ? (
+                    <MoreButton>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        Подробнее
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M5 3l6 6-6 6" />
+                        </svg>
+                      </span>
+                    </MoreButton>
+                  ) : (
+                    <ConditionButton $entryType={c.entryType}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        К условиям
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M5 3l6 6-6 6" />
+                        </svg>
+                      </span>
+                    </ConditionButton>
+                  )}
+                </Card>
+              );
+            })
           )}
         </List>
       </ScrollContainer>

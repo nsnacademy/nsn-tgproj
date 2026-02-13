@@ -157,22 +157,7 @@ export const List = styled.div`
   gap: 16px;
 `;
 
-export const Card = styled.div`
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 20px;
-  padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.2s ease;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 
-  &:hover {
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-  }
-`;
 
 export const CardHeader = styled.div`
   display: flex;
@@ -304,3 +289,107 @@ export const EmptySubtext = styled.div`
    BOTTOM NAV (re-export)
 ====================== */
 export { BottomNav, NavItem } from '../Home/styles';
+
+
+/* ======================
+   ENTRY TYPE STYLES
+====================== */
+
+export const Card = styled.div<{ $entryType?: 'free' | 'paid' | 'condition' }>`
+  background: ${({ $entryType }) => {
+    if ($entryType === 'paid') return 'rgba(255, 215, 0, 0.06)';
+    if ($entryType === 'condition') return 'rgba(155, 89, 182, 0.06)';
+    return 'rgba(255, 255, 255, 0.06)';
+  }};
+  border-radius: 20px;
+  padding: 18px;
+  border: 1px solid ${({ $entryType }) => {
+    if ($entryType === 'paid') return 'rgba(255, 215, 0, 0.15)';
+    if ($entryType === 'condition') return 'rgba(155, 89, 182, 0.15)';
+    return 'rgba(255, 255, 255, 0.08)';
+  }};
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: ${({ $entryType }) => {
+      if ($entryType === 'paid') return 'rgba(255, 215, 0, 0.3)';
+      if ($entryType === 'condition') return 'rgba(155, 89, 182, 0.3)';
+      return 'rgba(255, 255, 255, 0.15)';
+    }};
+    background: ${({ $entryType }) => {
+      if ($entryType === 'paid') return 'rgba(255, 215, 0, 0.1)';
+      if ($entryType === 'condition') return 'rgba(155, 89, 182, 0.1)';
+      return 'rgba(255, 255, 255, 0.08)';
+    }};
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  }
+`;
+
+export const EntryBadge = styled.span<{ $color: string }>`
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: ${({ $color }) => `rgba(${parseInt($color.slice(1,3), 16)}, ${parseInt($color.slice(3,5), 16)}, ${parseInt($color.slice(5,7), 16)}, 0.15)`};
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: ${({ $color }) => $color};
+  border: 1px solid ${({ $color }) => `rgba(${parseInt($color.slice(1,3), 16)}, ${parseInt($color.slice(3,5), 16)}, ${parseInt($color.slice(5,7), 16)}, 0.3)`};
+`;
+
+export const PriceTag = styled.div`
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFD700;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 215, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  &::before {
+    content: '💰';
+    font-size: 14px;
+    opacity: 0.8;
+  }
+`;
+
+export const ConditionButton = styled.button<{ $entryType: 'paid' | 'condition' }>`
+  margin-top: 14px;
+  padding: 10px 16px;
+  background: ${({ $entryType }) => 
+    $entryType === 'paid' 
+      ? 'rgba(255, 215, 0, 0.1)' 
+      : 'rgba(155, 89, 182, 0.1)'};
+  border: 1px solid ${({ $entryType }) => 
+    $entryType === 'paid' 
+      ? 'rgba(255, 215, 0, 0.2)' 
+      : 'rgba(155, 89, 182, 0.2)'};
+  border-radius: 12px;
+  color: ${({ $entryType }) => 
+    $entryType === 'paid' ? '#FFD700' : '#9B59B6'};
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+
+  &:hover {
+    background: ${({ $entryType }) => 
+      $entryType === 'paid' 
+        ? 'rgba(255, 215, 0, 0.15)' 
+        : 'rgba(155, 89, 182, 0.15)'};
+    border-color: ${({ $entryType }) => 
+      $entryType === 'paid' 
+        ? 'rgba(255, 215, 0, 0.3)' 
+        : 'rgba(155, 89, 182, 0.3)'};
+  }
+`;

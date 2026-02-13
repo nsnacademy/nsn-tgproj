@@ -17,6 +17,9 @@ import Profile from '../screens/Profile';
 import Admin from '../screens/Admin';
 import AdminChallenge from '../screens/AdminChallenge';
 import InviteSettings from '../screens/InviteSettings';
+import ChallengePaid from '../screens/ChallengePaid';
+import ChallengeCondition from '../screens/ChallengeCondition';
+
 
 /* =========================
    SCREENS
@@ -30,6 +33,8 @@ export type Screen =
   | 'create-flow-free'
   | 'create-flow-paid'
   | 'challenge-details'
+  | 'challenge-paid'
+  | 'challenge-condition'
   | 'challenge-progress'
   | 'challenge-report'
   | 'profile'
@@ -197,9 +202,29 @@ function App() {
         <CreateFlowFree onNavigate={navigate} />
       )}
 
+      {screen === 'create-flow-paid' && (
+        <CreateFlowPaid onNavigate={navigate} />
+      )}
+
       {screen === 'challenge-details' && selectedChallengeId && (
         <ChallengeDetails
           challengeId={selectedChallengeId}
+          onNavigateHome={goHomeAndRefresh}
+        />
+      )}
+
+      {screen === 'challenge-paid' && selectedChallengeId && (
+        <ChallengePaid
+          challengeId={selectedChallengeId}
+          onBack={() => navigate('create')}
+          onNavigateHome={goHomeAndRefresh}
+        />
+      )}
+
+      {screen === 'challenge-condition' && selectedChallengeId && (
+        <ChallengeCondition
+          challengeId={selectedChallengeId}
+          onBack={() => navigate('create')}
           onNavigateHome={goHomeAndRefresh}
         />
       )}
@@ -261,10 +286,6 @@ function App() {
           challengeId={selectedChallengeId}
           onBack={() => navigate('admin')}
         />
-      )}
-
-      {screen === 'create-flow-paid' && (
-        <CreateFlowPaid onNavigate={navigate} />
       )}
     </>
   );
