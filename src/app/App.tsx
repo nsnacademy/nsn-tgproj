@@ -264,18 +264,8 @@ function App() {
       )}
 
       {screen === 'create-flow-paid' && (
-  <CreateFlowPaid
-    onNavigate={navigate}
-  />
-)}
-
-         
-
-      {screen === 'create-flow-paid' && (
-  <CreateFlowPaid onNavigate={navigate} />
-)}
-
-
+        <CreateFlowPaid onNavigate={navigate} />
+      )}
     </>
   );
 }
