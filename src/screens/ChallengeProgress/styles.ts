@@ -730,3 +730,10 @@ export const DisabledButton = styled(PrimaryButton)`
     background: rgba(255, 255, 255, 0.1);
   }
 `;
+
+export const ScrollArea = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 120px;
+`;
