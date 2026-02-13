@@ -32,6 +32,7 @@ import {
   ParticipantAvatars,
   Avatar,
   RatingSection,
+  ScrollArea,
   RatingHeader,
   RatingTitle,
   RatingSubtitle,
@@ -327,9 +328,11 @@ if (!todayReport) {
           </BackButton>
           <HeaderTitle>Загрузка...</HeaderTitle>
         </Header>
+         <ScrollArea>
         <Content>
           <LoadingState>Загрузка данных...</LoadingState>
         </Content>
+        </ScrollArea>
       </SafeArea>
     );
   }
@@ -426,6 +429,7 @@ if (!todayReport) {
           )}
         </HeaderRight>
       </Header>
+       <ScrollArea>
 
       <Content>
         {/* Прогресс-карточка */}
@@ -720,6 +724,7 @@ if (!todayReport) {
           </Section>
         )}
       </Content>
+      </ScrollArea>
 
       {/* Кнопка действия */}
       <ActionBlock>
