@@ -123,7 +123,7 @@ export default function InviteSettings({
   const [processing, setProcessing] = useState<string | null>(null);
 
   /* =========================
-     LOAD
+     LOAD INITIAL DATA
   ========================= */
 
   useEffect(() => {
@@ -212,55 +212,108 @@ export default function InviteSettings({
         setParticipants(transformed);
       }
 
-      // 4️⃣ LOAD PENDING REQUESTS (для paid/condition)
-      if (challenge?.entry_type !== 'free') {
-        // Считаем количество
-        const { count: requestsCount } = await supabase
-          .from('entry_requests')
-          .select('*', { count: 'exact', head: true })
-          .eq('challenge_id', challengeId)
-          .eq('status', 'pending');
-
-        setPendingRequestsCount(requestsCount ?? 0);
-
-        // Загружаем сами заявки
-        const { data: requestsData } = await supabase
-          .from('entry_requests')
-          .select(`
-            id,
-            user_id,
-            status,
-            created_at,
-            users (
-              telegram_username,
-              first_name,
-              telegram_id
-            )
-          `)
-          .eq('challenge_id', challengeId)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: true });
-
-        if (requestsData) {
-          const transformed = (requestsData as RawRequest[]).map(item => ({
-            id: item.id,
-            user_id: item.user_id,
-            status: item.status as 'pending' | 'approved' | 'rejected',
-            created_at: item.created_at,
-            users: item.users[0] || {
-              telegram_username: null,
-              first_name: null,
-              telegram_id: '',
-            },
-          }));
-          setRequests(transformed);
-        }
-      }
+      // 4️⃣ LOAD PENDING REQUESTS
+      await loadRequests();
 
       setLoading(false);
     }
 
     load();
+  }, [challengeId]);
+
+  /* =========================
+     LOAD REQUESTS FUNCTION
+  ========================= */
+
+  const loadRequests = async () => {
+    // Считаем количество
+    const { count: requestsCount } = await supabase
+      .from('entry_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('challenge_id', challengeId)
+      .eq('status', 'pending');
+
+    setPendingRequestsCount(requestsCount ?? 0);
+
+    // Загружаем сами заявки
+    const { data: requestsData } = await supabase
+      .from('entry_requests')
+      .select(`
+        id,
+        user_id,
+        status,
+        created_at,
+        users (
+          telegram_username,
+          first_name,
+          telegram_id
+        )
+      `)
+      .eq('challenge_id', challengeId)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (requestsData) {
+      const transformed = (requestsData as RawRequest[]).map(item => ({
+        id: item.id,
+        user_id: item.user_id,
+        status: item.status as 'pending' | 'approved' | 'rejected',
+        created_at: item.created_at,
+        users: item.users[0] || {
+          telegram_username: null,
+          first_name: null,
+          telegram_id: '',
+        },
+      }));
+      setRequests(transformed);
+    }
+  };
+
+  /* =========================
+     REAL-TIME SUBSCRIPTION
+  ========================= */
+
+  useEffect(() => {
+    // Подписываемся на новые заявки
+    const subscription = supabase
+      .channel(`entry_requests:${challengeId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'entry_requests',
+          filter: `challenge_id=eq.${challengeId}`,
+        },
+        async (payload) => {
+          console.log('🆕 Новая заявка:', payload);
+          
+          // Загружаем данные нового пользователя
+          const { data: userData } = await supabase
+            .from('users')
+            .select('telegram_username, first_name, telegram_id')
+            .eq('id', payload.new.user_id)
+            .single();
+
+          if (userData) {
+            const newRequest: Request = {
+              id: payload.new.id,
+              user_id: payload.new.user_id,
+              status: payload.new.status,
+              created_at: payload.new.created_at,
+              users: userData,
+            };
+
+            setRequests(prev => [...prev, newRequest]);
+            setPendingRequestsCount(prev => prev + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [challengeId]);
 
   /* =========================
