@@ -120,8 +120,11 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
       
       setChallenges(challengesWithStatus);
 
+      // Загружаем количество участников для каждого вызова
+      await loadParticipantsCount(challengesWithStatus);
+
       // Загружаем общее количество заявок по всем вызовам
-      await loadTotalRequests(data);
+      await loadTotalRequests(challengesWithStatus);
 
       setAccessChecked(true);
       setLoading(false);
@@ -129,6 +132,34 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
     init();
   }, [onNavigate]);
+
+  /* =========================
+     ЗАГРУЗКА КОЛИЧЕСТВА УЧАСТНИКОВ ДЛЯ КАЖДОГО ВЫЗОВА
+  ========================= */
+
+  const loadParticipantsCount = async (challengesData: AdminChallenge[]) => {
+    if (!challengesData.length) return;
+
+    const updatedChallenges = [...challengesData];
+
+    for (let i = 0; i < updatedChallenges.length; i++) {
+      const ch = updatedChallenges[i];
+      
+      const { count, error } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('challenge_id', ch.id);
+
+      if (!error) {
+        updatedChallenges[i] = {
+          ...ch,
+          participants_count: count || 0
+        };
+      }
+    }
+
+    setChallenges(updatedChallenges);
+  };
 
   /* =========================
      ЗАГРУЗКА ОБЩЕГО КОЛИЧЕСТВА ЗАЯВОК
@@ -161,20 +192,20 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
     const challengeIds = challenges.map(ch => ch.id);
     
-    // Подписываемся на изменения в заявках
-    const subscription = supabase
+    // Создаем канал для отслеживания изменений
+    const channel = supabase
       .channel('admin-requests-changes')
       .on(
         'postgres_changes',
-        {
-          event: '*', // Слушаем все события (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'entry_requests',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'entry_requests' 
         },
         async (payload) => {
           console.log('[ADMIN] Изменение в заявках:', payload);
           
-          // Перезагружаем общее количество заявок
+          // Обновляем общее количество заявок
           const { count, error } = await supabase
             .from('entry_requests')
             .select('*', { count: 'exact', head: true })
@@ -184,12 +215,34 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
           if (!error) {
             setTotalRequestsCount(count || 0);
           }
+
+          // Проверяем, является ли это обновлением статуса заявки
+          const payloadAny = payload as any;
+          if (payloadAny.eventType === 'UPDATE' && 
+              payloadAny.new?.status === 'approved' && 
+              payloadAny.old?.status === 'pending') {
+            
+            const challengeId = payloadAny.new.challenge_id;
+            
+            const { count: participantsCount } = await supabase
+              .from('participants')
+              .select('*', { count: 'exact', head: true })
+              .eq('challenge_id', challengeId);
+
+            setChallenges(prev => 
+              prev.map(ch => 
+                ch.id === challengeId 
+                  ? { ...ch, participants_count: participantsCount || 0 }
+                  : ch
+              )
+            );
+          }
         }
       )
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      channel.unsubscribe();
     };
   }, [challenges]);
 
@@ -391,7 +444,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                         <path d="M4 12h16M12 4v16" />
                         <circle cx="12" cy="12" r="10" />
                       </svg>
-                      Управление
+                      Пригласить
                     </ActionButton>
                   </CardActions>
                 </ChallengeCard>
