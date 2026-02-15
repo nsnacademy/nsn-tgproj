@@ -103,21 +103,48 @@ export default function InviteSettings({
   const [processing, setProcessing] = useState<string | null>(null);
 
   /* =========================
+     DEBUG LOGS
+  ========================= */
+
+  console.log('🎯 [RENDER] InviteSettings state:', {
+    challengeId,
+    loading,
+    entryType,
+    requestsCount: requests.length,
+    pendingRequestsCount,
+    participantsCount,
+    limitEnabled,
+    maxParticipants,
+    showRequests
+  });
+
+  /* =========================
      LOAD INITIAL DATA
   ========================= */
 
   const loadAllData = async () => {
+    console.log('🚀 [LOAD] Начало загрузки всех данных для challengeId:', challengeId);
+    
     const user = await getCurrentUser();
-    if (!user) return;
+    console.log('👤 [LOAD] Текущий пользователь:', user?.id);
+    
+    if (!user) {
+      console.log('❌ [LOAD] Пользователь не найден');
+      return;
+    }
 
     // 0️⃣ CHALLENGE INFO
-    const { data: challenge } = await supabase
+    console.log('📊 [LOAD] Загрузка информации о вызове...');
+    const { data: challenge, error: challengeError } = await supabase
       .from('challenges')
       .select('max_participants, entry_type')
       .eq('id', challengeId)
       .single();
 
-    if (challenge) {
+    if (challengeError) {
+      console.error('❌ [LOAD] Ошибка загрузки challenge:', challengeError);
+    } else {
+      console.log('✅ [LOAD] Данные challenge:', challenge);
       setEntryType(challenge.entry_type);
       if (challenge.max_participants !== null) {
         setLimitEnabled(true);
@@ -126,17 +153,23 @@ export default function InviteSettings({
     }
 
     // 1️⃣ INVITE
-    const { data: existingInvite } = await supabase
+    console.log('🔗 [LOAD] Загрузка invite...');
+    const { data: existingInvite, error: inviteError } = await supabase
       .from('challenge_invites')
       .select('*')
       .eq('challenge_id', challengeId)
       .limit(1)
       .maybeSingle();
 
+    if (inviteError) {
+      console.error('❌ [LOAD] Ошибка загрузки invite:', inviteError);
+    }
+
     let inviteData = existingInvite;
 
     if (!inviteData) {
-      const { data: code } = await supabase.rpc(
+      console.log('🆕 [LOAD] Создание нового invite...');
+      const { data: code, error: codeError } = await supabase.rpc(
         'create_challenge_invite',
         {
           p_challenge_id: challengeId,
@@ -145,27 +178,47 @@ export default function InviteSettings({
         }
       );
 
-      const { data: created } = await supabase
-        .from('challenge_invites')
-        .select('*')
-        .eq('code', code)
-        .single();
+      if (codeError) {
+        console.error('❌ [LOAD] Ошибка создания кода:', codeError);
+      } else {
+        console.log('✅ [LOAD] Создан код:', code);
+        
+        const { data: created, error: createdError } = await supabase
+          .from('challenge_invites')
+          .select('*')
+          .eq('code', code)
+          .single();
 
-      inviteData = created;
+        if (createdError) {
+          console.error('❌ [LOAD] Ошибка получения созданного invite:', createdError);
+        } else {
+          console.log('✅ [LOAD] Создан invite:', created);
+          inviteData = created;
+        }
+      }
+    } else {
+      console.log('✅ [LOAD] Найден существующий invite:', inviteData);
     }
 
     setInvite(inviteData);
 
     // 2️⃣ COUNT PARTICIPANTS
-    const { count } = await supabase
+    console.log('👥 [LOAD] Подсчет участников...');
+    const { count, error: countError } = await supabase
       .from('participants')
       .select('*', { count: 'exact', head: true })
       .eq('challenge_id', challengeId);
 
-    setParticipantsCount(count ?? 0);
+    if (countError) {
+      console.error('❌ [LOAD] Ошибка подсчета участников:', countError);
+    } else {
+      console.log('✅ [LOAD] Количество участников:', count);
+      setParticipantsCount(count ?? 0);
+    }
 
     // 3️⃣ LOAD PARTICIPANTS LIST
-    const { data: participantsData } = await supabase
+    console.log('📋 [LOAD] Загрузка списка участников...');
+    const { data: participantsData, error: participantsError } = await supabase
       .from('participants')
       .select(`
         id,
@@ -178,23 +231,32 @@ export default function InviteSettings({
       `)
       .eq('challenge_id', challengeId);
 
-    if (participantsData) {
-      const transformed = participantsData.map((item: any) => ({
-        id: item.id,
-        user_id: item.user_id,
-        users: item.users?.[0] || {
-          telegram_username: null,
-          first_name: null,
-          telegram_id: '',
-        },
-      }));
-      setParticipants(transformed);
+    if (participantsError) {
+      console.error('❌ [LOAD] Ошибка загрузки участников:', participantsError);
+    } else {
+      console.log('✅ [LOAD] Загружено участников:', participantsData?.length || 0);
+      
+      if (participantsData) {
+        const transformed = participantsData.map((item: any) => ({
+          id: item.id,
+          user_id: item.user_id,
+          users: item.users?.[0] || {
+            telegram_username: null,
+            first_name: null,
+            telegram_id: '',
+          },
+        }));
+        console.log('🔄 [LOAD] Трансформированные участники:', transformed);
+        setParticipants(transformed);
+      }
     }
 
     // 4️⃣ LOAD PENDING REQUESTS
+    console.log('📨 [LOAD] Загрузка заявок...');
     await loadRequests();
 
     setLoading(false);
+    console.log('✅ [LOAD] Загрузка завершена');
   };
 
   /* =========================
@@ -202,7 +264,7 @@ export default function InviteSettings({
   ========================= */
 
   const loadRequests = async () => {
-    console.log('🔍 Загрузка заявок для challengeId:', challengeId);
+    console.log('🔍 [REQUESTS] Загрузка заявок для challengeId:', challengeId);
     
     // Загружаем заявки с данными пользователей
     const { data: requestsData, error } = await supabase
@@ -223,28 +285,43 @@ export default function InviteSettings({
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('❌ Ошибка загрузки заявок:', error);
+      console.error('❌ [REQUESTS] Ошибка загрузки заявок:', error);
       return;
     }
 
-    console.log('✅ Загружено заявок:', requestsData?.length || 0);
-    console.log('📋 Данные заявок:', requestsData);
+    console.log('✅ [REQUESTS] Загружено заявок (сырые данные):', requestsData?.length || 0);
+    console.log('📦 [REQUESTS] Сырые данные заявок:', requestsData);
 
     if (requestsData) {
-      const transformed = requestsData.map((item: any) => ({
-        id: item.id,
-        user_id: item.user_id,
-        status: item.status,
-        created_at: item.created_at,
-        users: item.users || {
-          telegram_username: null,
-          first_name: null,
-          telegram_id: '',
-        },
-      }));
+      const transformed = requestsData.map((item: any) => {
+        console.log(`🔄 [REQUESTS] Обработка заявки ${item.id}:`, {
+          user_id: item.user_id,
+          status: item.status,
+          created_at: item.created_at,
+          users: item.users
+        });
+        
+        return {
+          id: item.id,
+          user_id: item.user_id,
+          status: item.status,
+          created_at: item.created_at,
+          users: item.users || {
+            telegram_username: null,
+            first_name: null,
+            telegram_id: '',
+          },
+        };
+      });
       
+      console.log('✅ [REQUESTS] Трансформированные заявки:', transformed);
       setRequests(transformed);
       setPendingRequestsCount(transformed.length);
+      console.log(`📊 [REQUESTS] Установлено ${transformed.length} заявок в state`);
+    } else {
+      console.log('ℹ️ [REQUESTS] Нет данных о заявках');
+      setRequests([]);
+      setPendingRequestsCount(0);
     }
   };
 
@@ -257,6 +334,8 @@ export default function InviteSettings({
   ========================= */
 
   useEffect(() => {
+    console.log('🔌 [REALTIME] Установка подписки для challengeId:', challengeId);
+    
     // Подписываемся на новые заявки
     const subscription = supabase
       .channel(`entry_requests:${challengeId}`)
@@ -269,9 +348,11 @@ export default function InviteSettings({
           filter: `challenge_id=eq.${challengeId}`,
         },
         async (payload) => {
-          console.log('🆕 НОВАЯ ЗАЯВКА!', payload);
+          console.log('🆕 [REALTIME] ПОЛУЧЕНА НОВАЯ ЗАЯВКА!', payload);
+          console.log('📦 [REALTIME] Payload:', payload.new);
           
           // Загружаем данные нового пользователя
+          console.log('👤 [REALTIME] Загрузка данных пользователя ID:', payload.new.user_id);
           const { data: userData, error } = await supabase
             .from('users')
             .select('telegram_username, first_name, telegram_id')
@@ -279,9 +360,11 @@ export default function InviteSettings({
             .single();
 
           if (error) {
-            console.error('❌ Ошибка загрузки пользователя:', error);
+            console.error('❌ [REALTIME] Ошибка загрузки пользователя:', error);
             return;
           }
+
+          console.log('✅ [REALTIME] Данные пользователя:', userData);
 
           if (userData) {
             const newRequest: Request = {
@@ -292,31 +375,45 @@ export default function InviteSettings({
               users: userData,
             };
 
-            console.log('➕ Добавляем новую заявку:', newRequest);
+            console.log('➕ [REALTIME] Добавляем новую заявку в state:', newRequest);
             setRequests(prev => {
               const exists = prev.some(r => r.id === newRequest.id);
-              if (exists) return prev;
+              if (exists) {
+                console.log('⚠️ [REALTIME] Заявка уже существует, пропускаем');
+                return prev;
+              }
+              console.log('✅ [REALTIME] Новая заявка добавлена, было:', prev.length, 'стало:', prev.length + 1);
               return [...prev, newRequest];
             });
-            setPendingRequestsCount(prev => prev + 1);
+            setPendingRequestsCount(prev => {
+              console.log('📊 [REALTIME] Обновление счетчика, было:', prev, 'стало:', prev + 1);
+              return prev + 1;
+            });
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔌 [REALTIME] Статус подписки:', status);
+      });
 
     return () => {
+      console.log('🔌 [REALTIME] Отписка от канала');
       subscription.unsubscribe();
     };
   }, [challengeId]);
 
   // Добавляем периодическую проверку (для надежности)
   useEffect(() => {
+    console.log('⏱️ [INTERVAL] Установка периодической проверки каждые 5 секунд');
     const interval = setInterval(() => {
-      console.log('🔄 Периодическая проверка заявок...');
+      console.log('🔄 [INTERVAL] Периодическая проверка заявок...');
       loadRequests();
-    }, 5000); // Каждые 5 секунд
+    }, 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log('⏱️ [INTERVAL] Очистка интервала');
+      clearInterval(interval);
+    };
   }, [challengeId]);
 
   /* =========================
@@ -326,6 +423,7 @@ export default function InviteSettings({
   const updateInvite = async (patch: Partial<Invite>) => {
     if (!invite) return;
 
+    console.log('🔄 [INVITE] Обновление invite:', patch);
     const { data } = await supabase
       .from('challenge_invites')
       .update(patch)
@@ -333,6 +431,7 @@ export default function InviteSettings({
       .select()
       .single();
 
+    console.log('✅ [INVITE] Invite обновлен:', data);
     setInvite(data);
   };
 
@@ -341,6 +440,7 @@ export default function InviteSettings({
 
     const link = `https://t.me/Projects365_bot?startapp=invite_${invite.code}`;
     await navigator.clipboard.writeText(link);
+    console.log('📋 [INVITE] Ссылка скопирована:', link);
     alert('Ссылка скопирована!');
   };
 
@@ -349,6 +449,7 @@ export default function InviteSettings({
   ========================= */
 
   const updateChallengeLimit = async (value: number | null) => {
+    console.log('📊 [LIMIT] Обновление лимита:', value);
     await supabase
       .from('challenges')
       .update({ max_participants: value })
@@ -356,6 +457,7 @@ export default function InviteSettings({
   };
 
   const toggleLimit = async () => {
+    console.log('🔄 [LIMIT] Переключение лимита, было:', limitEnabled);
     if (limitEnabled) {
       setLimitEnabled(false);
       setMaxParticipants('');
@@ -369,6 +471,7 @@ export default function InviteSettings({
   };
 
   const onChangeLimit = async (value: string) => {
+    console.log('📝 [LIMIT] Изменение значения:', value);
     if (value === '') {
       setMaxParticipants('');
       await updateChallengeLimit(null);
@@ -393,6 +496,8 @@ export default function InviteSettings({
 
     if (!confirmed) return;
 
+    console.log('🗑️ [PARTICIPANT] Удаление участника:', { participantId, userId });
+
     await supabase
       .from('participants')
       .delete()
@@ -406,6 +511,7 @@ export default function InviteSettings({
 
     setParticipants(prev => prev.filter(p => p.id !== participantId));
     setParticipantsCount(prev => prev - 1);
+    console.log('✅ [PARTICIPANT] Участник удален');
   };
 
   /* =========================
@@ -413,7 +519,10 @@ export default function InviteSettings({
   ========================= */
 
   const handleApprove = async (requestId: string, userId: string) => {
+    console.log('🟢 [APPROVE] Начало approve:', { requestId, userId });
+
     if (limitEnabled && maxParticipants && participantsCount >= Number(maxParticipants)) {
+      console.log('⚠️ [APPROVE] Лимит участников достигнут');
       alert('Лимит участников достигнут');
       return;
     }
@@ -421,18 +530,21 @@ export default function InviteSettings({
     setProcessing(requestId);
 
     // 1️⃣ Обновляем статус заявки
+    console.log('📝 [APPROVE] Обновление статуса заявки...');
     const { error: updateError } = await supabase
       .from('entry_requests')
       .update({ status: 'approved' })
       .eq('id', requestId);
 
     if (updateError) {
-      console.error('❌ Ошибка обновления заявки:', updateError);
+      console.error('❌ [APPROVE] Ошибка обновления заявки:', updateError);
       setProcessing(null);
       return;
     }
+    console.log('✅ [APPROVE] Статус заявки обновлен');
 
     // 2️⃣ Добавляем пользователя в участники
+    console.log('📝 [APPROVE] Добавление в участники...');
     const { error: insertError } = await supabase
       .from('participants')
       .insert({
@@ -441,13 +553,15 @@ export default function InviteSettings({
       });
 
     if (insertError) {
-      console.error('❌ Ошибка добавления участника:', insertError);
+      console.error('❌ [APPROVE] Ошибка добавления участника:', insertError);
       setProcessing(null);
       return;
     }
+    console.log('✅ [APPROVE] Пользователь добавлен в участники');
 
     // 3️⃣ Загружаем данные нового участника
-    const { data: newParticipant } = await supabase
+    console.log('📝 [APPROVE] Загрузка данных нового участника...');
+    const { data: newParticipant, error: participantError } = await supabase
       .from('participants')
       .select(`
         id,
@@ -462,7 +576,10 @@ export default function InviteSettings({
       .eq('user_id', userId)
       .single();
 
-    if (newParticipant) {
+    if (participantError) {
+      console.error('❌ [APPROVE] Ошибка загрузки участника:', participantError);
+    } else if (newParticipant) {
+      console.log('✅ [APPROVE] Данные нового участника:', newParticipant);
       const transformed = {
         id: newParticipant.id,
         user_id: newParticipant.user_id,
@@ -479,25 +596,33 @@ export default function InviteSettings({
     setPendingRequestsCount(prev => prev - 1);
     setRequests(prev => prev.filter(r => r.id !== requestId));
     setProcessing(null);
+    console.log('✅ [APPROVE] Процесс approve завершен');
   };
 
   const handleReject = async (requestId: string) => {
+    console.log('🔴 [REJECT] Начало reject:', requestId);
+    
     const confirmed = window.confirm('Отклонить заявку?');
-    if (!confirmed) return;
+    if (!confirmed) {
+      console.log('ℹ️ [REJECT] Отменено пользователем');
+      return;
+    }
 
     setProcessing(requestId);
 
+    console.log('📝 [REJECT] Обновление статуса заявки...');
     const { error } = await supabase
       .from('entry_requests')
       .update({ status: 'rejected' })
       .eq('id', requestId);
 
     if (error) {
-      console.error('❌ Ошибка отклонения заявки:', error);
+      console.error('❌ [REJECT] Ошибка отклонения заявки:', error);
       setProcessing(null);
       return;
     }
 
+    console.log('✅ [REJECT] Заявка отклонена');
     setPendingRequestsCount(prev => prev - 1);
     setRequests(prev => prev.filter(r => r.id !== requestId));
     setProcessing(null);
@@ -530,6 +655,8 @@ export default function InviteSettings({
 
     if (!confirmed) return;
 
+    console.log('🗑️ [DELETE] Удаление вызова:', challengeId);
+
     await supabase
       .from('participants')
       .delete()
@@ -551,10 +678,11 @@ export default function InviteSettings({
       .eq('id', challengeId);
 
     if (error) {
-      console.error('[DELETE CHALLENGE] error', error);
+      console.error('❌ [DELETE] Ошибка удаления:', error);
       return;
     }
 
+    console.log('✅ [DELETE] Вызов удален');
     onBack();
   };
 
