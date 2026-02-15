@@ -46,7 +46,6 @@ import { supabase, getCurrentUser } from '../../shared/lib/supabase';
 type InviteSettingsProps = {
   challengeId: string;
   onBack: () => void;
-  onNavigateToRequests?: () => void; // 👈 ДОБАВЛЯЕМ ОПЦИОНАЛЬНЫЙ ПРОП
 };
 
 type Invite = {
@@ -102,7 +101,6 @@ type RawRequest = {
 export default function InviteSettings({
   challengeId,
   onBack,
-  onNavigateToRequests, // 👈 ДОБАВЛЯЕМ В ПРОПСЫ
 }: InviteSettingsProps) {
   const [invite, setInvite] = useState<Invite | null>(null);
   const [loading, setLoading] = useState(true);
@@ -735,15 +733,6 @@ export default function InviteSettings({
                       );
                     })}
                   </RequestList>
-                )}
-
-                {onNavigateToRequests && (
-                  <PrimaryButton
-                    onClick={onNavigateToRequests}
-                    style={{ marginTop: '12px', background: 'rgba(255,255,255,0.1)' }}
-                  >
-                    Все заявки
-                  </PrimaryButton>
                 )}
               </>
             )}
