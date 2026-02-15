@@ -78,6 +78,16 @@ type Request = {
   };
 };
 
+// Тип для сырых данных из БД
+type RawParticipant = {
+  id: string;
+  user_id: string;
+  users: Array<{
+    username: string | null;
+    telegram_id: string;
+  }>;
+};
+
 export default function InviteSettings({
   challengeId,
   onBack,
@@ -234,14 +244,22 @@ export default function InviteSettings({
       console.log('✅ [LOAD] Загружено участников:', participantsData?.length || 0);
       
       if (participantsData) {
-        console.log('📦 [LOAD] Сырые данные участников:', participantsData);
+        console.log('📦 [LOAD] Сырые данные участников:', JSON.stringify(participantsData, null, 2));
         
-        const transformed = participantsData.map((item: any) => {
+        const transformed = (participantsData as RawParticipant[]).map(item => {
           console.log(`🔄 [LOAD] Обработка участника ${item.id}:`, {
             user_id: item.user_id,
             usersData: item.users,
-            firstUser: item.users?.[0]
+            firstUser: item.users?.[0],
+            hasUsers: !!item.users,
+            usersLength: item.users?.length
           });
+          
+          // Если нет данных пользователя, пробуем загрузить их отдельно
+          if (!item.users?.[0]?.telegram_id) {
+            console.log(`⚠️ [LOAD] Нет данных пользователя для участника ${item.id}, пробуем загрузить...`);
+            loadUserDataForParticipant(item.id, item.user_id);
+          }
           
           return {
             id: item.id,
@@ -263,6 +281,42 @@ export default function InviteSettings({
 
     setLoading(false);
     console.log('✅ [LOAD] Загрузка завершена');
+  };
+
+  // Функция для загрузки данных пользователя для участника
+  const loadUserDataForParticipant = async (participantId: string, userId: string) => {
+    console.log(`👤 [USER_DATA] Загрузка данных для пользователя ${userId}`);
+    
+    const { data: userData, error } = await supabase
+      .from('users')
+      .select('username, telegram_id')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error(`❌ [USER_DATA] Ошибка загрузки пользователя ${userId}:`, error);
+      return;
+    }
+
+    console.log(`✅ [USER_DATA] Получены данные для пользователя ${userId}:`, userData);
+
+    if (userData) {
+      setParticipants(prev => {
+        const updated = prev.map(p => 
+          p.id === participantId 
+            ? { 
+                ...p, 
+                users: {
+                  username: userData.username,
+                  telegram_id: userData.telegram_id
+                }
+              }
+            : p
+        );
+        console.log('✅ [USER_DATA] Обновленные участники:', updated);
+        return updated;
+      });
+    }
   };
 
   /* =========================
@@ -297,7 +351,10 @@ export default function InviteSettings({
     console.log('📦 [REQUESTS] Сырые данные заявок:', JSON.stringify(requestsData, null, 2));
 
     if (requestsData) {
-      const transformed = requestsData.map((item: any) => {
+      // Явно приводим к типу any[] чтобы избежать ошибок типизации
+      const rawData = requestsData as any[];
+      
+      const transformed = rawData.map(item => {
         console.log(`🔄 [REQUESTS] Обработка заявки ${item.id}:`, {
           user_id: item.user_id,
           status: item.status,
@@ -310,9 +367,9 @@ export default function InviteSettings({
         return {
           id: item.id,
           user_id: item.user_id,
-          status: item.status,
+          status: item.status as 'pending' | 'approved' | 'rejected',
           created_at: item.created_at,
-          users: item.users || {
+          users: item.users?.[0] || {  // Берем первый элемент массива
             username: null,
             telegram_id: '',
           },
@@ -373,7 +430,10 @@ export default function InviteSettings({
               user_id: payload.new.user_id,
               status: payload.new.status,
               created_at: payload.new.created_at,
-              users: userData,
+              users: {
+                username: userData.username,
+                telegram_id: userData.telegram_id
+              },
             };
 
             console.log('➕ [REALTIME] Добавляем новую заявку:', newRequest);
@@ -528,6 +588,7 @@ export default function InviteSettings({
 
     setProcessing(requestId);
 
+    // 1️⃣ Обновляем статус заявки
     const { error: updateError } = await supabase
       .from('entry_requests')
       .update({ status: 'approved' })
@@ -540,6 +601,8 @@ export default function InviteSettings({
     }
     console.log('✅ [APPROVE] Статус заявки обновлен');
 
+    // 2️⃣ Добавляем пользователя в участники
+    console.log('📝 [APPROVE] Добавление в участники...');
     const { error: insertError } = await supabase
       .from('participants')
       .insert({
@@ -554,12 +617,14 @@ export default function InviteSettings({
     }
     console.log('✅ [APPROVE] Пользователь добавлен в участники');
 
-    const { data: newParticipant } = await supabase
+    // 3️⃣ Загружаем данные нового участника с JOIN
+    console.log('📝 [APPROVE] Загрузка данных нового участника...');
+    const { data: newParticipant, error: participantError } = await supabase
       .from('participants')
       .select(`
         id,
         user_id,
-        users (
+        users!inner (
           username,
           telegram_id
         )
@@ -568,12 +633,16 @@ export default function InviteSettings({
       .eq('user_id', userId)
       .single();
 
-    if (newParticipant) {
+    if (participantError) {
+      console.error('❌ [APPROVE] Ошибка загрузки участника:', participantError);
+    } else if (newParticipant) {
       console.log('✅ [APPROVE] Данные нового участника:', newParticipant);
-      const transformed = {
-        id: newParticipant.id,
-        user_id: newParticipant.user_id,
-        users: newParticipant.users?.[0] || {
+      // Приводим к правильному типу
+      const rawParticipant = newParticipant as any;
+      const transformed: Participant = {
+        id: rawParticipant.id,
+        user_id: rawParticipant.user_id,
+        users: rawParticipant.users?.[0] || {
           username: null,
           telegram_id: '',
         },
