@@ -290,7 +290,7 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
 
           <Divider />
 
-          {/* Условия входа - минималистично */}
+          {/* Условия входа */}
           <ConditionBox>
             <Label>Условие входа</Label>
             <Value>{challenge.entry_condition}</Value>

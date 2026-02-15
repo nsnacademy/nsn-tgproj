@@ -29,6 +29,10 @@ import {
   MetaRow,
   MetaText,
   WarningBox,
+  PrizePreview,
+  PrizeItem,
+  PrizePlace,
+  PrizeTitle,
 } from './styles';
 
 type Props = {
@@ -51,8 +55,15 @@ type ChallengeData = {
   rules?: string | null;
 };
 
+type Prize = {
+  place: number;
+  title: string;
+  description: string | null;
+};
+
 export default function ChallengePaid({ challengeId, onBack }: Props) {
   const [challenge, setChallenge] = useState<ChallengeData | null>(null);
+  const [prizes, setPrizes] = useState<Prize[]>([]);
   const [loading, setLoading] = useState(true);
   const [requestSent, setRequestSent] = useState(false);
   const [participantsCount, setParticipantsCount] = useState(0);
@@ -109,6 +120,26 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
       } else {
         console.log('✅ [PAID] Участников:', count);
         setParticipantsCount(count ?? 0);
+      }
+
+      // Загружаем награды, если есть рейтинг
+      if (data.has_rating) {
+        console.log('🏆 [PAID] Загрузка наград...');
+        const { data: prizesData, error: prizesError } = await supabase
+          .from('challenge_prizes')
+          .select('place, title, description')
+          .eq('challenge_id', challengeId)
+          .order('place', { ascending: true });
+
+        if (prizesError) {
+          console.error('❌ [PAID] Ошибка загрузки наград:', prizesError);
+        } else {
+          console.log('✅ [PAID] Награды загружены:', prizesData?.length || 0);
+          console.log('📋 [PAID] Список наград:', prizesData);
+          setPrizes(prizesData || []);
+        }
+      } else {
+        console.log('ℹ️ [PAID] У вызова нет рейтинга');
       }
     } catch (err) {
       console.error('💥 [PAID] Непредвиденная ошибка:', err);
@@ -180,6 +211,10 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
     }
   };
 
+  const getPlaceText = (place: number) => {
+    return `${place} место`;
+  };
+
   if (loading) {
     return (
       <SafeArea>
@@ -226,6 +261,7 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
   console.log('🎨 [PAID] Рендер с данными:', {
     title: challenge.title,
     participantsCount,
+    prizesCount: prizes.length,
     limitReached
   });
 
@@ -268,7 +304,7 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
 
           <Divider />
 
-          {/* Условия входа - минималистично */}
+          {/* Условия входа */}
           <PriceTag>
             {challenge.entry_price} {challenge.entry_currency.toUpperCase()}
           </PriceTag>
@@ -308,10 +344,21 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
             </InfoItem>
           </InfoGrid>
 
-          {challenge.has_rating && (
-            <MetaRow>
-              <MetaText>Есть рейтинг и награды</MetaText>
-            </MetaRow>
+          {/* Награды */}
+          {challenge.has_rating && prizes.length > 0 && (
+            <>
+              <MetaRow>
+                <MetaText>Награды</MetaText>
+              </MetaRow>
+              <PrizePreview>
+                {prizes.map(prize => (
+                  <PrizeItem key={prize.place}>
+                    <PrizePlace>{getPlaceText(prize.place)}</PrizePlace>
+                    <PrizeTitle>{prize.title}</PrizeTitle>
+                  </PrizeItem>
+                ))}
+              </PrizePreview>
+            </>
           )}
 
           {limitReached && (
