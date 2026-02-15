@@ -958,7 +958,7 @@ export default function InviteSettings({
         {/* 👥 УЧАСТНИКИ */}
         <Section>
           <SectionHeader>
-            <SectionTitle>👥 Участники ({participantsCount})</SectionTitle>
+            <SectionTitle> ({participantsCount})</SectionTitle>
           </SectionHeader>
 
           {participants.length === 0 ? (
