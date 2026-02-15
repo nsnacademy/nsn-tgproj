@@ -64,7 +64,7 @@ type AdminChallenge = {
   pending_count: number;
   participants_count?: number;
   status?: 'active' | 'completed';
-  entry_type?: 'free' | 'paid' | 'condition'; // Добавляем тип входа
+  entry_type?: 'free' | 'paid' | 'condition';
 };
 
 export default function Admin({ screen, onNavigate }: AdminProps) {
@@ -73,6 +73,9 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   const [accessChecked, setAccessChecked] = useState(false);
   const [challenges, setChallenges] = useState<AdminChallenge[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Добавляем состояние для общего количества заявок
+  const [totalRequestsCount, setTotalRequestsCount] = useState(0);
 
   /* =========================
      INIT
@@ -95,6 +98,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
         return;
       }
 
+      // Загружаем вызовы
       const { data, error } = await supabase.rpc(
         'get_admin_challenges',
         { p_creator_id: user.id }
@@ -115,6 +119,22 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
       }));
       
       setChallenges(challengesWithStatus);
+
+      // Загружаем общее количество заявок по всем вызовам
+      if (data && data.length > 0) {
+        const challengeIds = data.map((ch: AdminChallenge) => ch.id);
+        
+        const { count, error: countError } = await supabase
+          .from('entry_requests')
+          .select('*', { count: 'exact', head: true })
+          .in('challenge_id', challengeIds)
+          .eq('status', 'pending');
+
+        if (!countError) {
+          setTotalRequestsCount(count || 0);
+        }
+      }
+
       setAccessChecked(true);
       setLoading(false);
     }
@@ -145,14 +165,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   const totalChallenges = challenges.length;
   const activeChallenges = challenges.filter(c => c.status === 'active').length;
   const completedChallenges = challenges.filter(c => c.status === 'completed').length;
-  
   const totalParticipants = challenges.reduce((acc, c) => acc + (c.participants_count || 0), 0);
-  const totalPending = challenges.reduce((acc, c) => acc + (c.pending_count || 0), 0);
-  
-  // Статистика по типам вызовов
-  const freeChallenges = challenges.filter(c => c.entry_type === 'free').length;
-  const paidChallenges = challenges.filter(c => c.entry_type === 'paid').length;
-  const conditionChallenges = challenges.filter(c => c.entry_type === 'condition').length;
 
   if (!accessChecked || loading) {
     return (
@@ -247,20 +260,8 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                 <StatLabel>Участников</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>{totalPending}</StatValue>
-                <StatLabel>Ожидают</StatLabel>
-              </StatItem>
-              <StatItem>
-                <StatValue>{freeChallenges}</StatValue>
-                <StatLabel>Свободные</StatLabel>
-              </StatItem>
-              <StatItem>
-                <StatValue>{paidChallenges}</StatValue>
-                <StatLabel>Платные</StatLabel>
-              </StatItem>
-              <StatItem>
-                <StatValue>{conditionChallenges}</StatValue>
-                <StatLabel>По условию</StatLabel>
+                <StatValue>{totalRequestsCount}</StatValue>
+                <StatLabel>Всего заявок</StatLabel>
               </StatItem>
             </StatsGrid>
           </StatsCard>
@@ -318,20 +319,6 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                         {ch.status === 'active' ? 'Активен' : 'Завершён'}
                       </CardStatLabel>
                     </CardStat>
-                    {ch.entry_type && (
-                      <CardStat>
-                        <CardStatValue>
-                          {ch.entry_type === 'free' && '🆓'}
-                          {ch.entry_type === 'paid' && '💰'}
-                          {ch.entry_type === 'condition' && '🔒'}
-                        </CardStatValue>
-                        <CardStatLabel>
-                          {ch.entry_type === 'free' && 'Свободный'}
-                          {ch.entry_type === 'paid' && 'Платный'}
-                          {ch.entry_type === 'condition' && 'Условие'}
-                        </CardStatLabel>
-                      </CardStat>
-                    )}
                   </CardStats>
 
                   <CardActions>
