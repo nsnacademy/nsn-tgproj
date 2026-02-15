@@ -47,10 +47,9 @@ type ChallengeData = {
   payment_description: string | null;
   creator_username: string;
   duration_days: number;
-  participants_count?: number;
   max_participants?: number | null;
-  created_at: string;
   has_rating?: boolean;
+  // Убираем created_at, так как его нет в представлении
 };
 
 export default function ChallengePaid({ challengeId, onBack }: Props) {
@@ -58,48 +57,60 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
   const [loading, setLoading] = useState(true);
   const [requestSent, setRequestSent] = useState(false);
   const [participantsCount, setParticipantsCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadChallenge();
   }, [challengeId]);
 
   async function loadChallenge() {
-    // Загружаем данные вызова
-    const { data, error } = await supabase
-      .from('challenges_with_creator')
-      .select(`
-        title,
-        description,
-        entry_price,
-        entry_currency,
-        contact_info,
-        payment_method,
-        payment_description,
-        creator_username,
-        duration_days,
-        max_participants,
-        created_at,
-        has_rating
-      `)
-      .eq('id', challengeId)
-      .single();
+    try {
+      // Загружаем данные вызова
+      const { data, error } = await supabase
+        .from('challenges_with_creator')
+        .select(`
+          title,
+          description,
+          entry_price,
+          entry_currency,
+          contact_info,
+          payment_method,
+          payment_description,
+          creator_username,
+          duration_days,
+          max_participants,
+          has_rating
+        `)
+        .eq('id', challengeId)
+        .single();
 
-    if (error) {
-      console.error(error);
+      if (error) {
+        console.error('[PAID] Ошибка загрузки:', error);
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+
+      console.log('[PAID] Данные вызова:', data);
+      setChallenge(data);
+
+      // Загружаем количество участников
+      const { count, error: countError } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('challenge_id', challengeId);
+
+      if (countError) {
+        console.error('[PAID] Ошибка подсчета участников:', countError);
+      } else {
+        setParticipantsCount(count ?? 0);
+      }
+    } catch (err) {
+      console.error('[PAID] Непредвиденная ошибка:', err);
+      setError('Произошла ошибка при загрузке');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setChallenge(data);
-
-    // Загружаем количество участников
-    const { count } = await supabase
-      .from('participants')
-      .select('*', { count: 'exact', head: true })
-      .eq('challenge_id', challengeId);
-
-    setParticipantsCount(count ?? 0);
-    setLoading(false);
   }
 
   const handleSendRequest = async () => {
@@ -109,6 +120,7 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
 
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (!tgUser) {
+      console.error('[PAID] Нет данных пользователя Telegram');
       setRequestSent(false);
       return;
     }
@@ -120,7 +132,7 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
       .single();
 
     if (userError || !user) {
-      console.error('[PAID REQUEST] user not found', userError);
+      console.error('[PAID] Пользователь не найден:', userError);
       setRequestSent(false);
       return;
     }
@@ -134,8 +146,8 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
       });
 
     if (insertError) {
-      if (insertError.code !== '23505') {
-        console.error('[PAID REQUEST] insert error', insertError);
+      if (insertError.code !== '23505') { // 23505 = duplicate key
+        console.error('[PAID] Ошибка создания заявки:', insertError);
         setRequestSent(false);
         return;
       }
@@ -149,14 +161,6 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
       case 'link': return 'Ссылка на оплату';
       default: return method;
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
   };
 
   if (loading) {
@@ -176,7 +180,7 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
     );
   }
 
-  if (!challenge) {
+  if (error || !challenge) {
     return (
       <SafeArea>
         <Header>
@@ -186,9 +190,14 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </BackButton>
-            <Title>Вызов не найден</Title>
+            <Title>Ошибка</Title>
           </HeaderRow>
         </Header>
+        <Content>
+          <Card>
+            <Value>{error || 'Вызов не найден'}</Value>
+          </Card>
+        </Content>
       </SafeArea>
     );
   }
@@ -249,11 +258,6 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
                 {participantsCount}
                 {challenge.max_participants && ` / ${challenge.max_participants}`}
               </InfoValue>
-            </InfoItem>
-
-            <InfoItem>
-              <InfoLabel>📆 Создан</InfoLabel>
-              <InfoValue>{formatDate(challenge.created_at)}</InfoValue>
             </InfoItem>
           </InfoGrid>
 
