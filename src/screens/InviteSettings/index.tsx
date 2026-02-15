@@ -63,7 +63,6 @@ type Participant = {
   user_id: string;
   users: {
     username: string | null;
-    first_name: string | null;
     telegram_id: string;
   };
 };
@@ -75,7 +74,6 @@ type Request = {
   created_at: string;
   users: {
     username: string | null;
-    first_name: string | null;
     telegram_id: string;
   };
 };
@@ -216,7 +214,7 @@ export default function InviteSettings({
       setParticipantsCount(count ?? 0);
     }
 
-    // 3️⃣ LOAD PARTICIPANTS LIST - ИСПРАВЛЕНО
+    // 3️⃣ LOAD PARTICIPANTS LIST - ИСПРАВЛЕНО (убрал first_name)
     console.log('📋 [LOAD] Загрузка списка участников...');
     const { data: participantsData, error: participantsError } = await supabase
       .from('participants')
@@ -225,7 +223,6 @@ export default function InviteSettings({
         user_id,
         users (
           username,
-          first_name,
           telegram_id
         )
       `)
@@ -242,7 +239,6 @@ export default function InviteSettings({
           user_id: item.user_id,
           users: item.users?.[0] || {
             username: null,
-            first_name: null,
             telegram_id: '',
           },
         }));
@@ -251,7 +247,7 @@ export default function InviteSettings({
       }
     }
 
-    // 4️⃣ LOAD PENDING REQUESTS - ИСПРАВЛЕНО
+    // 4️⃣ LOAD PENDING REQUESTS - ИСПРАВЛЕНО (убрал first_name)
     console.log('📨 [LOAD] Загрузка заявок...');
     await loadRequests();
 
@@ -260,7 +256,7 @@ export default function InviteSettings({
   };
 
   /* =========================
-     LOAD REQUESTS FUNCTION - ИСПРАВЛЕНО
+     LOAD REQUESTS FUNCTION - ИСПРАВЛЕНО (убрал first_name)
   ========================= */
 
   const loadRequests = async () => {
@@ -276,7 +272,6 @@ export default function InviteSettings({
         created_at,
         users!inner (
           username,
-          first_name,
           telegram_id
         )
       `)
@@ -308,7 +303,6 @@ export default function InviteSettings({
           created_at: item.created_at,
           users: item.users || {
             username: null,
-            first_name: null,
             telegram_id: '',
           },
         };
@@ -330,7 +324,7 @@ export default function InviteSettings({
   }, [challengeId]);
 
   /* =========================
-     REAL-TIME SUBSCRIPTION - ИСПРАВЛЕНО
+     REAL-TIME SUBSCRIPTION - ИСПРАВЛЕНО (убрал first_name)
   ========================= */
 
   useEffect(() => {
@@ -355,7 +349,7 @@ export default function InviteSettings({
           console.log('👤 [REALTIME] Загрузка данных пользователя ID:', payload.new.user_id);
           const { data: userData, error } = await supabase
             .from('users')
-            .select('username, first_name, telegram_id')
+            .select('username, telegram_id')
             .eq('id', payload.new.user_id)
             .single();
 
@@ -568,7 +562,6 @@ export default function InviteSettings({
         user_id,
         users (
           username,
-          first_name,
           telegram_id
         )
       `)
@@ -585,7 +578,6 @@ export default function InviteSettings({
         user_id: newParticipant.user_id,
         users: newParticipant.users?.[0] || {
           username: null,
-          first_name: null,
           telegram_id: '',
         },
       };
@@ -630,7 +622,6 @@ export default function InviteSettings({
 
   const getDisplayName = (user: Request['users']) => {
     if (user?.username) return `@${user.username}`;
-    if (user?.first_name) return user.first_name;
     return `ID: ${user?.telegram_id || 'неизвестно'}`;
   };
 
@@ -688,7 +679,6 @@ export default function InviteSettings({
 
   const getUsername = (user: Participant['users']) => {
     if (user?.username) return `@${user.username}`;
-    if (user?.first_name) return user.first_name;
     return `ID: ${user?.telegram_id || 'неизвестно'}`;
   };
 
@@ -846,7 +836,7 @@ export default function InviteSettings({
                               <div style={{ flex: 1 }}>
                                 <RequestUsername>
                                   {displayName}
-                                  {!request.users?.username && !request.users?.first_name && (
+                                  {!request.users?.username && (
                                     <RequestBadge>⚡</RequestBadge>
                                   )}
                                 </RequestUsername>
