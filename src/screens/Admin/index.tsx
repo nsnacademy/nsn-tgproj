@@ -74,7 +74,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   const [challenges, setChallenges] = useState<AdminChallenge[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Добавляем состояние для общего количества заявок
+  // Состояние для общего количества заявок
   const [totalRequestsCount, setTotalRequestsCount] = useState(0);
 
   /* =========================
@@ -121,19 +121,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
       setChallenges(challengesWithStatus);
 
       // Загружаем общее количество заявок по всем вызовам
-      if (data && data.length > 0) {
-        const challengeIds = data.map((ch: AdminChallenge) => ch.id);
-        
-        const { count, error: countError } = await supabase
-          .from('entry_requests')
-          .select('*', { count: 'exact', head: true })
-          .in('challenge_id', challengeIds)
-          .eq('status', 'pending');
-
-        if (!countError) {
-          setTotalRequestsCount(count || 0);
-        }
-      }
+      await loadTotalRequests(data);
 
       setAccessChecked(true);
       setLoading(false);
@@ -141,6 +129,69 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
     init();
   }, [onNavigate]);
+
+  /* =========================
+     ЗАГРУЗКА ОБЩЕГО КОЛИЧЕСТВА ЗАЯВОК
+  ========================= */
+
+  const loadTotalRequests = async (challengesData?: AdminChallenge[]) => {
+    const challengesToUse = challengesData || challenges;
+    
+    if (challengesToUse && challengesToUse.length > 0) {
+      const challengeIds = challengesToUse.map((ch: AdminChallenge) => ch.id);
+      
+      const { count, error: countError } = await supabase
+        .from('entry_requests')
+        .select('*', { count: 'exact', head: true })
+        .in('challenge_id', challengeIds)
+        .eq('status', 'pending');
+
+      if (!countError) {
+        setTotalRequestsCount(count || 0);
+      }
+    }
+  };
+
+  /* =========================
+     REAL-TIME ПОДПИСКА НА ИЗМЕНЕНИЯ ЗАЯВОК
+  ========================= */
+
+  useEffect(() => {
+    if (!challenges.length) return;
+
+    const challengeIds = challenges.map(ch => ch.id);
+    
+    // Подписываемся на изменения в заявках
+    const subscription = supabase
+      .channel('admin-requests-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Слушаем все события (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'entry_requests',
+        },
+        async (payload) => {
+          console.log('[ADMIN] Изменение в заявках:', payload);
+          
+          // Перезагружаем общее количество заявок
+          const { count, error } = await supabase
+            .from('entry_requests')
+            .select('*', { count: 'exact', head: true })
+            .in('challenge_id', challengeIds)
+            .eq('status', 'pending');
+
+          if (!error) {
+            setTotalRequestsCount(count || 0);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [challenges]);
 
   /* =========================
      EXIT ADMIN
@@ -165,7 +216,6 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   const totalChallenges = challenges.length;
   const activeChallenges = challenges.filter(c => c.status === 'active').length;
   const completedChallenges = challenges.filter(c => c.status === 'completed').length;
-  const totalParticipants = challenges.reduce((acc, c) => acc + (c.participants_count || 0), 0);
 
   if (!accessChecked || loading) {
     return (
@@ -256,12 +306,8 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                 <StatLabel>Завершено</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>{totalParticipants}</StatValue>
-                <StatLabel>Участников</StatLabel>
-              </StatItem>
-              <StatItem>
                 <StatValue>{totalRequestsCount}</StatValue>
-                <StatLabel>Всего заявок</StatLabel>
+                <StatLabel>Заявки</StatLabel>
               </StatItem>
             </StatsGrid>
           </StatsCard>
@@ -345,7 +391,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                         <path d="M4 12h16M12 4v16" />
                         <circle cx="12" cy="12" r="10" />
                       </svg>
-                      Пригласить
+                      Управление
                     </ActionButton>
                   </CardActions>
                 </ChallengeCard>
