@@ -96,7 +96,7 @@ function App() {
   }, []);
 
   /* =========================
-     HANDLE INVITE
+     HANDLE INVITE LINKS
   ========================= */
 
   useEffect(() => {
@@ -106,16 +106,78 @@ function App() {
     const startParam = (tg.initDataUnsafe as any)?.start_param;
     if (!startParam || inviteHandledRef.current) return;
 
+    console.log('🔗 [APP] Получен start_param:', startParam);
+    inviteHandledRef.current = true;
+
+    // Обработка разных типов ссылок
     if (startParam.startsWith('invite_')) {
-      inviteHandledRef.current = true;
+      // Ссылка-приглашение (для вступления в вызов)
       const code = startParam.replace('invite_', '');
+      console.log('🔗 [APP] Обработка invite с кодом:', code);
 
       supabase
         .rpc('get_challenge_by_invite', { p_code: code })
-        .then(({ data }) => {
-          if (!data) return;
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('[APP] Ошибка получения challenge по invite:', error);
+            return;
+          }
+          
+          if (!data) {
+            console.log('[APP] Вызов не найден по коду:', code);
+            return;
+          }
+
+          console.log('[APP] Найден вызов по invite:', data);
           setSelectedChallengeId(data);
-          setScreen('challenge-details');
+          
+          // Определяем тип вызова и переходим на соответствующий экран
+          supabase
+            .from('challenges')
+            .select('entry_type')
+            .eq('id', data)
+            .single()
+            .then(({ data: challengeData }) => {
+              if (challengeData) {
+                const entryType = challengeData.entry_type;
+                console.log('[APP] Тип вызова:', entryType);
+                
+                if (entryType === 'free') {
+                  setScreen('challenge-details');
+                } else if (entryType === 'paid') {
+                  setScreen('challenge-paid');
+                } else if (entryType === 'condition') {
+                  setScreen('challenge-condition');
+                }
+              }
+            });
+        });
+
+    } else if (startParam.startsWith('challenge_')) {
+      // Прямая ссылка на вызов (для совместимости)
+      const idFromLink = startParam.replace('challenge_', '');
+      console.log('🔗 [APP] Обработка challenge ссылки с ID:', idFromLink);
+
+      setSelectedChallengeId(idFromLink);
+      
+      supabase
+        .from('challenges')
+        .select('entry_type')
+        .eq('id', idFromLink)
+        .single()
+        .then(({ data: challengeData }) => {
+          if (challengeData) {
+            const entryType = challengeData.entry_type;
+            console.log('[APP] Тип вызова:', entryType);
+            
+            if (entryType === 'free') {
+              setScreen('challenge-details');
+            } else if (entryType === 'paid') {
+              setScreen('challenge-paid');
+            } else if (entryType === 'condition') {
+              setScreen('challenge-condition');
+            }
+          }
         });
     }
   }, []);
