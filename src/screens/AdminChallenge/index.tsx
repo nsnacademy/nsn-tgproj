@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
-import type { Screen } from '../../app/App'; // 👈 Импортируем тип Screen
- // 👈 Импортируем тип Screen
+import type { Screen } from '../../app/App';
 
 import {
   SafeArea,
@@ -34,13 +33,13 @@ import {
   CommentBox,
   ScrollContent,
   FixedTop,
-  SettingsButton, // 👈 НОВЫЙ СТИЛЬ
+  SettingsButton,
 } from './styles';
 
 type Props = {
   challengeId: string;
-  onBack: () => void;
-  onNavigate: (screen: Screen, id?: string) => void; // 👈 ДОБАВЛЯЕМ ПРОП
+  onBack: () => void; // onBack будет вести в admin
+  onNavigate: (screen: Screen, id?: string) => void;
 };
 
 type Challenge = {
@@ -49,7 +48,7 @@ type Challenge = {
   metric_name: string | null;
   start_at: string;
   duration_days: number;
-  entry_type: 'free' | 'paid' | 'condition'; // 👈 ДОБАВЛЯЕМ
+  entry_type: 'free' | 'paid' | 'condition';
 };
 
 type Report = {
@@ -218,12 +217,24 @@ export default function AdminChallenge({ challengeId, onBack, onNavigate }: Prop
     setRejectionText('');
   };
 
+  // 👇 Функция для возврата в админ-панель
+  const handleBackToAdmin = () => {
+    console.log('[ADMIN] back to admin');
+    onBack(); // onBack должен вести в admin
+  };
+
+  // 👇 Функция для перехода в настройки приглашений
+  const handleGoToInviteSettings = () => {
+    console.log('[ADMIN] go to invite settings', challengeId);
+    onNavigate('invite-settings', challengeId);
+  };
+
   return (
     <SafeArea>
       {/* FIXED HEADER + DAY SWITCHER */}
       <FixedTop>
         <Header>
-          <BackButton onClick={onBack}>←</BackButton>
+          <BackButton onClick={handleBackToAdmin}>←</BackButton>
           <div>
             <Title>{challenge.title}</Title>
             <Meta>
@@ -233,7 +244,7 @@ export default function AdminChallenge({ challengeId, onBack, onNavigate }: Prop
           </div>
           
           {/* 👇 КНОПКА УПРАВЛЕНИЯ ВЫЗОВОМ */}
-          <SettingsButton onClick={() => onNavigate('invite-settings', challengeId)}>
+          <SettingsButton onClick={handleGoToInviteSettings}>
             ⚙️
           </SettingsButton>
         </Header>
