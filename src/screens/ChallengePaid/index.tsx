@@ -27,14 +27,8 @@ import {
   Divider,
   CreatorBadge,
   MetaRow,
-  MetaIcon,
   MetaText,
   WarningBox,
-  EntryDetailsCard,
-  EntryTitle,
-  EntryDetail,
-  EntryIcon,
-  EntryText,
 } from './styles';
 
 type Props = {
@@ -54,7 +48,7 @@ type ChallengeData = {
   duration_days: number;
   max_participants?: number | null;
   has_rating?: boolean;
-  rules?: string | null; // 👈 Добавляем правила вызова
+  rules?: string | null;
 };
 
 export default function ChallengePaid({ challengeId, onBack }: Props) {
@@ -65,11 +59,14 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('🔍 [PAID] Загрузка данных для challengeId:', challengeId);
     loadChallenge();
   }, [challengeId]);
 
   async function loadChallenge() {
     try {
+      console.log('📥 [PAID] Запрос к challenges_with_creator...');
+      
       // Загружаем данные вызова
       const { data, error } = await supabase
         .from('challenges_with_creator')
@@ -91,45 +88,54 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
         .single();
 
       if (error) {
-        console.error('[PAID] Ошибка загрузки:', error);
+        console.error('❌ [PAID] Ошибка загрузки:', error);
         setError(error.message);
         setLoading(false);
         return;
       }
 
-      console.log('[PAID] Данные вызова:', data);
+      console.log('✅ [PAID] Данные вызова получены:', data);
       setChallenge(data);
 
       // Загружаем количество участников
+      console.log('👥 [PAID] Запрос количества участников...');
       const { count, error: countError } = await supabase
         .from('participants')
         .select('*', { count: 'exact', head: true })
         .eq('challenge_id', challengeId);
 
       if (countError) {
-        console.error('[PAID] Ошибка подсчета участников:', countError);
+        console.error('❌ [PAID] Ошибка подсчета участников:', countError);
       } else {
+        console.log('✅ [PAID] Участников:', count);
         setParticipantsCount(count ?? 0);
       }
     } catch (err) {
-      console.error('[PAID] Непредвиденная ошибка:', err);
+      console.error('💥 [PAID] Непредвиденная ошибка:', err);
       setError('Произошла ошибка при загрузке');
     } finally {
       setLoading(false);
+      console.log('🏁 [PAID] Загрузка завершена');
     }
   }
 
   const handleSendRequest = async () => {
-    if (requestSent) return;
+    console.log('📤 [PAID] Отправка запроса на вступление');
+    
+    if (requestSent) {
+      console.log('⚠️ [PAID] Запрос уже отправлен');
+      return;
+    }
 
     setRequestSent(true);
 
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (!tgUser) {
-      console.error('[PAID] Нет данных пользователя Telegram');
+      console.error('❌ [PAID] Нет данных пользователя Telegram');
       setRequestSent(false);
       return;
     }
+    console.log('👤 [PAID] Пользователь Telegram:', tgUser);
 
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -138,10 +144,11 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
       .single();
 
     if (userError || !user) {
-      console.error('[PAID] Пользователь не найден:', userError);
+      console.error('❌ [PAID] Пользователь не найден в БД:', userError);
       setRequestSent(false);
       return;
     }
+    console.log('✅ [PAID] Найден пользователь в БД:', user);
 
     const { error: insertError } = await supabase
       .from('entry_requests')
@@ -153,10 +160,14 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
 
     if (insertError) {
       if (insertError.code !== '23505') {
-        console.error('[PAID] Ошибка создания заявки:', insertError);
+        console.error('❌ [PAID] Ошибка создания заявки:', insertError);
         setRequestSent(false);
         return;
+      } else {
+        console.log('ℹ️ [PAID] Заявка уже существует (дубликат)');
       }
+    } else {
+      console.log('✅ [PAID] Заявка успешно создана');
     }
   };
 
@@ -164,7 +175,7 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
     switch (method) {
       case 'transfer': return 'Перевод';
       case 'agreement': return 'Договорённость';
-      case 'link': return 'Ссылка на оплату';
+      case 'link': return 'Ссылка';
       default: return method;
     }
   };
@@ -212,6 +223,12 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
     ? participantsCount >= challenge.max_participants 
     : false;
 
+  console.log('🎨 [PAID] Рендер с данными:', {
+    title: challenge.title,
+    participantsCount,
+    limitReached
+  });
+
   return (
     <SafeArea>
       <Header>
@@ -234,7 +251,7 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
               <circle cx="8" cy="8" r="6" />
               <path d="M8 4v4l2 2" />
             </svg>
-            Автор: @{challenge.creator_username}
+            @{challenge.creator_username}
           </CreatorBadge>
 
           <Field>
@@ -242,81 +259,16 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
             <Value>{challenge.description}</Value>
           </Field>
 
-          {/* УСЛОВИЯ ВЫЗОВА */}
           {challenge.rules && (
             <Field>
-              <Label>Правила вызова</Label>
+              <Label>Правила</Label>
               <Value style={{ whiteSpace: 'pre-wrap' }}>{challenge.rules}</Value>
             </Field>
           )}
 
           <Divider />
 
-          {/* УСЛОВИЯ ВХОДА - ПЛАТНЫЙ ДОСТУП */}
-          <EntryDetailsCard>
-            <EntryTitle>🚪 Условия входа</EntryTitle>
-            
-            <EntryDetail>
-              <EntryIcon>💰</EntryIcon>
-              <EntryText>
-                Стоимость участия: {challenge.entry_price} {challenge.entry_currency.toUpperCase()}
-              </EntryText>
-            </EntryDetail>
-
-            <EntryDetail>
-              <EntryIcon>💳</EntryIcon>
-              <EntryText>
-                Способ оплаты: {getPaymentMethodLabel(challenge.payment_method)}
-              </EntryText>
-            </EntryDetail>
-
-            {challenge.payment_description && (
-              <EntryDetail>
-                <EntryIcon>📝</EntryIcon>
-                <EntryText>{challenge.payment_description}</EntryText>
-              </EntryDetail>
-            )}
-
-            <EntryDetail>
-              <EntryIcon>📞</EntryIcon>
-              <EntryText>
-                Контакт: @{challenge.contact_info.replace('@', '')}
-              </EntryText>
-            </EntryDetail>
-          </EntryDetailsCard>
-
-          {/* Основная информация в сетке */}
-          <InfoGrid>
-            <InfoItem>
-              <InfoLabel>💰 Стоимость</InfoLabel>
-              <InfoValue>
-                {challenge.entry_price} {challenge.entry_currency.toUpperCase()}
-              </InfoValue>
-            </InfoItem>
-
-            <InfoItem>
-              <InfoLabel>📅 Длительность</InfoLabel>
-              <InfoValue>{challenge.duration_days} дней</InfoValue>
-            </InfoItem>
-
-            <InfoItem>
-              <InfoLabel>👥 Участники</InfoLabel>
-              <InfoValue>
-                {participantsCount}
-                {challenge.max_participants && ` / ${challenge.max_participants}`}
-              </InfoValue>
-            </InfoItem>
-          </InfoGrid>
-
-          {challenge.has_rating && (
-            <MetaRow>
-              <MetaIcon>🏆</MetaIcon>
-              <MetaText>Есть рейтинг и награды</MetaText>
-            </MetaRow>
-          )}
-
-          <Divider />
-
+          {/* Условия входа - минималистично */}
           <PriceTag>
             {challenge.entry_price} {challenge.entry_currency.toUpperCase()}
           </PriceTag>
@@ -328,26 +280,50 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
 
           {challenge.payment_description && (
             <Field>
-              <Label>Комментарий по оплате</Label>
+              <Label>Комментарий</Label>
               <Value>{challenge.payment_description}</Value>
             </Field>
           )}
 
           <ContactInfo>
-            <Label>Контакт для связи</Label>
+            <Label>Контакт</Label>
             <Value>@{challenge.contact_info.replace('@', '')}</Value>
           </ContactInfo>
 
+          <Divider />
+
+          {/* Информация в сетке */}
+          <InfoGrid>
+            <InfoItem>
+              <InfoLabel>Длительность</InfoLabel>
+              <InfoValue>{challenge.duration_days} дней</InfoValue>
+            </InfoItem>
+
+            <InfoItem>
+              <InfoLabel>Участники</InfoLabel>
+              <InfoValue>
+                {participantsCount}
+                {challenge.max_participants && ` / ${challenge.max_participants}`}
+              </InfoValue>
+            </InfoItem>
+          </InfoGrid>
+
+          {challenge.has_rating && (
+            <MetaRow>
+              <MetaText>Есть рейтинг и награды</MetaText>
+            </MetaRow>
+          )}
+
           {limitReached && (
             <WarningBox>
-              ⚠️ Достигнут лимит участников
+              ⚠️ Лимит участников достигнут
             </WarningBox>
           )}
 
           <RuleBox>
-            <RuleIcon>📋</RuleIcon>
+            <RuleIcon>💰</RuleIcon>
             <RuleText>
-              После оплаты нажмите кнопку ниже, чтобы отправить запрос автору
+              Оплатите и отправьте запрос автору
             </RuleText>
           </RuleBox>
         </Card>
@@ -361,15 +337,17 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
           $disabled={limitReached}
         >
           {limitReached 
-            ? '❌ Мест нет' 
+            ? 'Мест нет' 
             : requestSent 
-              ? '✓ Запрос отправлен' 
-              : '📨 Отправить запрос на вступление'}
+              ? 'Запрос отправлен' 
+              : 'Отправить запрос'}
         </RequestButton>
         <RequestHint>
           {limitReached 
             ? 'Лимит участников исчерпан' 
-            : 'Автор проверит оплату и подтвердит ваше участие'}
+            : requestSent
+              ? 'Ожидайте подтверждения автора'
+              : 'Автор проверит оплату и подтвердит участие'}
         </RequestHint>
       </Footer>
     </SafeArea>

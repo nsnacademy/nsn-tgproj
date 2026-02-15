@@ -238,61 +238,6 @@ export const CreatorBadge = styled.div`
   width: fit-content;
 `;
 
-export const MetaRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0;
-`;
-
-export const MetaIcon = styled.span`
-  font-size: 18px;
-`;
-
-export const MetaText = styled.span`
-  font-size: 14px;
-  opacity: 0.8;
-`;
-
-export const WarningBox = styled.div`
-  padding: 12px 16px;
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.3);
-  border-radius: 12px;
-  color: #FFC107;
-  font-size: 13px;
-  font-weight: 500;
-  margin: 16px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-export const PrizePreview = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 12px 0;
-`;
-
-export const PrizeItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 10px;
-`;
-
-export const PrizePlace = styled.span`
-  font-size: 16px;
-  min-width: 40px;
-`;
-
-export const PrizeTitle = styled.span`
-  font-size: 14px;
-  opacity: 0.9;
-`;
 
 // Обновите RequestButton
 export const RequestButton = styled.button<{ $isSent?: boolean; $disabled?: boolean }>`
@@ -361,4 +306,63 @@ export const EntryText = styled.span`
   opacity: 0.9;
   line-height: 1.4;
   flex: 1;
+`;
+
+// Обновленные стили для наград (минималистичные)
+export const PrizePreview = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 12px;
+`;
+
+export const PrizeItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+export const PrizePlace = styled.span`
+  font-size: 13px;
+  opacity: 0.6;
+  min-width: 70px;
+`;
+
+export const PrizeTitle = styled.span`
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0.95;
+  text-align: right;
+`;
+
+// Обновленный MetaRow
+export const MetaRow = styled.div`
+  margin: 8px 0;
+`;
+
+export const MetaText = styled.span`
+  font-size: 13px;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+// Обновленный WarningBox
+export const WarningBox = styled.div`
+  padding: 12px 16px;
+  background: rgba(255, 193, 7, 0.05);
+  border: 1px solid rgba(255, 193, 7, 0.2);
+  border-radius: 12px;
+  color: #FFC107;
+  font-size: 13px;
+  margin: 16px 0;
 `;
