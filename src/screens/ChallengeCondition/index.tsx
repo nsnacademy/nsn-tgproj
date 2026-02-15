@@ -35,6 +35,11 @@ import {
   PrizeItem,
   PrizePlace,
   PrizeTitle,
+  EntryDetailsCard,
+  EntryTitle,
+  EntryDetail,
+  EntryIcon,
+  EntryText,
 } from './styles';
 
 type Props = {
@@ -51,6 +56,7 @@ type ChallengeData = {
   creator_username: string;
   duration_days: number;
   has_rating?: boolean;
+  rules?: string | null; // 👈 Добавляем правила вызова
 };
 
 type Prize = {
@@ -79,6 +85,7 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
         .select(`
           title,
           description,
+          rules,
           entry_condition,
           contact_info,
           max_participants,
@@ -256,7 +263,43 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
             <Value>{challenge.description}</Value>
           </Field>
 
+          {/* УСЛОВИЯ ВЫЗОВА */}
+          {challenge.rules && (
+            <Field>
+              <Label>Правила вызова</Label>
+              <Value style={{ whiteSpace: 'pre-wrap' }}>{challenge.rules}</Value>
+            </Field>
+          )}
+
           <Divider />
+
+          {/* УСЛОВИЯ ВХОДА - ДОСТУП ПО УСЛОВИЮ */}
+          <EntryDetailsCard>
+            <EntryTitle>🚪 Условия входа</EntryTitle>
+            
+            <EntryDetail>
+              <EntryIcon>🔒</EntryIcon>
+              <EntryText>
+                Условие: {challenge.entry_condition}
+              </EntryText>
+            </EntryDetail>
+
+            <EntryDetail>
+              <EntryIcon>📞</EntryIcon>
+              <EntryText>
+                Контакт: @{challenge.contact_info.replace('@', '')}
+              </EntryText>
+            </EntryDetail>
+
+            {challenge.max_participants && (
+              <EntryDetail>
+                <EntryIcon>👥</EntryIcon>
+                <EntryText>
+                  Лимит участников: {challenge.max_participants}
+                </EntryText>
+              </EntryDetail>
+            )}
+          </EntryDetailsCard>
 
           {/* Основная информация в сетке */}
           <InfoGrid>

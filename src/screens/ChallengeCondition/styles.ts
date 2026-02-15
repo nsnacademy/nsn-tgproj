@@ -335,3 +335,45 @@ export const RequestButton = styled.button<{ $isSent?: boolean; $disabled?: bool
       $isSent ? 'rgba(76, 175, 80, 0.25)' : 'rgba(255, 255, 255, 0.95)'};
   }
 `;
+
+// Добавьте эти стили в файл styles.ts для обоих экранов
+
+export const EntryDetailsCard = styled.div`
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 14px;
+  padding: 16px;
+  margin: 16px 0;
+`;
+
+export const EntryTitle = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #667eea;
+`;
+
+export const EntryDetail = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+export const EntryIcon = styled.span`
+  font-size: 20px;
+  min-width: 32px;
+  text-align: center;
+`;
+
+export const EntryText = styled.span`
+  font-size: 14px;
+  opacity: 0.9;
+  line-height: 1.4;
+  flex: 1;
+`;

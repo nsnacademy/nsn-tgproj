@@ -30,6 +30,11 @@ import {
   MetaIcon,
   MetaText,
   WarningBox,
+  EntryDetailsCard,
+  EntryTitle,
+  EntryDetail,
+  EntryIcon,
+  EntryText,
 } from './styles';
 
 type Props = {
@@ -49,7 +54,7 @@ type ChallengeData = {
   duration_days: number;
   max_participants?: number | null;
   has_rating?: boolean;
-  // Убираем created_at, так как его нет в представлении
+  rules?: string | null; // 👈 Добавляем правила вызова
 };
 
 export default function ChallengePaid({ challengeId, onBack }: Props) {
@@ -71,6 +76,7 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
         .select(`
           title,
           description,
+          rules,
           entry_price,
           entry_currency,
           contact_info,
@@ -146,7 +152,7 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
       });
 
     if (insertError) {
-      if (insertError.code !== '23505') { // 23505 = duplicate key
+      if (insertError.code !== '23505') {
         console.error('[PAID] Ошибка создания заявки:', insertError);
         setRequestSent(false);
         return;
@@ -236,7 +242,48 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
             <Value>{challenge.description}</Value>
           </Field>
 
+          {/* УСЛОВИЯ ВЫЗОВА */}
+          {challenge.rules && (
+            <Field>
+              <Label>Правила вызова</Label>
+              <Value style={{ whiteSpace: 'pre-wrap' }}>{challenge.rules}</Value>
+            </Field>
+          )}
+
           <Divider />
+
+          {/* УСЛОВИЯ ВХОДА - ПЛАТНЫЙ ДОСТУП */}
+          <EntryDetailsCard>
+            <EntryTitle>🚪 Условия входа</EntryTitle>
+            
+            <EntryDetail>
+              <EntryIcon>💰</EntryIcon>
+              <EntryText>
+                Стоимость участия: {challenge.entry_price} {challenge.entry_currency.toUpperCase()}
+              </EntryText>
+            </EntryDetail>
+
+            <EntryDetail>
+              <EntryIcon>💳</EntryIcon>
+              <EntryText>
+                Способ оплаты: {getPaymentMethodLabel(challenge.payment_method)}
+              </EntryText>
+            </EntryDetail>
+
+            {challenge.payment_description && (
+              <EntryDetail>
+                <EntryIcon>📝</EntryIcon>
+                <EntryText>{challenge.payment_description}</EntryText>
+              </EntryDetail>
+            )}
+
+            <EntryDetail>
+              <EntryIcon>📞</EntryIcon>
+              <EntryText>
+                Контакт: @{challenge.contact_info.replace('@', '')}
+              </EntryText>
+            </EntryDetail>
+          </EntryDetailsCard>
 
           {/* Основная информация в сетке */}
           <InfoGrid>
