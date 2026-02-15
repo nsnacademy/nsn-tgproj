@@ -958,7 +958,7 @@ export default function InviteSettings({
         {/* 👥 УЧАСТНИКИ */}
         <Section>
           <SectionHeader>
-            <SectionTitle> ({participantsCount})</SectionTitle>
+            <SectionTitle>👥 Участники ({participantsCount})</SectionTitle>
           </SectionHeader>
 
           {participants.length === 0 ? (
@@ -990,7 +990,7 @@ export default function InviteSettings({
                         </RequestAvatar>
                         <div>
                           <Username>{displayName}</Username>
-                          <UserRole>участник</UserRole>
+                          <UserRole></UserRole>
                         </div>
                       </div>
                     </UserInfo>
