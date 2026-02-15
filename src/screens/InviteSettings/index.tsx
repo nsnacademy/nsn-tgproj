@@ -106,100 +106,96 @@ export default function InviteSettings({
      LOAD INITIAL DATA
   ========================= */
 
-  useEffect(() => {
-    async function load() {
-      const user = await getCurrentUser();
-      if (!user) return;
+  const loadAllData = async () => {
+    const user = await getCurrentUser();
+    if (!user) return;
 
-      // 0️⃣ CHALLENGE INFO
-      const { data: challenge } = await supabase
-        .from('challenges')
-        .select('max_participants, entry_type')
-        .eq('id', challengeId)
-        .single();
+    // 0️⃣ CHALLENGE INFO
+    const { data: challenge } = await supabase
+      .from('challenges')
+      .select('max_participants, entry_type')
+      .eq('id', challengeId)
+      .single();
 
-      if (challenge) {
-        setEntryType(challenge.entry_type);
-        if (challenge.max_participants !== null) {
-          setLimitEnabled(true);
-          setMaxParticipants(challenge.max_participants);
-        }
+    if (challenge) {
+      setEntryType(challenge.entry_type);
+      if (challenge.max_participants !== null) {
+        setLimitEnabled(true);
+        setMaxParticipants(challenge.max_participants);
       }
-
-      // 1️⃣ INVITE
-      const { data: existingInvite } = await supabase
-        .from('challenge_invites')
-        .select('*')
-        .eq('challenge_id', challengeId)
-        .limit(1)
-        .maybeSingle();
-
-      let inviteData = existingInvite;
-
-      if (!inviteData) {
-        const { data: code } = await supabase.rpc(
-          'create_challenge_invite',
-          {
-            p_challenge_id: challengeId,
-            p_created_by: user.id,
-            p_max_uses: null,
-          }
-        );
-
-        const { data: created } = await supabase
-          .from('challenge_invites')
-          .select('*')
-          .eq('code', code)
-          .single();
-
-        inviteData = created;
-      }
-
-      setInvite(inviteData);
-
-      // 2️⃣ COUNT PARTICIPANTS
-      const { count } = await supabase
-        .from('participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('challenge_id', challengeId);
-
-      setParticipantsCount(count ?? 0);
-
-      // 3️⃣ LOAD PARTICIPANTS LIST
-      const { data: participantsData } = await supabase
-        .from('participants')
-        .select(`
-          id,
-          user_id,
-          users (
-            telegram_username,
-            first_name,
-            telegram_id
-          )
-        `)
-        .eq('challenge_id', challengeId);
-
-      if (participantsData) {
-        const transformed = participantsData.map((item: any) => ({
-          id: item.id,
-          user_id: item.user_id,
-          users: item.users?.[0] || {
-            telegram_username: null,
-            first_name: null,
-            telegram_id: '',
-          },
-        }));
-        setParticipants(transformed);
-      }
-
-      // 4️⃣ LOAD PENDING REQUESTS
-      await loadRequests();
-
-      setLoading(false);
     }
 
-    load();
-  }, [challengeId]);
+    // 1️⃣ INVITE
+    const { data: existingInvite } = await supabase
+      .from('challenge_invites')
+      .select('*')
+      .eq('challenge_id', challengeId)
+      .limit(1)
+      .maybeSingle();
+
+    let inviteData = existingInvite;
+
+    if (!inviteData) {
+      const { data: code } = await supabase.rpc(
+        'create_challenge_invite',
+        {
+          p_challenge_id: challengeId,
+          p_created_by: user.id,
+          p_max_uses: null,
+        }
+      );
+
+      const { data: created } = await supabase
+        .from('challenge_invites')
+        .select('*')
+        .eq('code', code)
+        .single();
+
+      inviteData = created;
+    }
+
+    setInvite(inviteData);
+
+    // 2️⃣ COUNT PARTICIPANTS
+    const { count } = await supabase
+      .from('participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('challenge_id', challengeId);
+
+    setParticipantsCount(count ?? 0);
+
+    // 3️⃣ LOAD PARTICIPANTS LIST
+    const { data: participantsData } = await supabase
+      .from('participants')
+      .select(`
+        id,
+        user_id,
+        users (
+          telegram_username,
+          first_name,
+          telegram_id
+        )
+      `)
+      .eq('challenge_id', challengeId);
+
+    if (participantsData) {
+      const transformed = participantsData.map((item: any) => ({
+        id: item.id,
+        user_id: item.user_id,
+        users: item.users?.[0] || {
+          telegram_username: null,
+          first_name: null,
+          telegram_id: '',
+        },
+      }));
+      setParticipants(transformed);
+    }
+
+    // 4️⃣ LOAD PENDING REQUESTS
+    await loadRequests();
+
+    setLoading(false);
+  };
 
   /* =========================
      LOAD REQUESTS FUNCTION
@@ -232,6 +228,7 @@ export default function InviteSettings({
     }
 
     console.log('✅ Загружено заявок:', requestsData?.length || 0);
+    console.log('📋 Данные заявок:', requestsData);
 
     if (requestsData) {
       const transformed = requestsData.map((item: any) => ({
@@ -251,6 +248,10 @@ export default function InviteSettings({
     }
   };
 
+  useEffect(() => {
+    loadAllData();
+  }, [challengeId]);
+
   /* =========================
      REAL-TIME SUBSCRIPTION
   ========================= */
@@ -268,14 +269,19 @@ export default function InviteSettings({
           filter: `challenge_id=eq.${challengeId}`,
         },
         async (payload) => {
-          console.log('🆕 Новая заявка:', payload);
+          console.log('🆕 НОВАЯ ЗАЯВКА!', payload);
           
           // Загружаем данные нового пользователя
-          const { data: userData } = await supabase
+          const { data: userData, error } = await supabase
             .from('users')
             .select('telegram_username, first_name, telegram_id')
             .eq('id', payload.new.user_id)
             .single();
+
+          if (error) {
+            console.error('❌ Ошибка загрузки пользователя:', error);
+            return;
+          }
 
           if (userData) {
             const newRequest: Request = {
@@ -286,7 +292,12 @@ export default function InviteSettings({
               users: userData,
             };
 
-            setRequests(prev => [...prev, newRequest]);
+            console.log('➕ Добавляем новую заявку:', newRequest);
+            setRequests(prev => {
+              const exists = prev.some(r => r.id === newRequest.id);
+              if (exists) return prev;
+              return [...prev, newRequest];
+            });
             setPendingRequestsCount(prev => prev + 1);
           }
         }
@@ -296,6 +307,16 @@ export default function InviteSettings({
     return () => {
       subscription.unsubscribe();
     };
+  }, [challengeId]);
+
+  // Добавляем периодическую проверку (для надежности)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('🔄 Периодическая проверка заявок...');
+      loadRequests();
+    }, 5000); // Каждые 5 секунд
+
+    return () => clearInterval(interval);
   }, [challengeId]);
 
   /* =========================
@@ -372,20 +393,17 @@ export default function InviteSettings({
 
     if (!confirmed) return;
 
-    // Удаляем из participants
     await supabase
       .from('participants')
       .delete()
       .eq('id', participantId);
 
-    // Если была заявка — удаляем или помечаем
     await supabase
       .from('entry_requests')
       .delete()
       .eq('challenge_id', challengeId)
       .eq('user_id', userId);
 
-    // Обновляем список
     setParticipants(prev => prev.filter(p => p.id !== participantId));
     setParticipantsCount(prev => prev - 1);
   };
@@ -395,9 +413,6 @@ export default function InviteSettings({
   ========================= */
 
   const handleApprove = async (requestId: string, userId: string) => {
-    console.log('🟢 [REQUESTS] Нажатие Approve:', { requestId, userId });
-
-    // Проверяем лимит
     if (limitEnabled && maxParticipants && participantsCount >= Number(maxParticipants)) {
       alert('Лимит участников достигнут');
       return;
@@ -412,7 +427,7 @@ export default function InviteSettings({
       .eq('id', requestId);
 
     if (updateError) {
-      console.error('❌ [REQUESTS] Ошибка обновления заявки:', updateError);
+      console.error('❌ Ошибка обновления заявки:', updateError);
       setProcessing(null);
       return;
     }
@@ -426,7 +441,7 @@ export default function InviteSettings({
       });
 
     if (insertError) {
-      console.error('❌ [REQUESTS] Ошибка добавления участника:', insertError);
+      console.error('❌ Ошибка добавления участника:', insertError);
       setProcessing(null);
       return;
     }
@@ -460,11 +475,8 @@ export default function InviteSettings({
       setParticipants(prev => [...prev, transformed]);
     }
 
-    // 4️⃣ Обновляем счетчики
     setParticipantsCount(prev => prev + 1);
     setPendingRequestsCount(prev => prev - 1);
-
-    // 5️⃣ Удаляем из списка заявок
     setRequests(prev => prev.filter(r => r.id !== requestId));
     setProcessing(null);
   };
@@ -481,7 +493,7 @@ export default function InviteSettings({
       .eq('id', requestId);
 
     if (error) {
-      console.error('❌ [REQUESTS] Ошибка отклонения заявки:', error);
+      console.error('❌ Ошибка отклонения заявки:', error);
       setProcessing(null);
       return;
     }
@@ -518,25 +530,21 @@ export default function InviteSettings({
 
     if (!confirmed) return;
 
-    // 1️⃣ удалить участников
     await supabase
       .from('participants')
       .delete()
       .eq('challenge_id', challengeId);
 
-    // 2️⃣ удалить инвайты
     await supabase
       .from('challenge_invites')
       .delete()
       .eq('challenge_id', challengeId);
 
-    // 3️⃣ удалить заявки
     await supabase
       .from('entry_requests')
       .delete()
       .eq('challenge_id', challengeId);
 
-    // 4️⃣ удалить сам вызов
     const { error } = await supabase
       .from('challenges')
       .delete()
@@ -558,10 +566,6 @@ export default function InviteSettings({
 
   const limitReached = Boolean(limitEnabled && maxParticipants && participantsCount >= Number(maxParticipants));
   const isProcessing = (requestId: string) => processing === requestId;
-
-  /* =========================
-     RENDER
-  ========================= */
 
   if (loading || !invite) {
     return (
