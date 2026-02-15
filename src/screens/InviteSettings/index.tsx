@@ -320,7 +320,7 @@ export default function InviteSettings({
   };
 
   /* =========================
-     LOAD REQUESTS FUNCTION
+     LOAD REQUESTS FUNCTION - ИСПРАВЛЕНО
   ========================= */
 
   const loadRequests = async () => {
@@ -364,12 +364,14 @@ export default function InviteSettings({
           telegram_id: item.users?.telegram_id
         });
         
+        // ВНИМАНИЕ: users это объект, а не массив!
+        // Не используем [0], берем сам объект
         return {
           id: item.id,
           user_id: item.user_id,
           status: item.status as 'pending' | 'approved' | 'rejected',
           created_at: item.created_at,
-          users: item.users?.[0] || {  // Берем первый элемент массива
+          users: item.users || {  // Просто берем объект users
             username: null,
             telegram_id: '',
           },
@@ -642,6 +644,7 @@ export default function InviteSettings({
       const transformed: Participant = {
         id: rawParticipant.id,
         user_id: rawParticipant.user_id,
+        // Для participants users может быть массивом, поэтому берем [0]
         users: rawParticipant.users?.[0] || {
           username: null,
           telegram_id: '',
