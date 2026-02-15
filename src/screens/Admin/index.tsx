@@ -3,21 +3,38 @@ import { useEffect, useState } from 'react';
 import {
   SafeArea,
   Container,
-  Title,
-  Text,
+  Header,
   HeaderRow,
-  List,
-
-  CardRow,
+  HeaderTitle,
+  HeaderSubtitle,
+  StatsCard,
+  StatsGrid,
+  StatItem,
+  StatValue,
+  StatLabel,
+  Content,
+  SectionTitle,
+  ChallengeGrid,
   ChallengeCard,
-  ChallengeTitle,
-  ChallengeMeta,
-
+  CardHeader,
+  CardTitle,
+  CardMeta,
+  CardStats,
+  CardStat,
+  CardStatValue,
+  CardStatLabel,
+  CardActions,
+  ActionButton,
   PendingBadge,
-  ShareButton,
+  EmptyState,
+  EmptyIcon,
+  EmptyText,
+  LoadingState,
+  ToggleContainer,
+  Toggle,
+  ToggleKnob,
 } from './styles';
 
-import { Toggle, ToggleKnob } from '../Profile/styles';
 import { BottomNav, NavItem } from '../Home/styles';
 
 import {
@@ -45,6 +62,8 @@ type AdminChallenge = {
   start_at: string;
   end_at: string | null;
   pending_count: number;
+  participants_count?: number;
+  status?: 'active' | 'completed';
 };
 
 export default function Admin({ screen, onNavigate }: AdminProps) {
@@ -52,6 +71,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   const [locked, setLocked] = useState(false);
   const [accessChecked, setAccessChecked] = useState(false);
   const [challenges, setChallenges] = useState<AdminChallenge[]>([]);
+  const [loading, setLoading] = useState(true);
 
   /* =========================
      INIT
@@ -60,12 +80,19 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   useEffect(() => {
     async function init() {
       console.log('[ADMIN] init');
+      setLoading(true);
 
       const user = await getCurrentUser();
-      if (!user) return onNavigate('profile');
+      if (!user) {
+        onNavigate('profile');
+        return;
+      }
 
       const isCreator = await checkIsCreator(user.id);
-      if (!isCreator) return onNavigate('profile');
+      if (!isCreator) {
+        onNavigate('profile');
+        return;
+      }
 
       const { data, error } = await supabase.rpc(
         'get_admin_challenges',
@@ -74,12 +101,21 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
       if (error) {
         console.error('[ADMIN] load error', error);
+        setLoading(false);
         return;
       }
 
       console.log('[ADMIN] challenges loaded', data);
-      setChallenges(data ?? []);
+      
+      // Добавляем статус для каждого вызова
+      const challengesWithStatus = (data ?? []).map((ch: AdminChallenge) => ({
+        ...ch,
+        status: new Date(ch.end_at || '') < new Date() ? 'completed' : 'active'
+      }));
+      
+      setChallenges(challengesWithStatus);
       setAccessChecked(true);
+      setLoading(false);
     }
 
     init();
@@ -101,7 +137,65 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
     }, 250);
   };
 
-  if (!accessChecked) return null;
+  /* =========================
+     STATS
+  ========================= */
+
+  const totalChallenges = challenges.length;
+  const activeChallenges = challenges.filter(c => c.status === 'active').length;
+  const totalParticipants = challenges.reduce((acc, c) => acc + (c.participants_count || 0), 0);
+  const totalPending = challenges.reduce((acc, c) => acc + (c.pending_count || 0), 0);
+
+  if (!accessChecked || loading) {
+    return (
+      <SafeArea>
+        <Container>
+          <Header>
+            <HeaderRow>
+              <HeaderTitle>Админ-панель</HeaderTitle>
+              <ToggleContainer>
+                <Toggle $active={adminMode} onClick={onToggleBack}>
+                  <ToggleKnob $active={adminMode} />
+                </Toggle>
+              </ToggleContainer>
+            </HeaderRow>
+          </Header>
+          <Content>
+            <LoadingState>Загрузка данных...</LoadingState>
+          </Content>
+        </Container>
+        <BottomNav>
+          <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 10.5L12 3l9 7.5" />
+              <path d="M5 9.5V21h14V9.5" />
+            </svg>
+          </NavItem>
+          <NavItem $active={screen === 'create'} onClick={() => onNavigate('create')}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          </NavItem>
+          <NavItem $active={false}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="6" y1="18" x2="6" y2="14" />
+              <line x1="12" y1="18" x2="12" y2="10" />
+              <line x1="18" y1="18" x2="18" y2="6" />
+            </svg>
+          </NavItem>
+          <NavItem $active={screen === 'profile'} onClick={() => onNavigate('profile')}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="7" r="4" />
+              <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+            </svg>
+          </NavItem>
+        </BottomNav>
+      </SafeArea>
+    );
+  }
 
   /* =========================
      RENDER
@@ -110,59 +204,130 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   return (
     <SafeArea>
       <Container>
-        <HeaderRow>
-          <Title>Админ-панель</Title>
-          <Toggle $active={adminMode} onClick={onToggleBack}>
-            <ToggleKnob $active={adminMode} />
-          </Toggle>
-        </HeaderRow>
+        <Header>
+          <HeaderRow>
+            <div>
+              <HeaderTitle>Админ-панель</HeaderTitle>
+              <HeaderSubtitle>Управление вашими вызовами</HeaderSubtitle>
+            </div>
+            <ToggleContainer>
+              <Toggle $active={adminMode} onClick={onToggleBack}>
+                <ToggleKnob $active={adminMode} />
+              </Toggle>
+            </ToggleContainer>
+          </HeaderRow>
+        </Header>
 
-        <Text>Мои вызовы</Text>
+        <Content>
+          {/* Статистика */}
+          <StatsCard>
+            <StatsGrid>
+              <StatItem>
+                <StatValue>{totalChallenges}</StatValue>
+                <StatLabel>Всего вызовов</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>{activeChallenges}</StatValue>
+                <StatLabel>Активных</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>{totalParticipants}</StatValue>
+                <StatLabel>Участников</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>{totalPending}</StatValue>
+                <StatLabel>Ожидают</StatLabel>
+              </StatItem>
+            </StatsGrid>
+          </StatsCard>
 
-        <List>
-          {challenges.map(ch => (
-            <CardRow key={ch.id}>
-              {/* КАРТОЧКА — ПЕРЕХОД В УПРАВЛЕНИЕ */}
-              <ChallengeCard
-                onClick={() => {
-                  console.log(
-                    '[ADMIN] card click → admin-challenge',
-                    ch.id
-                  );
-                  onNavigate('admin-challenge', ch.id);
-                }}
-              >
-                <ChallengeTitle>{ch.title}</ChallengeTitle>
-                <ChallengeMeta>
-                  {new Date(ch.start_at).toLocaleDateString()} →
-                  {ch.end_at
-                    ? ` ${new Date(ch.end_at).toLocaleDateString()}`
-                    : ' …'}
-                </ChallengeMeta>
-              </ChallengeCard>
+          {/* Список вызовов */}
+          <SectionTitle>Мои вызовы</SectionTitle>
 
-              {/* 🔗 КНОПКА — ПЕРЕХОД В INVITE SETTINGS */}
-              <ShareButton
-                type="button"
-                onClick={() => {
-                  console.log(
-                    '[ADMIN] open invite settings',
-                    ch.id
-                  );
-                  onNavigate('invite-settings', ch.id);
-                }}
-              >
-                🔗
-              </ShareButton>
+          {challenges.length === 0 ? (
+            <EmptyState>
+              <EmptyIcon>
+                <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="24" cy="24" r="22" />
+                  <path d="M24 12v12l8 4" />
+                </svg>
+              </EmptyIcon>
+              <EmptyText>У вас пока нет созданных вызовов</EmptyText>
+            </EmptyState>
+          ) : (
+            <ChallengeGrid>
+              {challenges.map(ch => (
+                <ChallengeCard key={ch.id}>
+                  <CardHeader>
+                    <div style={{ flex: 1 }}>
+                      <CardTitle>{ch.title}</CardTitle>
+                      <CardMeta>
+                        {new Date(ch.start_at).toLocaleDateString('ru-RU', {
+                          day: 'numeric',
+                          month: 'short'
+                        })}
+                        {' → '}
+                        {ch.end_at
+                          ? new Date(ch.end_at).toLocaleDateString('ru-RU', {
+                              day: 'numeric',
+                              month: 'short'
+                            })
+                          : 'бессрочно'}
+                      </CardMeta>
+                    </div>
+                    
+                    {ch.pending_count > 0 && (
+                      <PendingBadge>{ch.pending_count}</PendingBadge>
+                    )}
+                  </CardHeader>
 
-              {ch.pending_count > 0 && (
-                <PendingBadge>
-                  {ch.pending_count}
-                </PendingBadge>
-              )}
-            </CardRow>
-          ))}
-        </List>
+                  <CardStats>
+                    <CardStat>
+                      <CardStatValue>{ch.participants_count || 0}</CardStatValue>
+                      <CardStatLabel>участников</CardStatLabel>
+                    </CardStat>
+                    <CardStat>
+                      <CardStatValue>
+                        {ch.status === 'active' ? '🟢' : '🔴'}
+                      </CardStatValue>
+                      <CardStatLabel>
+                        {ch.status === 'active' ? 'Активен' : 'Завершён'}
+                      </CardStatLabel>
+                    </CardStat>
+                  </CardStats>
+
+                  <CardActions>
+                    <ActionButton
+                      onClick={() => {
+                        console.log('[ADMIN] card click → admin-challenge', ch.id);
+                        onNavigate('admin-challenge', ch.id);
+                      }}
+                    >
+                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 5l7 7-7 7M5 12h14" />
+                      </svg>
+                      Управление
+                    </ActionButton>
+                    
+                    <ActionButton
+                      variant="secondary"
+                      onClick={() => {
+                        console.log('[ADMIN] open invite settings', ch.id);
+                        onNavigate('invite-settings', ch.id);
+                      }}
+                    >
+                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 12h16M12 4v16" />
+                        <circle cx="12" cy="12" r="10" />
+                      </svg>
+                      Пригласить
+                    </ActionButton>
+                  </CardActions>
+                </ChallengeCard>
+              ))}
+            </ChallengeGrid>
+          )}
+        </Content>
       </Container>
 
       {/* =========================
