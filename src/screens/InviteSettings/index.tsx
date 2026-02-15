@@ -32,6 +32,8 @@ import {
   RequestCard,
   RequestUserInfo,
   RequestUsername,
+  RequestMeta,
+  RequestDate,
   RequestActions,
   ApproveButton,
   RejectButton,
@@ -39,6 +41,8 @@ import {
   EmptyRequests,
   RequestsToggle,
   InfoMessage,
+  RequestAvatar,
+  RequestBadge,
 } from './styles';
 
 import { supabase, getCurrentUser } from '../../shared/lib/supabase';
@@ -74,28 +78,6 @@ type Request = {
     first_name: string | null;
     telegram_id: string;
   };
-};
-
-type RawParticipant = {
-  id: string;
-  user_id: string;
-  users: {
-    telegram_username: string | null;
-    first_name: string | null;
-    telegram_id: string;
-  }[];
-};
-
-type RawRequest = {
-  id: string;
-  user_id: string;
-  status: string;
-  created_at: string;
-  users: {
-    telegram_username: string | null;
-    first_name: string | null;
-    telegram_id: string;
-  }[];
 };
 
 export default function InviteSettings({
@@ -198,10 +180,10 @@ export default function InviteSettings({
         .eq('challenge_id', challengeId);
 
       if (participantsData) {
-        const transformed = (participantsData as RawParticipant[]).map(item => ({
+        const transformed = participantsData.map((item: any) => ({
           id: item.id,
           user_id: item.user_id,
-          users: item.users[0] || {
+          users: item.users?.[0] || {
             telegram_username: null,
             first_name: null,
             telegram_id: '',
@@ -224,24 +206,17 @@ export default function InviteSettings({
   ========================= */
 
   const loadRequests = async () => {
-    // Считаем количество
-    const { count: requestsCount } = await supabase
-      .from('entry_requests')
-      .select('*', { count: 'exact', head: true })
-      .eq('challenge_id', challengeId)
-      .eq('status', 'pending');
-
-    setPendingRequestsCount(requestsCount ?? 0);
-
-    // Загружаем сами заявки
-    const { data: requestsData } = await supabase
+    console.log('🔍 Загрузка заявок для challengeId:', challengeId);
+    
+    // Загружаем заявки с данными пользователей
+    const { data: requestsData, error } = await supabase
       .from('entry_requests')
       .select(`
         id,
         user_id,
         status,
         created_at,
-        users (
+        users!inner (
           telegram_username,
           first_name,
           telegram_id
@@ -251,19 +226,28 @@ export default function InviteSettings({
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
 
+    if (error) {
+      console.error('❌ Ошибка загрузки заявок:', error);
+      return;
+    }
+
+    console.log('✅ Загружено заявок:', requestsData?.length || 0);
+
     if (requestsData) {
-      const transformed = (requestsData as RawRequest[]).map(item => ({
+      const transformed = requestsData.map((item: any) => ({
         id: item.id,
         user_id: item.user_id,
-        status: item.status as 'pending' | 'approved' | 'rejected',
+        status: item.status,
         created_at: item.created_at,
-        users: item.users[0] || {
+        users: item.users || {
           telegram_username: null,
           first_name: null,
           telegram_id: '',
         },
       }));
+      
       setRequests(transformed);
+      setPendingRequestsCount(transformed.length);
     }
   };
 
@@ -467,7 +451,7 @@ export default function InviteSettings({
       const transformed = {
         id: newParticipant.id,
         user_id: newParticipant.user_id,
-        users: newParticipant.users[0] || {
+        users: newParticipant.users?.[0] || {
           telegram_username: null,
           first_name: null,
           telegram_id: '',
@@ -508,9 +492,19 @@ export default function InviteSettings({
   };
 
   const getDisplayName = (user: Request['users']) => {
-    if (user.telegram_username) return `@${user.telegram_username}`;
-    if (user.first_name) return user.first_name;
-    return `ID: ${user.telegram_id}`;
+    if (user?.telegram_username) return `@${user.telegram_username}`;
+    if (user?.first_name) return user.first_name;
+    return `ID: ${user?.telegram_id || 'неизвестно'}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   /* =========================
@@ -557,9 +551,9 @@ export default function InviteSettings({
   };
 
   const getUsername = (user: Participant['users']) => {
-    if (user.telegram_username) return `@${user.telegram_username}`;
-    if (user.first_name) return user.first_name;
-    return `ID: ${user.telegram_id}`;
+    if (user?.telegram_username) return `@${user.telegram_username}`;
+    if (user?.first_name) return user.first_name;
+    return `ID: ${user?.telegram_id || 'неизвестно'}`;
   };
 
   const limitReached = Boolean(limitEnabled && maxParticipants && participantsCount >= Number(maxParticipants));
@@ -707,24 +701,43 @@ export default function InviteSettings({
                     {requests.map(request => {
                       const processingThis = isProcessing(request.id);
                       const disableButtons = processingThis || limitReached;
+                      const displayName = getDisplayName(request.users);
+                      const firstLetter = displayName.charAt(0).toUpperCase();
                       
                       return (
                         <RequestCard key={request.id}>
                           <RequestUserInfo>
-                            <RequestUsername>
-                              {getDisplayName(request.users)}
-                            </RequestUsername>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <RequestAvatar>
+                                {firstLetter}
+                              </RequestAvatar>
+                              <div style={{ flex: 1 }}>
+                                <RequestUsername>
+                                  {displayName}
+                                  {!request.users?.telegram_username && !request.users?.first_name && (
+                                    <RequestBadge>⚡</RequestBadge>
+                                  )}
+                                </RequestUsername>
+                                <RequestMeta>
+                                  <RequestDate>
+                                    {formatDate(request.created_at)}
+                                  </RequestDate>
+                                </RequestMeta>
+                              </div>
+                            </div>
                           </RequestUserInfo>
                           <RequestActions>
                             <ApproveButton
                               onClick={() => handleApprove(request.id, request.user_id)}
                               disabled={disableButtons}
+                              title="Принять заявку"
                             >
-                              {processingThis ? '...' : '✓'}
+                              {processingThis ? '⋯' : '✓'}
                             </ApproveButton>
                             <RejectButton
                               onClick={() => handleReject(request.id)}
                               disabled={processingThis}
+                              title="Отклонить заявку"
                             >
                               ✕
                             </RejectButton>
@@ -755,19 +768,31 @@ export default function InviteSettings({
             </EmptyUsers>
           ) : (
             <UserList>
-              {participants.map(p => (
-                <UserCard key={p.id}>
-                  <UserInfo>
-                    <Username>{getUsername(p.users)}</Username>
-                    <UserRole>участник</UserRole>
-                  </UserInfo>
-                  <RemoveButton onClick={() => removeParticipant(p.id, p.user_id)}>
-                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M1 1l12 12M13 1L1 13" />
-                    </svg>
-                  </RemoveButton>
-                </UserCard>
-              ))}
+              {participants.map(p => {
+                const displayName = getUsername(p.users);
+                const firstLetter = displayName.charAt(0).toUpperCase();
+                
+                return (
+                  <UserCard key={p.id}>
+                    <UserInfo>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <RequestAvatar style={{ background: 'rgba(255,255,255,0.1)' }}>
+                          {firstLetter}
+                        </RequestAvatar>
+                        <div>
+                          <Username>{displayName}</Username>
+                          <UserRole>участник</UserRole>
+                        </div>
+                      </div>
+                    </UserInfo>
+                    <RemoveButton onClick={() => removeParticipant(p.id, p.user_id)} title="Удалить участника">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 1l12 12M13 1L1 13" />
+                      </svg>
+                    </RemoveButton>
+                  </UserCard>
+                );
+              })}
             </UserList>
           )}
         </Section>

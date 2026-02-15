@@ -454,3 +454,39 @@ export const InfoMessage = styled.div`
   opacity: 0.6;
   font-size: 14px;
 `;
+
+// Добавить в конец файла styles.ts:
+
+/* =========================
+   REQUEST STYLES (ДОБАВИТЬ)
+========================= */
+
+export const RequestAvatar = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+`;
+
+export const RequestMeta = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+`;
+
+export const RequestBadge = styled.span`
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffd700;
+  margin-left: 8px;
+`;
