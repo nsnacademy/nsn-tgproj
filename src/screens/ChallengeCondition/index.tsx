@@ -21,6 +21,21 @@ import {
   RequestButton,
   RequestHint,
   Footer,
+  InfoGrid,
+  InfoItem,
+  InfoLabel,
+  InfoValue,
+  Divider,
+
+  CreatorBadge,
+  MetaRow,
+  MetaIcon,
+  MetaText,
+  WarningBox,
+  PrizePreview,
+  PrizeItem,
+  PrizePlace,
+  PrizeTitle,
 } from './styles';
 
 type Props = {
@@ -35,18 +50,30 @@ type ChallengeData = {
   contact_info: string;
   max_participants: number | null;
   creator_username: string;
+  duration_days: number;
+  created_at: string;
+  has_rating?: boolean;
+};
+
+type Prize = {
+  place: number;
+  title: string;
+  description: string | null;
 };
 
 export default function ChallengeCondition({ challengeId, onBack }: Props) {
   const [challenge, setChallenge] = useState<ChallengeData | null>(null);
+  const [prizes, setPrizes] = useState<Prize[]>([]);
   const [loading, setLoading] = useState(true);
   const [requestSent, setRequestSent] = useState(false);
+  const [participantsCount, setParticipantsCount] = useState(0);
 
   useEffect(() => {
     loadChallenge();
   }, [challengeId]);
 
   async function loadChallenge() {
+    // Загружаем данные вызова
     const { data, error } = await supabase
       .from('challenges_with_creator')
       .select(`
@@ -55,7 +82,10 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
         entry_condition,
         contact_info,
         max_participants,
-        creator_username
+        creator_username,
+        duration_days,
+        created_at,
+        has_rating
       `)
       .eq('id', challengeId)
       .single();
@@ -67,6 +97,26 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
     }
 
     setChallenge(data);
+
+    // Загружаем количество участников
+    const { count } = await supabase
+      .from('participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('challenge_id', challengeId);
+
+    setParticipantsCount(count ?? 0);
+
+    // Загружаем награды, если есть рейтинг
+    if (data.has_rating) {
+      const { data: prizesData } = await supabase
+        .from('challenge_prizes')
+        .select('place, title, description')
+        .eq('challenge_id', challengeId)
+        .order('place', { ascending: true });
+
+      setPrizes(prizesData || []);
+    }
+
     setLoading(false);
   }
 
@@ -75,14 +125,12 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
 
     setRequestSent(true);
 
-    // 1️⃣ получаем Telegram user
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (!tgUser) {
       setRequestSent(false);
       return;
     }
 
-    // 2️⃣ находим user.id в нашей таблице users
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
@@ -95,7 +143,6 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
       return;
     }
 
-    // 3️⃣ создаём заявку
     const { error: insertError } = await supabase
       .from('entry_requests')
       .insert({
@@ -105,15 +152,29 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
       });
 
     if (insertError) {
-      // если заявка уже есть — это ОК
       if (insertError.code !== '23505') {
         console.error('[CONDITION REQUEST] insert error', insertError);
         setRequestSent(false);
         return;
       }
     }
+  };
 
-    // 4️⃣ успех — оставляем requestSent = true
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const getPlaceEmoji = (place: number) => {
+    switch (place) {
+      case 1: return '🥇';
+      case 2: return '🥈';
+      case 3: return '🥉';
+      default: return `#${place}`;
+    }
   };
 
   if (loading) {
@@ -150,6 +211,10 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
     );
   }
 
+  const limitReached = challenge.max_participants 
+    ? participantsCount >= challenge.max_participants 
+    : false;
+
   return (
     <SafeArea>
       <Header>
@@ -167,10 +232,60 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
         <Card>
           <CardTitle>{challenge.title}</CardTitle>
           
+          <CreatorBadge>
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="8" cy="8" r="6" />
+              <path d="M8 4v4l2 2" />
+            </svg>
+            Автор: @{challenge.creator_username}
+          </CreatorBadge>
+
           <Field>
             <Label>Описание</Label>
             <Value>{challenge.description}</Value>
           </Field>
+
+          <Divider />
+
+          {/* Основная информация в сетке */}
+          <InfoGrid>
+            <InfoItem>
+              <InfoLabel>📅 Длительность</InfoLabel>
+              <InfoValue>{challenge.duration_days} дней</InfoValue>
+            </InfoItem>
+
+            <InfoItem>
+              <InfoLabel>👥 Участники</InfoLabel>
+              <InfoValue>
+                {participantsCount}
+                {challenge.max_participants && ` / ${challenge.max_participants}`}
+              </InfoValue>
+            </InfoItem>
+
+            <InfoItem>
+              <InfoLabel>📆 Создан</InfoLabel>
+              <InfoValue>{formatDate(challenge.created_at)}</InfoValue>
+            </InfoItem>
+          </InfoGrid>
+
+          {challenge.has_rating && prizes.length > 0 && (
+            <>
+              <MetaRow>
+                <MetaIcon>🏆</MetaIcon>
+                <MetaText>Награды за места:</MetaText>
+              </MetaRow>
+              <PrizePreview>
+                {prizes.map(prize => (
+                  <PrizeItem key={prize.place}>
+                    <PrizePlace>{getPlaceEmoji(prize.place)}</PrizePlace>
+                    <PrizeTitle>{prize.title}</PrizeTitle>
+                  </PrizeItem>
+                ))}
+              </PrizePreview>
+            </>
+          )}
+
+          <Divider />
 
           <ConditionBox>
             <Label>Условие для вступления</Label>
@@ -188,6 +303,12 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
             <Value>@{challenge.contact_info.replace('@', '')}</Value>
           </ContactInfo>
 
+          {limitReached && (
+            <WarningBox>
+              ⚠️ Достигнут лимит участников
+            </WarningBox>
+          )}
+
           <RuleBox>
             <RuleIcon>🔒</RuleIcon>
             <RuleText>
@@ -200,13 +321,20 @@ export default function ChallengeCondition({ challengeId, onBack }: Props) {
       <Footer>
         <RequestButton 
           onClick={handleSendRequest}
-          disabled={requestSent}
+          disabled={requestSent || limitReached}
           $isSent={requestSent}
+          $disabled={limitReached}
         >
-          {requestSent ? '✓ Запрос отправлен' : '🔑 Отправить запрос на вступление'}
+          {limitReached 
+            ? '❌ Мест нет' 
+            : requestSent 
+              ? '✓ Запрос отправлен' 
+              : '🔑 Отправить запрос на вступление'}
         </RequestButton>
         <RequestHint>
-          Автор проверит выполнение условия и подтвердит ваше участие
+          {limitReached 
+            ? 'Лимит участников исчерпан' 
+            : 'Автор проверит выполнение условия и подтвердит ваше участие'}
         </RequestHint>
       </Footer>
     </SafeArea>

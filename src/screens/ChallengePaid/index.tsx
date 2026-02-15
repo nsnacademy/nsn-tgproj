@@ -20,6 +20,16 @@ import {
   RequestButton,
   RequestHint,
   Footer,
+  InfoGrid,
+  InfoItem,
+  InfoLabel,
+  InfoValue,
+  Divider,
+  CreatorBadge,
+  MetaRow,
+  MetaIcon,
+  MetaText,
+  WarningBox,
 } from './styles';
 
 type Props = {
@@ -36,18 +46,25 @@ type ChallengeData = {
   payment_method: string;
   payment_description: string | null;
   creator_username: string;
+  duration_days: number;
+  participants_count?: number;
+  max_participants?: number | null;
+  created_at: string;
+  has_rating?: boolean;
 };
 
 export default function ChallengePaid({ challengeId, onBack }: Props) {
   const [challenge, setChallenge] = useState<ChallengeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [requestSent, setRequestSent] = useState(false);
+  const [participantsCount, setParticipantsCount] = useState(0);
 
   useEffect(() => {
     loadChallenge();
   }, [challengeId]);
 
   async function loadChallenge() {
+    // Загружаем данные вызова
     const { data, error } = await supabase
       .from('challenges_with_creator')
       .select(`
@@ -58,7 +75,11 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
         contact_info,
         payment_method,
         payment_description,
-        creator_username
+        creator_username,
+        duration_days,
+        max_participants,
+        created_at,
+        has_rating
       `)
       .eq('id', challengeId)
       .single();
@@ -70,6 +91,14 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
     }
 
     setChallenge(data);
+
+    // Загружаем количество участников
+    const { count } = await supabase
+      .from('participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('challenge_id', challengeId);
+
+    setParticipantsCount(count ?? 0);
     setLoading(false);
   }
 
@@ -78,14 +107,12 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
 
     setRequestSent(true);
 
-    // 1️⃣ получаем Telegram user
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (!tgUser) {
       setRequestSent(false);
       return;
     }
 
-    // 2️⃣ находим user.id в нашей таблице users
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
@@ -98,7 +125,6 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
       return;
     }
 
-    // 3️⃣ создаём заявку
     const { error: insertError } = await supabase
       .from('entry_requests')
       .insert({
@@ -108,15 +134,12 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
       });
 
     if (insertError) {
-      // если заявка уже есть — это ОК
       if (insertError.code !== '23505') {
         console.error('[PAID REQUEST] insert error', insertError);
         setRequestSent(false);
         return;
       }
     }
-
-    // 4️⃣ успех — оставляем requestSent = true
   };
 
   const getPaymentMethodLabel = (method: string) => {
@@ -126,6 +149,14 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
       case 'link': return 'Ссылка на оплату';
       default: return method;
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
   };
 
   if (loading) {
@@ -162,6 +193,10 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
     );
   }
 
+  const limitReached = challenge.max_participants 
+    ? participantsCount >= challenge.max_participants 
+    : false;
+
   return (
     <SafeArea>
       <Header>
@@ -171,7 +206,7 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </BackButton>
-          <Title>Условия входа</Title>
+          <Title>Платный вызов</Title>
         </HeaderRow>
       </Header>
 
@@ -179,10 +214,57 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
         <Card>
           <CardTitle>{challenge.title}</CardTitle>
           
+          <CreatorBadge>
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="8" cy="8" r="6" />
+              <path d="M8 4v4l2 2" />
+            </svg>
+            Автор: @{challenge.creator_username}
+          </CreatorBadge>
+
           <Field>
             <Label>Описание</Label>
             <Value>{challenge.description}</Value>
           </Field>
+
+          <Divider />
+
+          {/* Основная информация в сетке */}
+          <InfoGrid>
+            <InfoItem>
+              <InfoLabel>💰 Стоимость</InfoLabel>
+              <InfoValue>
+                {challenge.entry_price} {challenge.entry_currency.toUpperCase()}
+              </InfoValue>
+            </InfoItem>
+
+            <InfoItem>
+              <InfoLabel>📅 Длительность</InfoLabel>
+              <InfoValue>{challenge.duration_days} дней</InfoValue>
+            </InfoItem>
+
+            <InfoItem>
+              <InfoLabel>👥 Участники</InfoLabel>
+              <InfoValue>
+                {participantsCount}
+                {challenge.max_participants && ` / ${challenge.max_participants}`}
+              </InfoValue>
+            </InfoItem>
+
+            <InfoItem>
+              <InfoLabel>📆 Создан</InfoLabel>
+              <InfoValue>{formatDate(challenge.created_at)}</InfoValue>
+            </InfoItem>
+          </InfoGrid>
+
+          {challenge.has_rating && (
+            <MetaRow>
+              <MetaIcon>🏆</MetaIcon>
+              <MetaText>Есть рейтинг и награды</MetaText>
+            </MetaRow>
+          )}
+
+          <Divider />
 
           <PriceTag>
             {challenge.entry_price} {challenge.entry_currency.toUpperCase()}
@@ -195,7 +277,7 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
 
           {challenge.payment_description && (
             <Field>
-              <Label>Комментарий</Label>
+              <Label>Комментарий по оплате</Label>
               <Value>{challenge.payment_description}</Value>
             </Field>
           )}
@@ -204,6 +286,12 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
             <Label>Контакт для связи</Label>
             <Value>@{challenge.contact_info.replace('@', '')}</Value>
           </ContactInfo>
+
+          {limitReached && (
+            <WarningBox>
+              ⚠️ Достигнут лимит участников
+            </WarningBox>
+          )}
 
           <RuleBox>
             <RuleIcon>📋</RuleIcon>
@@ -217,13 +305,20 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
       <Footer>
         <RequestButton 
           onClick={handleSendRequest}
-          disabled={requestSent}
+          disabled={requestSent || limitReached}
           $isSent={requestSent}
+          $disabled={limitReached}
         >
-          {requestSent ? '✓ Запрос отправлен' : '📨 Отправить запрос на вступление'}
+          {limitReached 
+            ? '❌ Мест нет' 
+            : requestSent 
+              ? '✓ Запрос отправлен' 
+              : '📨 Отправить запрос на вступление'}
         </RequestButton>
         <RequestHint>
-          Автор проверит оплату и подтвердит ваше участие
+          {limitReached 
+            ? 'Лимит участников исчерпан' 
+            : 'Автор проверит оплату и подтвердит ваше участие'}
         </RequestHint>
       </Footer>
     </SafeArea>

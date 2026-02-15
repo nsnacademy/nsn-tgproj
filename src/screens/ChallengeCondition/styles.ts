@@ -197,44 +197,141 @@ export const Footer = styled.div`
   z-index: 900;
 `;
 
-export const RequestButton = styled.button<{ $isSent?: boolean }>`
-  width: 100%;
-  height: 48px;
-  border-radius: 24px;
-  border: none;
-  background: ${({ $isSent }) => $isSent ? 'rgba(76, 175, 80, 0.1)' : 'transparent'};
-  color: ${({ $isSent }) => $isSent ? '#4CAF50' : '#9B59B6'};
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  border: 1px solid ${({ $isSent }) => $isSent ? 'rgba(76, 175, 80, 0.3)' : '#9B59B6'};
 
-  &:hover:not(:disabled) {
-    transform: translateY(-1px);
-    background: ${({ $isSent }) => $isSent ? 'rgba(76, 175, 80, 0.15)' : 'rgba(155, 89, 182, 0.1)'};
-    border-color: ${({ $isSent }) => $isSent ? 'rgba(76, 175, 80, 0.4)' : '#AE6DC9'};
-    color: ${({ $isSent }) => $isSent ? '#4CAF50' : '#AE6DC9'};
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-`;
 
 export const RequestHint = styled.div`
   font-size: 12px;
   color: rgba(255, 255, 255, 0.3);
   text-align: center;
   line-height: 1.4;
+`;
+
+// Добавьте эти стили в файл styles.ts для экранов ChallengePaid и ChallengeCondition
+
+export const InfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 16px 0;
+`;
+
+export const InfoItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+export const InfoLabel = styled.span`
+  font-size: 11px;
+  opacity: 0.5;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+export const InfoValue = styled.span`
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.95;
+`;
+
+export const Divider = styled.div`
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 16px 0;
+`;
+
+export const CreatorBadge = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  opacity: 0.7;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  width: fit-content;
+`;
+
+export const MetaRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+`;
+
+export const MetaIcon = styled.span`
+  font-size: 18px;
+`;
+
+export const MetaText = styled.span`
+  font-size: 14px;
+  opacity: 0.8;
+`;
+
+export const WarningBox = styled.div`
+  padding: 12px 16px;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 12px;
+  color: #FFC107;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+export const PrizePreview = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+`;
+
+export const PrizeItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+`;
+
+export const PrizePlace = styled.span`
+  font-size: 16px;
+  min-width: 40px;
+`;
+
+export const PrizeTitle = styled.span`
+  font-size: 14px;
+  opacity: 0.9;
+`;
+
+// Обновите RequestButton
+export const RequestButton = styled.button<{ $isSent?: boolean; $disabled?: boolean }>`
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: none;
+  font-weight: 600;
+  font-size: 15px;
+  background: ${({ $isSent, $disabled }) => 
+    $disabled ? 'rgba(255, 255, 255, 0.1)' :
+    $isSent ? 'rgba(76, 175, 80, 0.2)' : '#fff'};
+  color: ${({ $isSent, $disabled }) => 
+    $disabled ? 'rgba(255, 255, 255, 0.5)' :
+    $isSent ? '#4CAF50' : '#000'};
+  border: ${({ $isSent, $disabled }) => 
+    $disabled ? '1px solid rgba(255, 255, 255, 0.1)' :
+    $isSent ? '1px solid rgba(76, 175, 80, 0.3)' : 'none'};
+  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: ${({ $isSent }) => 
+      $isSent ? 'rgba(76, 175, 80, 0.25)' : 'rgba(255, 255, 255, 0.95)'};
+  }
 `;
