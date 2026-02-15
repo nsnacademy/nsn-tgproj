@@ -98,7 +98,7 @@ export const Input = styled.input`
    BUTTONS
 ========================= */
 
-export const PrimaryButton = styled.button`
+export const PrimaryButton = styled.button<{ disabled?: boolean }>`
   width: 100%;
   padding: 14px;
   border-radius: 14px;
@@ -282,4 +282,175 @@ export const DangerButton = styled(PrimaryButton)`
   &:hover:not(:disabled) {
     background: #ff5a4a;
   }
+`;
+
+/* =========================
+   REQUESTS SECTION
+========================= */
+
+export const RequestsSection = styled(Section)`
+  border-left: 3px solid rgba(102, 126, 234, 0.5);
+`;
+
+export const RequestsHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+`;
+
+export const RequestsTitle = styled(SectionTitle)`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+`;
+
+export const RequestCount = styled.span`
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-weight: 600;
+`;
+
+export const RequestList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+export const RequestCard = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+export const RequestUserInfo = styled.div`
+  flex: 1;
+`;
+
+export const RequestUsername = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0.9;
+`;
+
+export const RequestDate = styled.div`
+  font-size: 11px;
+  opacity: 0.5;
+  margin-top: 2px;
+`;
+
+export const RequestActions = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+export const ApproveButton = styled.button<{ disabled?: boolean }>`
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+`;
+
+export const RejectButton = styled.button<{ disabled?: boolean }>`
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 68, 68, 0.2);
+    border-color: rgba(255, 68, 68, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+`;
+
+export const LimitReached = styled.div`
+  padding: 12px 16px;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 12px;
+  color: #FFC107;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+export const EmptyRequests = styled.div`
+  text-align: center;
+  padding: 32px 20px;
+  opacity: 0.5;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+export const RequestsToggle = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+`;
+
+export const InfoMessage = styled.div`
+  text-align: center;
+  padding: 40px 20px;
+  opacity: 0.6;
+  font-size: 14px;
 `;

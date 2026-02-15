@@ -24,6 +24,21 @@ import {
   UserRole,
   RemoveButton,
   EmptyUsers,
+  RequestsSection,
+  RequestsHeader,
+  RequestsTitle,
+  RequestCount,
+  RequestList,
+  RequestCard,
+  RequestUserInfo,
+  RequestUsername,
+  RequestActions,
+  ApproveButton,
+  RejectButton,
+  LimitReached,
+  EmptyRequests,
+  RequestsToggle,
+  InfoMessage,
 } from './styles';
 
 import { supabase, getCurrentUser } from '../../shared/lib/supabase';
@@ -31,7 +46,7 @@ import { supabase, getCurrentUser } from '../../shared/lib/supabase';
 type InviteSettingsProps = {
   challengeId: string;
   onBack: () => void;
-  onNavigateToRequests?: () => void; // для перехода к заявкам
+  onNavigateToRequests?: () => void;
 };
 
 type Invite = {
@@ -47,13 +62,36 @@ type Participant = {
     telegram_username: string | null;
     first_name: string | null;
     telegram_id: string;
-  }; // 👈 объект, не массив
+  };
 };
 
-// 👇 Вспомогательный тип для сырых данных из Supabase
+type Request = {
+  id: string;
+  user_id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  users: {
+    telegram_username: string | null;
+    first_name: string | null;
+    telegram_id: string;
+  };
+};
+
 type RawParticipant = {
   id: string;
   user_id: string;
+  users: {
+    telegram_username: string | null;
+    first_name: string | null;
+    telegram_id: string;
+  }[];
+};
+
+type RawRequest = {
+  id: string;
+  user_id: string;
+  status: string;
+  created_at: string;
   users: {
     telegram_username: string | null;
     first_name: string | null;
@@ -68,6 +106,7 @@ export default function InviteSettings({
 }: InviteSettingsProps) {
   const [invite, setInvite] = useState<Invite | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showRequests, setShowRequests] = useState(true);
 
   // 🔥 ЛИМИТ ВЫЗОВА
   const [limitEnabled, setLimitEnabled] = useState(false);
@@ -77,7 +116,11 @@ export default function InviteSettings({
   // 👥 УЧАСТНИКИ
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [entryType, setEntryType] = useState<'free' | 'paid' | 'condition'>('free');
+
+  // 📋 ЗАЯВКИ
+  const [requests, setRequests] = useState<Request[]>([]);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [processing, setProcessing] = useState<string | null>(null);
 
   /* =========================
      LOAD
@@ -156,12 +199,11 @@ export default function InviteSettings({
         `)
         .eq('challenge_id', challengeId);
 
-      // 👇 ПРАВИЛЬНАЯ ТРАНСФОРМАЦИЯ
       if (participantsData) {
         const transformed = (participantsData as RawParticipant[]).map(item => ({
           id: item.id,
           user_id: item.user_id,
-          users: item.users[0] || {  // берем первый элемент массива
+          users: item.users[0] || {
             telegram_username: null,
             first_name: null,
             telegram_id: '',
@@ -170,8 +212,9 @@ export default function InviteSettings({
         setParticipants(transformed);
       }
 
-      // 4️⃣ COUNT PENDING REQUESTS (для paid/condition)
+      // 4️⃣ LOAD PENDING REQUESTS (для paid/condition)
       if (challenge?.entry_type !== 'free') {
+        // Считаем количество
         const { count: requestsCount } = await supabase
           .from('entry_requests')
           .select('*', { count: 'exact', head: true })
@@ -179,6 +222,39 @@ export default function InviteSettings({
           .eq('status', 'pending');
 
         setPendingRequestsCount(requestsCount ?? 0);
+
+        // Загружаем сами заявки
+        const { data: requestsData } = await supabase
+          .from('entry_requests')
+          .select(`
+            id,
+            user_id,
+            status,
+            created_at,
+            users (
+              telegram_username,
+              first_name,
+              telegram_id
+            )
+          `)
+          .eq('challenge_id', challengeId)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: true });
+
+        if (requestsData) {
+          const transformed = (requestsData as RawRequest[]).map(item => ({
+            id: item.id,
+            user_id: item.user_id,
+            status: item.status as 'pending' | 'approved' | 'rejected',
+            created_at: item.created_at,
+            users: item.users[0] || {
+              telegram_username: null,
+              first_name: null,
+              telegram_id: '',
+            },
+          }));
+          setRequests(transformed);
+        }
       }
 
       setLoading(false);
@@ -209,6 +285,7 @@ export default function InviteSettings({
 
     const link = `https://t.me/Projects365_bot?startapp=invite_${invite.code}`;
     await navigator.clipboard.writeText(link);
+    alert('Ссылка скопирована!');
   };
 
   /* =========================
@@ -279,6 +356,113 @@ export default function InviteSettings({
   };
 
   /* =========================
+     REQUEST MANAGEMENT
+  ========================= */
+
+  const handleApprove = async (requestId: string, userId: string) => {
+    console.log('🟢 [REQUESTS] Нажатие Approve:', { requestId, userId });
+
+    // Проверяем лимит
+    if (limitEnabled && maxParticipants && participantsCount >= Number(maxParticipants)) {
+      alert('Лимит участников достигнут');
+      return;
+    }
+
+    setProcessing(requestId);
+
+    // 1️⃣ Обновляем статус заявки
+    const { error: updateError } = await supabase
+      .from('entry_requests')
+      .update({ status: 'approved' })
+      .eq('id', requestId);
+
+    if (updateError) {
+      console.error('❌ [REQUESTS] Ошибка обновления заявки:', updateError);
+      setProcessing(null);
+      return;
+    }
+
+    // 2️⃣ Добавляем пользователя в участники
+    const { error: insertError } = await supabase
+      .from('participants')
+      .insert({
+        challenge_id: challengeId,
+        user_id: userId,
+      });
+
+    if (insertError) {
+      console.error('❌ [REQUESTS] Ошибка добавления участника:', insertError);
+      setProcessing(null);
+      return;
+    }
+
+    // 3️⃣ Загружаем данные нового участника
+    const { data: newParticipant } = await supabase
+      .from('participants')
+      .select(`
+        id,
+        user_id,
+        users (
+          telegram_username,
+          first_name,
+          telegram_id
+        )
+      `)
+      .eq('challenge_id', challengeId)
+      .eq('user_id', userId)
+      .single();
+
+    if (newParticipant) {
+      const transformed = {
+        id: newParticipant.id,
+        user_id: newParticipant.user_id,
+        users: newParticipant.users[0] || {
+          telegram_username: null,
+          first_name: null,
+          telegram_id: '',
+        },
+      };
+      setParticipants(prev => [...prev, transformed]);
+    }
+
+    // 4️⃣ Обновляем счетчики
+    setParticipantsCount(prev => prev + 1);
+    setPendingRequestsCount(prev => prev - 1);
+
+    // 5️⃣ Удаляем из списка заявок
+    setRequests(prev => prev.filter(r => r.id !== requestId));
+    setProcessing(null);
+  };
+
+  const handleReject = async (requestId: string) => {
+    const confirmed = window.confirm('Отклонить заявку?');
+    if (!confirmed) return;
+
+    setProcessing(requestId);
+
+    const { error } = await supabase
+      .from('entry_requests')
+      .update({ status: 'rejected' })
+      .eq('id', requestId);
+
+    if (error) {
+      console.error('❌ [REQUESTS] Ошибка отклонения заявки:', error);
+      setProcessing(null);
+      return;
+    }
+
+    setPendingRequestsCount(prev => prev - 1);
+    setRequests(prev => prev.filter(r => r.id !== requestId));
+    setProcessing(null);
+  };
+
+  const getDisplayName = (user: Request['users']) => {
+    if (user.telegram_username) return `@${user.telegram_username}`;
+    if (user.first_name) return user.first_name;
+    return `ID: ${user.telegram_id}`;
+  };
+
+  /* =========================
      DELETE CHALLENGE
   ========================= */
 
@@ -301,7 +485,13 @@ export default function InviteSettings({
       .delete()
       .eq('challenge_id', challengeId);
 
-    // 3️⃣ удалить сам вызов
+    // 3️⃣ удалить заявки
+    await supabase
+      .from('entry_requests')
+      .delete()
+      .eq('challenge_id', challengeId);
+
+    // 4️⃣ удалить сам вызов
     const { error } = await supabase
       .from('challenges')
       .delete()
@@ -321,6 +511,9 @@ export default function InviteSettings({
     return `ID: ${user.telegram_id}`;
   };
 
+  const limitReached = Boolean(limitEnabled && maxParticipants && participantsCount >= Number(maxParticipants));
+  const isProcessing = (requestId: string) => processing === requestId;
+
   /* =========================
      RENDER
   ========================= */
@@ -329,8 +522,16 @@ export default function InviteSettings({
     return (
       <SafeArea>
         <Container>
+          <HeaderRow>
+            <BackButton onClick={onBack}>
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </BackButton>
+            <Title>Управление вызовом</Title>
+          </HeaderRow>
           <Section>
-            <Label>Загрузка…</Label>
+            <InfoMessage>Загрузка...</InfoMessage>
           </Section>
         </Container>
       </SafeArea>
@@ -341,7 +542,11 @@ export default function InviteSettings({
     <SafeArea>
       <Container>
         <HeaderRow>
-          <BackButton onClick={onBack}>← Назад</BackButton>
+          <BackButton onClick={onBack}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </BackButton>
           <Title>Управление вызовом</Title>
         </HeaderRow>
 
@@ -367,6 +572,10 @@ export default function InviteSettings({
             disabled={!invite.is_active}
             onClick={copyLink}
           >
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '8px' }}>
+              <rect x="3" y="3" width="14" height="14" rx="2" />
+              <path d="M8 12h8M12 8v8" />
+            </svg>
             Скопировать ссылку
           </PrimaryButton>
         </Section>
@@ -409,24 +618,97 @@ export default function InviteSettings({
           </Row>
         </Section>
 
+        {/* 📋 ЗАЯВКИ (только для paid/condition) */}
+        {entryType !== 'free' && (
+          <RequestsSection>
+            <RequestsHeader>
+              <RequestsTitle>
+                📋 Заявки на вступление
+                {pendingRequestsCount > 0 && (
+                  <RequestCount>{pendingRequestsCount}</RequestCount>
+                )}
+              </RequestsTitle>
+              <RequestsToggle onClick={() => setShowRequests(!showRequests)}>
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d={showRequests ? "M18 15l-6-6-6 6" : "M6 9l6 6 6-6"} />
+                </svg>
+              </RequestsToggle>
+            </RequestsHeader>
+
+            {showRequests && (
+              <>
+                {limitReached && (
+                  <LimitReached>
+                    ⚠️ Лимит участников достигнут ({participantsCount}/{maxParticipants})
+                  </LimitReached>
+                )}
+
+                {requests.length === 0 ? (
+                  <EmptyRequests>
+                    <svg width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: '12px', opacity: 0.3 }}>
+                      <circle cx="20" cy="20" r="18" />
+                      <path d="M12 16l8 8 8-8" />
+                    </svg>
+                    Нет активных заявок
+                  </EmptyRequests>
+                ) : (
+                  <RequestList>
+                    {requests.map(request => {
+                      const processingThis = isProcessing(request.id);
+                      const disableButtons = processingThis || limitReached;
+                      
+                      return (
+                        <RequestCard key={request.id}>
+                          <RequestUserInfo>
+                            <RequestUsername>
+                              {getDisplayName(request.users)}
+                            </RequestUsername>
+                          </RequestUserInfo>
+                          <RequestActions>
+                            <ApproveButton
+                              onClick={() => handleApprove(request.id, request.user_id)}
+                              disabled={disableButtons}
+                            >
+                              {processingThis ? '...' : '✓'}
+                            </ApproveButton>
+                            <RejectButton
+                              onClick={() => handleReject(request.id)}
+                              disabled={processingThis}
+                            >
+                              ✕
+                            </RejectButton>
+                          </RequestActions>
+                        </RequestCard>
+                      );
+                    })}
+                  </RequestList>
+                )}
+
+                {onNavigateToRequests && (
+                  <PrimaryButton
+                    onClick={onNavigateToRequests}
+                    style={{ marginTop: '12px', background: 'rgba(255,255,255,0.1)' }}
+                  >
+                    Все заявки
+                  </PrimaryButton>
+                )}
+              </>
+            )}
+          </RequestsSection>
+        )}
+
         {/* 👥 УЧАСТНИКИ */}
         <Section>
           <SectionHeader>
             <SectionTitle>👥 Участники ({participantsCount})</SectionTitle>
-            
-            {/* Кнопка заявок (только для paid/condition) */}
-            {entryType !== 'free' && onNavigateToRequests && (
-              <PrimaryButton 
-                onClick={onNavigateToRequests}
-                style={{ width: 'auto', padding: '8px 16px' }}
-              >
-                Заявки {pendingRequestsCount > 0 && `(${pendingRequestsCount})`}
-              </PrimaryButton>
-            )}
           </SectionHeader>
 
           {participants.length === 0 ? (
             <EmptyUsers>
+              <svg width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: '12px', opacity: 0.3 }}>
+                <circle cx="20" cy="10" r="4" />
+                <path d="M5 26c1.5-4 5-6 15-6s13.5 2 15 6" />
+              </svg>
               Пока нет участников
             </EmptyUsers>
           ) : (
@@ -438,7 +720,9 @@ export default function InviteSettings({
                     <UserRole>участник</UserRole>
                   </UserInfo>
                   <RemoveButton onClick={() => removeParticipant(p.id, p.user_id)}>
-                    ✕
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 1l12 12M13 1L1 13" />
+                    </svg>
                   </RemoveButton>
                 </UserCard>
               ))}
@@ -453,6 +737,10 @@ export default function InviteSettings({
           </SectionHeader>
           
           <DangerButton onClick={deleteChallenge}>
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '8px' }}>
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
             Удалить вызов
           </DangerButton>
         </Section>
