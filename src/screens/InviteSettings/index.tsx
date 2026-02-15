@@ -62,7 +62,7 @@ type Participant = {
   id: string;
   user_id: string;
   users: {
-    telegram_username: string | null;
+    username: string | null;
     first_name: string | null;
     telegram_id: string;
   };
@@ -74,7 +74,7 @@ type Request = {
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   users: {
-    telegram_username: string | null;
+    username: string | null;
     first_name: string | null;
     telegram_id: string;
   };
@@ -216,7 +216,7 @@ export default function InviteSettings({
       setParticipantsCount(count ?? 0);
     }
 
-    // 3️⃣ LOAD PARTICIPANTS LIST
+    // 3️⃣ LOAD PARTICIPANTS LIST - ИСПРАВЛЕНО
     console.log('📋 [LOAD] Загрузка списка участников...');
     const { data: participantsData, error: participantsError } = await supabase
       .from('participants')
@@ -224,7 +224,7 @@ export default function InviteSettings({
         id,
         user_id,
         users (
-          telegram_username,
+          username,
           first_name,
           telegram_id
         )
@@ -241,7 +241,7 @@ export default function InviteSettings({
           id: item.id,
           user_id: item.user_id,
           users: item.users?.[0] || {
-            telegram_username: null,
+            username: null,
             first_name: null,
             telegram_id: '',
           },
@@ -251,7 +251,7 @@ export default function InviteSettings({
       }
     }
 
-    // 4️⃣ LOAD PENDING REQUESTS
+    // 4️⃣ LOAD PENDING REQUESTS - ИСПРАВЛЕНО
     console.log('📨 [LOAD] Загрузка заявок...');
     await loadRequests();
 
@@ -260,7 +260,7 @@ export default function InviteSettings({
   };
 
   /* =========================
-     LOAD REQUESTS FUNCTION
+     LOAD REQUESTS FUNCTION - ИСПРАВЛЕНО
   ========================= */
 
   const loadRequests = async () => {
@@ -275,7 +275,7 @@ export default function InviteSettings({
         status,
         created_at,
         users!inner (
-          telegram_username,
+          username,
           first_name,
           telegram_id
         )
@@ -307,7 +307,7 @@ export default function InviteSettings({
           status: item.status,
           created_at: item.created_at,
           users: item.users || {
-            telegram_username: null,
+            username: null,
             first_name: null,
             telegram_id: '',
           },
@@ -330,7 +330,7 @@ export default function InviteSettings({
   }, [challengeId]);
 
   /* =========================
-     REAL-TIME SUBSCRIPTION
+     REAL-TIME SUBSCRIPTION - ИСПРАВЛЕНО
   ========================= */
 
   useEffect(() => {
@@ -355,7 +355,7 @@ export default function InviteSettings({
           console.log('👤 [REALTIME] Загрузка данных пользователя ID:', payload.new.user_id);
           const { data: userData, error } = await supabase
             .from('users')
-            .select('telegram_username, first_name, telegram_id')
+            .select('username, first_name, telegram_id')
             .eq('id', payload.new.user_id)
             .single();
 
@@ -567,7 +567,7 @@ export default function InviteSettings({
         id,
         user_id,
         users (
-          telegram_username,
+          username,
           first_name,
           telegram_id
         )
@@ -584,7 +584,7 @@ export default function InviteSettings({
         id: newParticipant.id,
         user_id: newParticipant.user_id,
         users: newParticipant.users?.[0] || {
-          telegram_username: null,
+          username: null,
           first_name: null,
           telegram_id: '',
         },
@@ -629,7 +629,7 @@ export default function InviteSettings({
   };
 
   const getDisplayName = (user: Request['users']) => {
-    if (user?.telegram_username) return `@${user.telegram_username}`;
+    if (user?.username) return `@${user.username}`;
     if (user?.first_name) return user.first_name;
     return `ID: ${user?.telegram_id || 'неизвестно'}`;
   };
@@ -687,7 +687,7 @@ export default function InviteSettings({
   };
 
   const getUsername = (user: Participant['users']) => {
-    if (user?.telegram_username) return `@${user.telegram_username}`;
+    if (user?.username) return `@${user.username}`;
     if (user?.first_name) return user.first_name;
     return `ID: ${user?.telegram_id || 'неизвестно'}`;
   };
@@ -846,7 +846,7 @@ export default function InviteSettings({
                               <div style={{ flex: 1 }}>
                                 <RequestUsername>
                                   {displayName}
-                                  {!request.users?.telegram_username && !request.users?.first_name && (
+                                  {!request.users?.username && !request.users?.first_name && (
                                     <RequestBadge>⚡</RequestBadge>
                                   )}
                                 </RequestUsername>
