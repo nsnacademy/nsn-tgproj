@@ -64,6 +64,7 @@ type AdminChallenge = {
   pending_count: number;
   participants_count?: number;
   status?: 'active' | 'completed';
+  entry_type?: 'free' | 'paid' | 'condition'; // Добавляем тип входа
 };
 
 export default function Admin({ screen, onNavigate }: AdminProps) {
@@ -143,8 +144,15 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
   const totalChallenges = challenges.length;
   const activeChallenges = challenges.filter(c => c.status === 'active').length;
+  const completedChallenges = challenges.filter(c => c.status === 'completed').length;
+  
   const totalParticipants = challenges.reduce((acc, c) => acc + (c.participants_count || 0), 0);
   const totalPending = challenges.reduce((acc, c) => acc + (c.pending_count || 0), 0);
+  
+  // Статистика по типам вызовов
+  const freeChallenges = challenges.filter(c => c.entry_type === 'free').length;
+  const paidChallenges = challenges.filter(c => c.entry_type === 'paid').length;
+  const conditionChallenges = challenges.filter(c => c.entry_type === 'condition').length;
 
   if (!accessChecked || loading) {
     return (
@@ -231,12 +239,28 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                 <StatLabel>Активных</StatLabel>
               </StatItem>
               <StatItem>
+                <StatValue>{completedChallenges}</StatValue>
+                <StatLabel>Завершено</StatLabel>
+              </StatItem>
+              <StatItem>
                 <StatValue>{totalParticipants}</StatValue>
                 <StatLabel>Участников</StatLabel>
               </StatItem>
               <StatItem>
                 <StatValue>{totalPending}</StatValue>
                 <StatLabel>Ожидают</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>{freeChallenges}</StatValue>
+                <StatLabel>Свободные</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>{paidChallenges}</StatValue>
+                <StatLabel>Платные</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>{conditionChallenges}</StatValue>
+                <StatLabel>По условию</StatLabel>
               </StatItem>
             </StatsGrid>
           </StatsCard>
@@ -294,6 +318,20 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                         {ch.status === 'active' ? 'Активен' : 'Завершён'}
                       </CardStatLabel>
                     </CardStat>
+                    {ch.entry_type && (
+                      <CardStat>
+                        <CardStatValue>
+                          {ch.entry_type === 'free' && '🆓'}
+                          {ch.entry_type === 'paid' && '💰'}
+                          {ch.entry_type === 'condition' && '🔒'}
+                        </CardStatValue>
+                        <CardStatLabel>
+                          {ch.entry_type === 'free' && 'Свободный'}
+                          {ch.entry_type === 'paid' && 'Платный'}
+                          {ch.entry_type === 'condition' && 'Условие'}
+                        </CardStatLabel>
+                      </CardStat>
+                    )}
                   </CardStats>
 
                   <CardActions>
@@ -306,7 +344,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                       <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M12 5l7 7-7 7M5 12h14" />
                       </svg>
-                      Управление
+                      Отчеты
                     </ActionButton>
                     
                     <ActionButton
