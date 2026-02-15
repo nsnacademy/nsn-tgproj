@@ -49,7 +49,7 @@ import { supabase, getCurrentUser } from '../../shared/lib/supabase';
 
 type InviteSettingsProps = {
   challengeId: string;
-  onBack: () => void;
+  onBack: () => void; // onBack будет вести в admin
 };
 
 type Invite = {
@@ -320,7 +320,7 @@ export default function InviteSettings({
   };
 
   /* =========================
-     LOAD REQUESTS FUNCTION - ИСПРАВЛЕНО
+     LOAD REQUESTS FUNCTION
   ========================= */
 
   const loadRequests = async () => {
@@ -351,7 +351,6 @@ export default function InviteSettings({
     console.log('📦 [REQUESTS] Сырые данные заявок:', JSON.stringify(requestsData, null, 2));
 
     if (requestsData) {
-      // Явно приводим к типу any[] чтобы избежать ошибок типизации
       const rawData = requestsData as any[];
       
       const transformed = rawData.map(item => {
@@ -364,14 +363,12 @@ export default function InviteSettings({
           telegram_id: item.users?.telegram_id
         });
         
-        // ВНИМАНИЕ: users это объект, а не массив!
-        // Не используем [0], берем сам объект
         return {
           id: item.id,
           user_id: item.user_id,
           status: item.status as 'pending' | 'approved' | 'rejected',
           created_at: item.created_at,
-          users: item.users || {  // Просто берем объект users
+          users: item.users || {
             username: null,
             telegram_id: '',
           },
@@ -576,7 +573,7 @@ export default function InviteSettings({
   };
 
   /* =========================
-     REQUEST MANAGEMENT
+     REQUEST MANAGEMENT - ИСПРАВЛЕНО
   ========================= */
 
   const handleApprove = async (requestId: string, userId: string) => {
@@ -619,7 +616,7 @@ export default function InviteSettings({
     }
     console.log('✅ [APPROVE] Пользователь добавлен в участники');
 
-    // 3️⃣ Загружаем данные нового участника с JOIN
+    // 3️⃣ Загружаем данные нового участника
     console.log('📝 [APPROVE] Загрузка данных нового участника...');
     const { data: newParticipant, error: participantError } = await supabase
       .from('participants')
@@ -639,12 +636,10 @@ export default function InviteSettings({
       console.error('❌ [APPROVE] Ошибка загрузки участника:', participantError);
     } else if (newParticipant) {
       console.log('✅ [APPROVE] Данные нового участника:', newParticipant);
-      // Приводим к правильному типу
       const rawParticipant = newParticipant as any;
       const transformed: Participant = {
         id: rawParticipant.id,
         user_id: rawParticipant.user_id,
-        // Для participants users может быть массивом, поэтому берем [0]
         users: rawParticipant.users?.[0] || {
           username: null,
           telegram_id: '',
@@ -657,7 +652,11 @@ export default function InviteSettings({
     setPendingRequestsCount(prev => prev - 1);
     setRequests(prev => prev.filter(r => r.id !== requestId));
     setProcessing(null);
+    
     console.log('✅ [APPROVE] Процесс approve завершен');
+    
+    // 👇 ОБНОВЛЯЕМ СТРАНИЦУ (перезагружаем все данные)
+    await loadAllData();
   };
 
   const handleReject = async (requestId: string) => {
@@ -686,6 +685,9 @@ export default function InviteSettings({
     setPendingRequestsCount(prev => prev - 1);
     setRequests(prev => prev.filter(r => r.id !== requestId));
     setProcessing(null);
+    
+    // 👇 ОБНОВЛЯЕМ СТРАНИЦУ (перезагружаем все данные)
+    await loadAllData();
   };
 
   const getDisplayName = (user: { username: string | null; telegram_id: string }) => {
@@ -754,7 +756,7 @@ export default function InviteSettings({
     }
 
     console.log('✅ [DELETE] Вызов удален');
-    onBack();
+    onBack(); // Возвращаемся в админ-панель
   };
 
   const limitReached = Boolean(limitEnabled && maxParticipants && participantsCount >= Number(maxParticipants));
