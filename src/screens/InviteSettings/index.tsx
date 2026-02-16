@@ -761,16 +761,17 @@ export default function InviteSettings({
   };
 
   // 👇 Функция-обработчик для кнопки назад с логами
-  const handleBackClick = () => {
-    console.log('🔙 [NAVIGATION] Нажата кнопка назад');
-    console.log('📍 [NAVIGATION] Текущий экран: InviteSettings, challengeId:', challengeId);
-    console.log('🎯 [NAVIGATION] Вызов onBack() для перехода на экран admin');
-    
-    // Логируем стек вызовов для отладки
-    console.trace('[NAVIGATION] Стек вызовов:');
-    
-    onBack();
-  };
+  // 👇 Функция-обработчик для кнопки назад с логами
+const handleBackClick = () => {
+  console.log('🔙 [NAVIGATION] Нажата кнопка назад');
+  console.log('📍 [NAVIGATION] Текущий экран: InviteSettings, challengeId:', challengeId);
+  console.log('🎯 [NAVIGATION] Вызов onBack() для перехода на экран admin-reports'); // 👈 ИСПРАВЛЕНО
+  
+  // Логируем стек вызовов для отладки
+  console.trace('[NAVIGATION] Стек вызовов:');
+  
+  onBack();
+};
 
   const limitReached = Boolean(limitEnabled && maxParticipants && participantsCount >= Number(maxParticipants));
   const isProcessing = (requestId: string) => processing === requestId;

@@ -48,7 +48,7 @@ type Screen =
   | 'create'
   | 'profile'
   | 'admin'
-  | 'admin-challenge'
+  | 'admin-reports'    // 👈 ИСПРАВЛЕНО
   | 'invite-settings';
 
 type AdminProps = {
@@ -134,7 +134,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   }, [onNavigate]);
 
   /* =========================
-     ЗАГРУЗКА КОЛИЧЕСТВА УЧАСТНИКОВ ДЛЯ КАЖДОГО ВЫЗОВА
+     ЗАГРУЗКА КОЛИЧЕСТВА УЧАСТНИКОВ
   ========================= */
 
   const loadParticipantsCount = async (challengesData: AdminChallenge[]) => {
@@ -182,69 +182,6 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
       }
     }
   };
-
-  /* =========================
-     REAL-TIME ПОДПИСКА НА ИЗМЕНЕНИЯ ЗАЯВОК
-  ========================= */
-
-  useEffect(() => {
-    if (!challenges.length) return;
-
-    const challengeIds = challenges.map(ch => ch.id);
-    
-    // Создаем канал для отслеживания изменений
-    const channel = supabase
-      .channel('admin-requests-changes')
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'entry_requests' 
-        },
-        async (payload) => {
-          console.log('[ADMIN] Изменение в заявках:', payload);
-          
-          // Обновляем общее количество заявок
-          const { count, error } = await supabase
-            .from('entry_requests')
-            .select('*', { count: 'exact', head: true })
-            .in('challenge_id', challengeIds)
-            .eq('status', 'pending');
-
-          if (!error) {
-            setTotalRequestsCount(count || 0);
-          }
-
-          // Проверяем, является ли это обновлением статуса заявки
-          const payloadAny = payload as any;
-          if (payloadAny.eventType === 'UPDATE' && 
-              payloadAny.new?.status === 'approved' && 
-              payloadAny.old?.status === 'pending') {
-            
-            const challengeId = payloadAny.new.challenge_id;
-            
-            const { count: participantsCount } = await supabase
-              .from('participants')
-              .select('*', { count: 'exact', head: true })
-              .eq('challenge_id', challengeId);
-
-            setChallenges(prev => 
-              prev.map(ch => 
-                ch.id === challengeId 
-                  ? { ...ch, participants_count: participantsCount || 0 }
-                  : ch
-              )
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [challenges]);
 
   /* =========================
      EXIT ADMIN
@@ -320,10 +257,6 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
       </SafeArea>
     );
   }
-
-  /* =========================
-     RENDER
-  ========================= */
 
   return (
     <SafeArea>
@@ -423,8 +356,8 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                   <CardActions>
                     <ActionButton
                       onClick={() => {
-                        console.log('[ADMIN] card click → admin-challenge', ch.id);
-                        onNavigate('admin-challenge', ch.id);
+                        console.log('[ADMIN] card click → admin-reports', ch.id);
+                        onNavigate('admin-reports', ch.id);                // 👈 ИСПРАВЛЕНО
                       }}
                     >
                       <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
@@ -454,25 +387,16 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
         </Content>
       </Container>
 
-      {/* =========================
-          BOTTOM NAV
-      ========================= */}
-
+      {/* Bottom Nav */}
       <BottomNav>
-        <NavItem
-          $active={screen === 'home'}
-          onClick={() => onNavigate('home')}
-        >
+        <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 10.5L12 3l9 7.5" />
             <path d="M5 9.5V21h14V9.5" />
           </svg>
         </NavItem>
 
-        <NavItem
-          $active={screen === 'create'}
-          onClick={() => onNavigate('create')}
-        >
+        <NavItem $active={screen === 'create'} onClick={() => onNavigate('create')}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="3" y="3" width="7" height="7" rx="1.5" />
             <rect x="14" y="3" width="7" height="7" rx="1.5" />
@@ -489,10 +413,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
           </svg>
         </NavItem>
 
-        <NavItem
-          $active={screen === 'profile'}
-          onClick={() => onNavigate('profile')}
-        >
+        <NavItem $active={screen === 'profile'} onClick={() => onNavigate('profile')}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="7" r="4" />
             <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
