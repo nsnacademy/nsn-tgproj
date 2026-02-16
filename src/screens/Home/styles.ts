@@ -287,20 +287,17 @@ export const PrimaryButton = styled.button<{ $variant?: 'primary' | 'outline' }>
 /* ======================
    BOTTOM NAV
 ====================== */
-/* ======================
-   BOTTOM NAV - Вариант 9 (Утопленный)
-====================== */
 export const BottomNav = styled.div`
   position: fixed;
   left: 16px;
   right: 16px;
   bottom: 18px;
 
-  height: 65px;
-  background: #000;
-  border-radius: 32px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  height: 68px;
+  background: rgba(0,0,0,0.9);
+  border-radius: 34px;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
 
   display: flex;
   justify-content: space-around;
@@ -309,42 +306,24 @@ export const BottomNav = styled.div`
 `;
 
 export const NavItem = styled.div<{ $active?: boolean }>`
-  width: 45px;
-  height: 45px;
-  border-radius: 22px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
   background: ${({ $active }) =>
-    $active ? 'rgba(255, 255, 255, 0.05)' : 'transparent'};
+    $active ? 'rgba(255,255,255,0.15)' : 'transparent'};
   color: ${({ $active }) =>
-    $active ? '#fff' : 'rgba(255, 255, 255, 0.2)'};
-  
-  box-shadow: ${({ $active }) =>
-    $active ? '0 2px 4px rgba(0, 0, 0, 0.3)' : 'none'};
+    $active ? '#fff' : 'rgba(255,255,255,0.65)'};
   
   transition: all 0.2s ease;
   cursor: pointer;
 
   &:hover {
     background: ${({ $active }) =>
-      $active ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)'};
-    color: ${({ $active }) =>
-      $active ? '#fff' : 'rgba(255, 255, 255, 0.4)'};
+      $active ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'};
   }
-
-  &:active {
-    transform: scale(0.95);
-  }
-`;
-
-/* Иконки (опционально, можно оставить как есть) */
-export const NavIcon = styled.svg`
-  width: 22px;
-  height: 22px;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  transition: all 0.2s ease;
 `;
