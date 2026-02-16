@@ -43,8 +43,7 @@ import {
   checkIsCreator,
 } from '../../shared/lib/supabase';
 
-import type { Screen } from '../../app/App'; // 👈 ИМПОРТИРУЕМ ТИП ИЗ APP
- // 👈 ИМПОРТИРУЕМ ТИП ИЗ APP
+import { type Screen } from '../../app/App'; // 👈 ИМПОРТИРУЕМ ТИП ИЗ APP
 
 // 👇 ЛОКАЛЬНОЕ ОПРЕДЕЛЕНИЕ ТИПА УДАЛЕНО! 
 
