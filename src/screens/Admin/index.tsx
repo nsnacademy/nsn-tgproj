@@ -444,7 +444,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                         <path d="M4 12h16M12 4v16" />
                         <circle cx="12" cy="12" r="10" />
                       </svg>
-                      
+                      Управление
                     </ActionButton>
                   </CardActions>
                 </ChallengeCard>
