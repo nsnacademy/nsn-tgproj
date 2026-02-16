@@ -372,20 +372,26 @@ export const UserMeta = styled.span`
 `;
 
 /* СЕТКА МЕДИА */
+/* СЕТКА МЕДИА - увеличенный размер */
 export const MediaGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(2, 1fr); /* 👈 2 колонки вместо 3 */
+  gap: 12px;
   margin-top: 12px;
   margin-bottom: 12px;
 `;
 
 export const MediaItem = styled.div`
   position: relative;
-  aspect-ratio: 1;
-  border-radius: 8px;
+  aspect-ratio: 4/3; /* 👈 более широкий формат */
+  border-radius: 12px;
   overflow: hidden;
   background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  
+  &:hover {
+    border-color: rgba(255,255,255,0.3);
+  }
 `;
 
 export const MediaPreview = styled.div<{ $imageUrl?: string; $isLoading?: boolean; $error?: boolean }>`
@@ -395,32 +401,44 @@ export const MediaPreview = styled.div<{ $imageUrl?: string; $isLoading?: boolea
     $error ? 'rgba(255,80,80,0.1)' :
     $isLoading ? 'rgba(255,255,255,0.05)' :
     $imageUrl ? `url(${$imageUrl})` : 'rgba(255,255,255,0.05)'};
-  background-size: cover;
+  background-size: contain; /* 👈 contain вместо cover */
   background-position: center;
+  background-repeat: no-repeat;
   cursor: ${({ $imageUrl }) => $imageUrl ? 'pointer' : 'default'};
   display: flex;
   align-items: center;
   justify-content: center;
   color: rgba(255,255,255,0.5);
-  font-size: 20px;
+  font-size: 24px;
   transition: transform 0.2s ease;
 
   &:hover {
-    transform: ${({ $imageUrl }) => $imageUrl ? 'scale(1.05)' : 'none'};
+    transform: ${({ $imageUrl }) => $imageUrl ? 'scale(1.02)' : 'none'};
+    background-color: ${({ $imageUrl }) => $imageUrl ? 'rgba(255,255,255,0.1)' : 'none'};
   }
 `;
 
 export const MediaCount = styled.div`
   position: absolute;
-  bottom: 4px;
-  right: 4px;
-  background: rgba(0,0,0,0.6);
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
   color: #fff;
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  font-weight: 500;
+`;
+
+/* Стили для видео */
+export const VideoPreview = styled.video`
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #000;
 `;
 
 /* УЛУЧШЕННЫЙ АВАТАР */
@@ -525,12 +543,4 @@ export const MediaInfo = styled.div`
   color: rgba(255,255,255,0.5);
 `;
 
-/* ПРЕДПРОСМОТР ВИДЕО */
-export const VideoPreview = styled.video`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 8px;
-`;
 
-/* ОБНОВЛЕННЫЙ USERBLOCK (замена Avatar на StyledAvatar) */

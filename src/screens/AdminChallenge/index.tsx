@@ -508,14 +508,24 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: 8,
+                  objectFit: 'contain',
+                  borderRadius: 12,
+                  background: '#000',
                 }}
               />
             ) : (
-              <MediaPreview 
-                $imageUrl={url}
+              <img
+                src={url}
+                alt={`proof-${i}`}
                 onClick={() => openFullscreen(url)}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  borderRadius: 12,
+                  cursor: 'pointer',
+                  background: '#111',
+                }}
               />
             )}
             <MediaCount>{i + 1}/{totalFiles}</MediaCount>
