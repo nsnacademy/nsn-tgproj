@@ -43,16 +43,13 @@ import {
   checkIsCreator,
 } from '../../shared/lib/supabase';
 
-type Screen =
-  | 'home'
-  | 'create'
-  | 'profile'
-  | 'admin'
-  | 'admin-reports'    // 👈 ИСПРАВЛЕНО
-  | 'invite-settings';
+import type { Screen } from '../../app/App'; // 👈 ИМПОРТИРУЕМ ТИП ИЗ APP
+ // 👈 ИМПОРТИРУЕМ ТИП ИЗ APP
+
+// 👇 ЛОКАЛЬНОЕ ОПРЕДЕЛЕНИЕ ТИПА УДАЛЕНО! 
 
 type AdminProps = {
-  screen: Screen;
+  screen: Screen; // 👈 ИСПОЛЬЗУЕМ ИМПОРТИРОВАННЫЙ ТИП
   onNavigate: (screen: Screen, challengeId?: string) => void;
 };
 
@@ -357,7 +354,7 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                     <ActionButton
                       onClick={() => {
                         console.log('[ADMIN] card click → admin-reports', ch.id);
-                        onNavigate('admin-reports', ch.id);                // 👈 ИСПРАВЛЕНО
+                        onNavigate('admin-reports', ch.id);
                       }}
                     >
                       <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
