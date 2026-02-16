@@ -23,7 +23,12 @@ type ProfileProps = {
 };
 
 export default function Profile({ screen, onNavigate }: ProfileProps) {
-  const [adminMode, setAdminMode] = useState(false);
+  // 👇 Инициализируем из localStorage
+  const [adminMode, setAdminMode] = useState(() => {
+    const saved = localStorage.getItem('adminMode');
+    return saved === 'true';
+  });
+  
   const [locked, setLocked] = useState(false);
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
 
@@ -53,6 +58,8 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   const onToggleAdmin = () => {
     if (locked || !isCreator) return;
 
+    // 👇 Сохраняем в localStorage
+    localStorage.setItem('adminMode', 'true');
     setAdminMode(true);
     setLocked(true);
 
@@ -61,6 +68,18 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
       setLocked(false);
     }, 250);
   };
+
+  /* =========================
+     Сброс при выходе из админки
+  ========================= */
+
+  // Если мы вернулись на профиль из админки, сбрасываем состояние
+  useEffect(() => {
+    if (screen === 'profile') {
+      localStorage.setItem('adminMode', 'false');
+      setAdminMode(false);
+    }
+  }, [screen]);
 
   /* =========================
      RENDER
