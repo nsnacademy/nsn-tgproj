@@ -14,6 +14,7 @@ export const Header = styled.div`
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
+  position: relative;
 `;
 
 export const BackButton = styled.button`
@@ -23,6 +24,19 @@ export const BackButton = styled.button`
   background: rgba(255,255,255,0.1);
   border: none;
   color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  
+  &:hover {
+    background: rgba(255,255,255,0.15);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
 `;
 
 export const Title = styled.div`
@@ -57,6 +71,15 @@ export const NavButton = styled.button<{ disabled?: boolean }>`
   border: none;
   color: #fff;
   opacity: ${({ disabled }) => (disabled ? 0.3 : 1)};
+  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
+  
+  &:hover:not(:disabled) {
+    background: rgba(255,255,255,0.15);
+  }
+  
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+  }
 `;
 
 export const DayInfo = styled.div`
@@ -181,6 +204,20 @@ export const ApproveButton = styled.button`
   background: #4CAF50;
   color: #000;
   font-weight: 500;
+  cursor: pointer;
+  
+  &:hover:not(:disabled) {
+    background: #5cbf5c;
+  }
+  
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 export const RejectButton = styled.button`
@@ -190,6 +227,20 @@ export const RejectButton = styled.button`
   border: none;
   background: rgba(255,255,255,0.1);
   color: #fff;
+  cursor: pointer;
+  
+  &:hover:not(:disabled) {
+    background: rgba(255,255,255,0.15);
+  }
+  
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 export const EmptyState = styled.div`
@@ -209,7 +260,6 @@ export const CommentBox = styled.div`
   opacity: 0.9;
   white-space: pre-wrap;
 `;
-
 
 export const FixedTop = styled.div`
   position: fixed;
@@ -231,7 +281,6 @@ export const FixedTop = styled.div`
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
 `;
 
-
 export const ScrollContent = styled.div`
   margin-top: 160px; /* высота header + day switcher */
   display: flex;
@@ -239,31 +288,4 @@ export const ScrollContent = styled.div`
   gap: 16px;
 `;
 
-export const SettingsButton = styled.button`
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-50%) scale(1.05);
-  }
-
-  &:active {
-    transform: translateY(-50%) scale(0.95);
-  }
-`;
+// SettingsButton полностью удален

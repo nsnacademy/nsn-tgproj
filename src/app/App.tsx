@@ -337,7 +337,7 @@ function App() {
         <AdminChallenge
           challengeId={selectedChallengeId}
           onBack={() => navigate('admin')}
-          onNavigate={(screen: Screen, id?: string) => navigate(screen, id)}
+          // onNavigate удален, так как не используется в AdminChallenge
         />
       )}
 

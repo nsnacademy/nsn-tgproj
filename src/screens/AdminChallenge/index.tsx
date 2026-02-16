@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
-import type { Screen } from '../../app/App';
+// Импорт Screen удален, так как не используется
 
 import {
   SafeArea,
@@ -33,13 +33,13 @@ import {
   CommentBox,
   ScrollContent,
   FixedTop,
-  SettingsButton,
+  // SettingsButton удален
 } from './styles';
 
 type Props = {
   challengeId: string;
   onBack: () => void; // onBack будет вести в admin
-  onNavigate: (screen: Screen, id?: string) => void;
+  // onNavigate удален, так как не используется
 };
 
 type Challenge = {
@@ -67,7 +67,7 @@ type Report = {
   };
 };
 
-export default function AdminChallenge({ challengeId, onBack, onNavigate }: Props) {
+export default function AdminChallenge({ challengeId, onBack }: Props) {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [dayIndex, setDayIndex] = useState(0);
@@ -223,12 +223,6 @@ export default function AdminChallenge({ challengeId, onBack, onNavigate }: Prop
     onBack(); // onBack должен вести в admin
   };
 
-  // 👇 Функция для перехода в настройки приглашений
-  const handleGoToInviteSettings = () => {
-    console.log('[ADMIN] go to invite settings', challengeId);
-    onNavigate('invite-settings', challengeId);
-  };
-
   return (
     <SafeArea>
       {/* FIXED HEADER + DAY SWITCHER */}
@@ -243,10 +237,7 @@ export default function AdminChallenge({ challengeId, onBack, onNavigate }: Prop
             </Meta>
           </div>
           
-          {/* 👇 КНОПКА УПРАВЛЕНИЯ ВЫЗОВОМ */}
-          <SettingsButton onClick={handleGoToInviteSettings}>
-            ⚙️
-          </SettingsButton>
+          {/* SettingsButton полностью удален */}
         </Header>
 
         <DaySwitcher>
