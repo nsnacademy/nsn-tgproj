@@ -22,7 +22,7 @@ export const Container = styled.div`
 `;
 
 export const Header = styled.div`
-  padding: 70px 20px 16px;
+  padding: 100px 20px 16px;
   background: #000;
   position: sticky;
   top: 0;

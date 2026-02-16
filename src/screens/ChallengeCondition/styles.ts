@@ -9,7 +9,7 @@ export const SafeArea = styled.div`
 `;
 
 export const Header = styled.div`
-  padding: 50px 16px 12px;
+  padding: 100px 16px 12px;
   background: #000;
   position: sticky;
   top: 0;

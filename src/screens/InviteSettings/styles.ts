@@ -14,7 +14,7 @@ export const SafeArea = styled.div`
 
 export const Container = styled.div`
   flex: 1;
-  padding: 90px 20px 140px;
+  padding: 100px 20px 140px;
 `;
 
 export const HeaderRow = styled.div`
