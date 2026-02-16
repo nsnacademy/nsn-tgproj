@@ -544,3 +544,377 @@ export const MediaInfo = styled.div`
 `;
 
 
+/* ======================
+   SPLIT LAYOUT
+====================== */
+
+export const SplitContainer = styled.div`
+  display: flex;
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  position: relative;
+`;
+
+export const LeftPanel = styled.div`
+  width: 300px;
+  background: #0a0a0a;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+`;
+
+export const RightPanel = styled.div`
+  flex: 1;
+  background: #000;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+`;
+
+export const PanelHeader = styled.div`
+  padding: 100px 20px 20px;
+  background: linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.95) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+`;
+
+/* ======================
+   SETTINGS SECTION
+====================== */
+
+export const SettingsSection = styled.div`
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+`;
+
+export const SettingsTitle = styled.div`
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 16px;
+`;
+
+export const SettingsRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
+`;
+
+export const SettingsLabel = styled.span`
+  color: rgba(255, 255, 255, 0.6);
+`;
+
+export const SettingsValue = styled.span`
+  font-weight: 500;
+  color: #fff;
+`;
+
+export const SettingsButton = styled.button`
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+/* ======================
+   PARTICIPANTS LIST
+====================== */
+
+export const ParticipantsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const ParticipantCard = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+`;
+
+export const ParticipantName = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+`;
+
+export const ParticipantRole = styled.span`
+  font-size: 10px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.6);
+`;
+
+export const RemoveButton = styled.button`
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 80, 80, 0.1);
+  color: #ff6b6b;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 80, 80, 0.2);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+/* ======================
+   REQUESTS SECTION
+====================== */
+
+export const RequestsSection = styled(SettingsSection)`
+  background: rgba(255, 215, 0, 0.02);
+`;
+
+export const RequestsHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+`;
+
+export const RequestsTitle = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 215, 0, 0.8);
+`;
+
+export const RequestCount = styled.span`
+  font-size: 11px;
+  padding: 2px 6px;
+  background: rgba(255, 215, 0, 0.15);
+  border-radius: 10px;
+  color: #FFD700;
+`;
+
+export const RequestCard = styled.div`
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: 12px;
+  margin-bottom: 8px;
+`;
+
+export const RequestUserInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+`;
+
+export const RequestAvatar = styled.div`
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #000;
+`;
+
+export const RequestUsername = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+export const RequestBadge = styled.span`
+  font-size: 10px;
+  padding: 2px 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #FFD700;
+`;
+
+export const RequestMeta = styled.div`
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+`;
+
+export const RequestDate = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+export const RequestActions = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+`;
+
+export const RequestApproveButton = styled.button`
+  flex: 1;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #4CAF50;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #5cbf5c;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+`;
+
+export const RequestRejectButton = styled.button`
+  flex: 1;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 80, 80, 0.1);
+  color: #ff6b6b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 80, 80, 0.2);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+`;
+
+/* ======================
+   DANGER ZONE
+====================== */
+
+export const DangerZone = styled(SettingsSection)`
+  background: rgba(255, 80, 80, 0.02);
+  border-top: 1px solid rgba(255, 80, 80, 0.15);
+  
+  ${SettingsTitle} {
+    color: #ff6b6b;
+  }
+`;
+
+export const DangerButton = styled(SettingsButton)`
+  background: rgba(255, 80, 80, 0.1);
+  border-color: rgba(255, 80, 80, 0.2);
+  color: #ff6b6b;
+
+  &:hover {
+    background: rgba(255, 80, 80, 0.15);
+    border-color: rgba(255, 80, 80, 0.3);
+  }
+`;
+
+/* ======================
+   RESPONSIVE
+====================== */
+

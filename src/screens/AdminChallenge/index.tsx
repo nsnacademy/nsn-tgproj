@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 import {
   SafeArea,
-  Header,
+  SplitContainer,
+  LeftPanel,
+  RightPanel,
+  PanelHeader,
   BackButton,
   Title,
   Meta,
@@ -15,7 +18,7 @@ import {
   ReportCard,
   ReportHeader,
   UserBlock,
-  StyledAvatar, // 👈 Заменили Avatar на StyledAvatar
+  StyledAvatar,
   UserText,
   Username,
   StatusBadge,
@@ -29,7 +32,6 @@ import {
   EmptyState,
   CommentBox,
   ScrollContent,
-  FixedTop,
   StatsRow,
   StatItem,
   StatValue,
@@ -44,11 +46,39 @@ import {
   FullscreenClose,
   FullscreenImage,
   LoadingSpinner,
+  // 👇 Импорты для левой панели
+  SettingsSection,
+  SettingsTitle,
+  SettingsRow,
+  SettingsLabel,
+  SettingsValue,
+  SettingsButton,
+  DangerZone,
+  DangerButton,
+  ParticipantsList,
+  ParticipantCard,
+  ParticipantName,
+  RemoveButton,
+  RequestsSection,
+  RequestsHeader,
+  RequestsTitle,
+  RequestCount,
+  RequestCard as AdminRequestCard,
+  RequestUserInfo,
+  RequestUsername,
+  RequestMeta,
+  RequestDate,
+  RequestActions,
+  ApproveButton as RequestApproveButton,
+  RejectButton as RequestRejectButton,
+  RequestAvatar,
 } from './styles';
 
 type Props = {
   challengeId: string;
   onBack: () => void;
+  onNavigateToSettings?: () => void; // для перехода к настройкам
+  onNavigateToRequests?: () => void; // для перехода к заявкам
 };
 
 type Challenge = {
@@ -58,6 +88,7 @@ type Challenge = {
   start_at: string;
   duration_days: number;
   entry_type: 'free' | 'paid' | 'condition';
+  max_participants: number | null;
 };
 
 type Report = {
@@ -76,7 +107,33 @@ type Report = {
   };
 };
 
-export default function AdminChallenge({ challengeId, onBack }: Props) {
+type Participant = {
+  id: string;
+  user_id: string;
+  users: {
+    username: string | null;
+    telegram_id: string;
+  };
+};
+
+type Request = {
+  id: string;
+  user_id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  users: {
+    username: string | null;
+    telegram_id: string;
+  };
+};
+
+export default function AdminChallenge({ 
+  challengeId, 
+  onBack,
+  onNavigateToSettings,
+  onNavigateToRequests 
+}: Props) {
+  // 📊 Состояния для отчетов
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [dayIndex, setDayIndex] = useState(0);
@@ -85,17 +142,27 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [loadingMedia, setLoadingMedia] = useState<Record<string, boolean>>({});
 
-  // 👉 состояние для отклонения
+  // 👥 Состояния для левой панели
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [participantsCount, setParticipantsCount] = useState(0);
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [processing, setProcessing] = useState<string | null>(null);
+  const [showRequests, setShowRequests] = useState(true);
+
+  // 👉 состояние для отклонения отчетов
   const [rejectingReportId, setRejectingReportId] = useState<string | null>(null);
   const [rejectionText, setRejectionText] = useState('');
 
-  /* === LOAD CHALLENGE === */
+  /* =========================
+     LOAD CHALLENGE
+  ========================= */
   useEffect(() => {
     console.log('📋 [ADMIN CHALLENGE] Загрузка данных вызова:', challengeId);
     
     supabase
       .from('challenges')
-      .select('title, report_mode, metric_name, start_at, duration_days, entry_type')
+      .select('title, report_mode, metric_name, start_at, duration_days, entry_type, max_participants')
       .eq('id', challengeId)
       .single()
       .then(({ data, error }) => {
@@ -108,23 +175,105 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       });
   }, [challengeId]);
 
-  /* === LOAD REPORTS === */
+  /* =========================
+     LOAD PARTICIPANTS
+  ========================= */
   useEffect(() => {
-    if (!challenge) {
-      console.log('⏳ [ADMIN CHALLENGE] Ожидание загрузки challenge...');
-      return;
-    }
+    const loadParticipants = async () => {
+      console.log('👥 [ADMIN CHALLENGE] Загрузка участников...');
+      
+      const { count } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('challenge_id', challengeId);
+
+      setParticipantsCount(count ?? 0);
+
+      const { data: participantsData } = await supabase
+        .from('participants')
+        .select(`
+          id,
+          user_id,
+          users (
+            username,
+            telegram_id
+          )
+        `)
+        .eq('challenge_id', challengeId);
+
+      if (participantsData) {
+        const transformed = participantsData.map((item: any) => ({
+          id: item.id,
+          user_id: item.user_id,
+          users: item.users?.[0] || {
+            username: null,
+            telegram_id: '',
+          },
+        }));
+        setParticipants(transformed);
+        console.log('✅ [ADMIN CHALLENGE] Участники загружены:', transformed.length);
+      }
+    };
+
+    loadParticipants();
+  }, [challengeId]);
+
+  /* =========================
+     LOAD REQUESTS
+  ========================= */
+  useEffect(() => {
+    const loadRequests = async () => {
+      if (!challenge || challenge.entry_type === 'free') return;
+
+      console.log('📨 [ADMIN CHALLENGE] Загрузка заявок...');
+      
+      const { data: requestsData } = await supabase
+        .from('entry_requests')
+        .select(`
+          id,
+          user_id,
+          status,
+          created_at,
+          users!inner (
+            username,
+            telegram_id
+          )
+        `)
+        .eq('challenge_id', challengeId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true });
+
+      if (requestsData) {
+        const transformed = requestsData.map((item: any) => ({
+          id: item.id,
+          user_id: item.user_id,
+          status: item.status,
+          created_at: item.created_at,
+          users: item.users || {
+            username: null,
+            telegram_id: '',
+          },
+        }));
+        setRequests(transformed);
+        setPendingRequestsCount(transformed.length);
+        console.log('✅ [ADMIN CHALLENGE] Заявки загружены:', transformed.length);
+      }
+    };
+
+    loadRequests();
+  }, [challengeId, challenge]);
+
+  /* =========================
+     LOAD REPORTS
+  ========================= */
+  useEffect(() => {
+    if (!challenge) return;
 
     const date = new Date(challenge.start_at);
     date.setDate(date.getDate() + dayIndex);
     const reportDate = date.toISOString().slice(0, 10);
 
-    console.log('🔍 [ADMIN CHALLENGE] Загрузка отчетов:', {
-      challengeId,
-      dayIndex,
-      reportDate,
-      challengeTitle: challenge.title
-    });
+    console.log('🔍 [ADMIN CHALLENGE] Загрузка отчетов за день:', reportDate);
 
     supabase
       .from('reports')
@@ -138,9 +287,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
         proof_media_urls,
         rejection_reason,
         participant:participants!inner (
-          user:users!inner ( 
-            username 
-          )
+          user:users!inner ( username )
         )
       `)
       .eq('challenge_id', challengeId)
@@ -152,24 +299,11 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
           return;
         }
 
-        console.log('✅ [ADMIN CHALLENGE] Отчеты загружены:', {
-          count: data?.length || 0,
-          reports: data?.map(r => ({
-            id: r.id,
-            username: r.participant?.user?.username,
-            status: r.status,
-            mediaCount: r.proof_media_urls?.length || 0
-          }))
-        });
-
         setReports(data ?? []);
 
-        if (!data || data.length === 0) {
-          console.log('ℹ️ [ADMIN CHALLENGE] Нет отчетов за этот день');
-          return;
-        }
+        if (!data || data.length === 0) return;
 
-        // Собираем все пути к медиа
+        // Загружаем медиа
         const allMediaPaths: string[] = [];
         data.forEach(report => {
           if (report.proof_media_urls) {
@@ -177,37 +311,18 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
           }
         });
 
-        console.log('📸 [ADMIN CHALLENGE] Медиа файлы для загрузки:', {
-          total: allMediaPaths.length,
-          paths: allMediaPaths
-        });
-
-        // Загружаем signed URLs для каждого медиа
         const urls: Record<string, string> = {};
         
         for (const path of allMediaPaths) {
-          if (mediaUrls[path]) {
-            console.log('♻️ [ADMIN CHALLENGE] Медиа уже загружено, используем кэш:', path);
-            continue;
-          }
+          if (mediaUrls[path]) continue;
 
           setLoadingMedia(prev => ({ ...prev, [path]: true }));
-          console.log('⏳ [ADMIN CHALLENGE] Запрос signed URL для:', path);
 
-          const { data: signed, error: signedError } = await supabase.storage
+          const { data: signed } = await supabase.storage
             .from('report-media')
-            .createSignedUrl(path, 60 * 60); // 1 час
+            .createSignedUrl(path, 60 * 60);
 
-          if (signedError) {
-            console.error('❌ [ADMIN CHALLENGE] Ошибка получения signed URL:', {
-              path,
-              error: signedError
-            });
-          } else if (signed?.signedUrl) {
-            console.log('✅ [ADMIN CHALLENGE] Signed URL получен:', {
-              path,
-              url: signed.signedUrl.substring(0, 50) + '...'
-            });
+          if (signed?.signedUrl) {
             urls[path] = signed.signedUrl;
           }
 
@@ -215,29 +330,143 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
         }
 
         if (Object.keys(urls).length > 0) {
-          console.log('📦 [ADMIN CHALLENGE] Обновление mediaUrls:', {
-            newUrls: Object.keys(urls).length
-          });
-          setMediaUrls(prev => ({
-            ...prev,
-            ...urls,
-          }));
+          setMediaUrls(prev => ({ ...prev, ...urls }));
         }
       });
   }, [challenge, dayIndex, challengeId]);
 
+  /* =========================
+     REPORT ACTIONS
+  ========================= */
+  const updateStatus = async (
+    reportId: string,
+    status: 'approved' | 'rejected',
+    rejectionReason?: string
+  ) => {
+    console.log('🔄 [ADMIN CHALLENGE] Обновление статуса отчета:', { reportId, status });
+
+    const payload =
+      status === 'rejected'
+        ? { status, rejection_reason: rejectionReason?.trim() }
+        : { status, rejection_reason: null };
+
+    const { error } = await supabase
+      .from('reports')
+      .update(payload)
+      .eq('id', reportId);
+
+    if (error) {
+      console.error('❌ [ADMIN CHALLENGE] Ошибка обновления статуса:', error);
+      return;
+    }
+
+    setReports(prev =>
+      prev.map(r =>
+        r.id === reportId
+          ? { ...r, status, rejection_reason: payload.rejection_reason ?? null }
+          : r
+      )
+    );
+
+    setRejectingReportId(null);
+    setRejectionText('');
+  };
+
+  /* =========================
+     REQUEST ACTIONS
+  ========================= */
+  const handleApproveRequest = async (requestId: string, userId: string) => {
+    if (!challenge) return;
+
+    if (challenge.max_participants && participantsCount >= challenge.max_participants) {
+      alert('Лимит участников достигнут');
+      return;
+    }
+
+    setProcessing(requestId);
+
+    await supabase
+      .from('entry_requests')
+      .update({ status: 'approved' })
+      .eq('id', requestId);
+
+    await supabase
+      .from('participants')
+      .insert({
+        challenge_id: challengeId,
+        user_id: userId,
+      });
+
+    setParticipantsCount(prev => prev + 1);
+    setPendingRequestsCount(prev => prev - 1);
+    setRequests(prev => prev.filter(r => r.id !== requestId));
+    setProcessing(null);
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    const confirmed = window.confirm('Отклонить заявку?');
+    if (!confirmed) return;
+
+    setProcessing(requestId);
+
+    await supabase
+      .from('entry_requests')
+      .update({ status: 'rejected' })
+      .eq('id', requestId);
+
+    setPendingRequestsCount(prev => prev - 1);
+    setRequests(prev => prev.filter(r => r.id !== requestId));
+    setProcessing(null);
+  };
+
+  const removeParticipant = async (participantId: string, userId: string) => {
+    const confirmed = window.confirm('Удалить участника?');
+    if (!confirmed) return;
+
+    await supabase
+      .from('participants')
+      .delete()
+      .eq('id', participantId);
+
+    await supabase
+      .from('entry_requests')
+      .delete()
+      .eq('challenge_id', challengeId)
+      .eq('user_id', userId);
+
+    setParticipants(prev => prev.filter(p => p.id !== participantId));
+    setParticipantsCount(prev => prev - 1);
+  };
+
+  const getDisplayName = (user: { username: string | null; telegram_id: string }) => {
+    if (user?.username) return `@${user.username}`;
+    if (user?.telegram_id) return `ID: ${user.telegram_id}`;
+    return 'Неизвестно';
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getInitials = (username: string | null) => {
+    if (!username) return '?';
+    return username.charAt(0).toUpperCase();
+  };
+
   if (!challenge) {
-    console.log('⏳ [ADMIN CHALLENGE] Рендер заглушки загрузки...');
     return (
       <SafeArea>
-        <FixedTop>
-          <Header>
+        <LeftPanel>
+          <PanelHeader>
             <BackButton onClick={onBack}>←</BackButton>
-            <div>
-              <Title>Загрузка...</Title>
-            </div>
-          </Header>
-        </FixedTop>
+            <Title>Загрузка...</Title>
+          </PanelHeader>
+        </LeftPanel>
       </SafeArea>
     );
   }
@@ -253,368 +482,394 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
     rejected: reports.filter(r => r.status === 'rejected').length,
   };
 
-  console.log('📊 [ADMIN CHALLENGE] Статистика отчетов:', {
-    day: dayIndex + 1,
-    stats,
-    activeTab
-  });
-
-  // Фильтрация отчетов по вкладке
   const filteredReports = activeTab === 'all' 
     ? reports 
     : reports.filter(r => r.status === activeTab);
 
-  console.log('🎨 [ADMIN CHALLENGE] Отчеты для отображения:', {
-    tab: activeTab,
-    count: filteredReports.length,
-    reports: filteredReports.map(r => ({
-      id: r.id,
-      username: r.participant?.user?.username,
-      status: r.status,
-      mediaCount: r.proof_media_urls?.length || 0
-    }))
-  });
-
-  /* === UPDATE STATUS === */
-  const updateStatus = async (
-    reportId: string,
-    status: 'approved' | 'rejected',
-    rejectionReason?: string
-  ) => {
-    console.log('🔄 [ADMIN CHALLENGE] Обновление статуса отчета:', {
-      reportId,
-      status,
-      rejectionReason
-    });
-
-    const payload =
-      status === 'rejected'
-        ? {
-            status,
-            rejection_reason: rejectionReason?.trim(),
-          }
-        : {
-            status,
-            rejection_reason: null,
-          };
-
-    const { data, error } = await supabase
-      .from('reports')
-      .update(payload)
-      .eq('id', reportId)
-      .select();
-
-    if (error) {
-      console.error('❌ [ADMIN CHALLENGE] Ошибка обновления статуса:', error);
-      return;
-    }
-
-    console.log('✅ [ADMIN CHALLENGE] Статус обновлен:', data);
-    
-    setReports(prev =>
-      prev.map(r =>
-        r.id === reportId
-          ? {
-              ...r,
-              status,
-              rejection_reason: payload.rejection_reason ?? null,
-            }
-          : r
-      )
-    );
-
-    setRejectingReportId(null);
-    setRejectionText('');
-  };
-
-  const handleBackToAdmin = () => {
-    console.log('👈 [ADMIN CHALLENGE] Возврат в админ-панель');
-    onBack();
-  };
-
-  const openFullscreen = (url: string) => {
-    console.log('🖼️ [ADMIN CHALLENGE] Открытие полноэкранного режима:', url.substring(0, 50) + '...');
-    setFullscreenImage(url);
-  };
-
-  const getInitials = (username: string | null) => {
-    if (!username) return '?';
-    return username.charAt(0).toUpperCase();
-  };
+  const limitReached = challenge.max_participants 
+    ? participantsCount >= challenge.max_participants 
+    : false;
 
   return (
     <SafeArea>
-      <FixedTop>
-        <Header>
-          <BackButton onClick={handleBackToAdmin}>←</BackButton>
-          <div>
-            <Title>{challenge.title}</Title>
-            <Meta>
-              <span>Ежедневный вызов</span>
-              <span>{challenge.duration_days} дней</span>
-            </Meta>
-          </div>
-        </Header>
+      <SplitContainer>
+        {/* 👈 ЛЕВАЯ ПАНЕЛЬ - УПРАВЛЕНИЕ ВЫЗОВОМ */}
+        <LeftPanel>
+          <PanelHeader>
+            <BackButton onClick={onBack}>←</BackButton>
+            <Title>Управление</Title>
+          </PanelHeader>
 
-        <DaySwitcher>
-          <NavButton
-            disabled={dayIndex === 0}
-            onClick={() => {
-              console.log('⬅️ [ADMIN CHALLENGE] Переключение на предыдущий день:', dayIndex);
-              setDayIndex(d => d - 1);
-            }}
-          >
-            ←
-          </NavButton>
+          <ScrollContent>
+            {/* Информация о вызове */}
+            <SettingsSection>
+              <SettingsTitle>📊 Информация</SettingsTitle>
+              <SettingsRow>
+                <SettingsLabel>Название</SettingsLabel>
+                <SettingsValue>{challenge.title}</SettingsValue>
+              </SettingsRow>
+              <SettingsRow>
+                <SettingsLabel>Тип</SettingsLabel>
+                <SettingsValue>
+                  {challenge.entry_type === 'paid' && '💰 Платный'}
+                  {challenge.entry_type === 'condition' && '🔒 По условию'}
+                  {challenge.entry_type === 'free' && '🆓 Бесплатный'}
+                </SettingsValue>
+              </SettingsRow>
+              <SettingsRow>
+                <SettingsLabel>Участников</SettingsLabel>
+                <SettingsValue>
+                  {participantsCount}
+                  {challenge.max_participants ? ` / ${challenge.max_participants}` : ''}
+                </SettingsValue>
+              </SettingsRow>
+            </SettingsSection>
 
-          <DayInfo>
-            <DayNumber>
-              День {dayIndex + 1} / {challenge.duration_days}
-            </DayNumber>
-            <DayDate>
-              {currentDate.toLocaleDateString('ru-RU')}
-            </DayDate>
-          </DayInfo>
+            {/* Заявки (только для paid/condition) */}
+            {challenge.entry_type !== 'free' && (
+              <RequestsSection>
+                <RequestsHeader>
+                  <RequestsTitle>
+                    📋 Заявки
+                    {pendingRequestsCount > 0 && (
+                      <RequestCount>{pendingRequestsCount}</RequestCount>
+                    )}
+                  </RequestsTitle>
+                  <SettingsButton onClick={() => setShowRequests(!showRequests)}>
+                    {showRequests ? '▲' : '▼'}
+                  </SettingsButton>
+                </RequestsHeader>
 
-          <NavButton
-            disabled={dayIndex + 1 >= challenge.duration_days}
-            onClick={() => {
-              console.log('➡️ [ADMIN CHALLENGE] Переключение на следующий день:', dayIndex + 2);
-              setDayIndex(d => d + 1);
-            }}
-          >
-            →
-          </NavButton>
-        </DaySwitcher>
-
-        {/* Статистика */}
-        <StatsRow>
-          <StatItem onClick={() => setActiveTab('all')}>
-            <StatValue $active={activeTab === 'all'}>{stats.all}</StatValue>
-            <StatLabel>Всего</StatLabel>
-          </StatItem>
-          <StatItem onClick={() => setActiveTab('pending')}>
-            <StatValue $active={activeTab === 'pending'}>{stats.pending}</StatValue>
-            <StatLabel>Ожидают</StatLabel>
-          </StatItem>
-          <StatItem onClick={() => setActiveTab('approved')}>
-            <StatValue $active={activeTab === 'approved'}>{stats.approved}</StatValue>
-            <StatLabel>Принято</StatLabel>
-          </StatItem>
-          <StatItem onClick={() => setActiveTab('rejected')}>
-            <StatValue $active={activeTab === 'rejected'}>{stats.rejected}</StatValue>
-            <StatLabel>Отклонено</StatLabel>
-          </StatItem>
-        </StatsRow>
-      </FixedTop>
-
-      <ScrollContent>
-        <Content>
-          {filteredReports.length === 0 ? (
-            <EmptyState>Нет отчетов в этой категории</EmptyState>
-          ) : (
-            filteredReports.map(r => (
-              <ReportCard key={r.id} $status={r.status}>
-                <ReportHeader>
-                  <UserBlock>
-                    <StyledAvatar>
-                      {getInitials(r.participant?.user?.username)}
-                    </StyledAvatar>
-                    <UserText>
-                      <Username>
-                        @{r.participant?.user?.username ?? 'user'}
-                      </Username>
-                      <UserInfoRow>
-                        <UserMeta>Отправлено: {r.report_date}</UserMeta>
-                        {r.proof_media_urls && r.proof_media_urls.length > 0 && (
-                          <UserMeta>
-                            📸 {r.proof_media_urls.length} файл(ов)
-                          </UserMeta>
-                        )}
-                      </UserInfoRow>
-                    </UserText>
-                  </UserBlock>
-
-                  <StatusBadge $status={r.status}>
-                    {r.status === 'pending' && '⏳'}
-                    {r.status === 'approved' && '✅'}
-                    {r.status === 'rejected' && '❌'}
-                  </StatusBadge>
-                </ReportHeader>
-
-                <ReportBody>
-                  <Label>Отчёт</Label>
-                  <Value>
-                    {challenge.report_mode === 'simple'
-                      ? r.is_done ? '✅ Выполнил' : '❌ Не выполнил'
-                      : `📊 ${r.value ?? 0} ${challenge.metric_name ?? ''}`}
-                  </Value>
-
-                  {r.proof_text && r.proof_text.trim() && (
-                    <>
-                      <Label>Комментарий</Label>
-                      <CommentBox>{r.proof_text}</CommentBox>
-                    </>
-                  )}
-
-                  {/* 📸 МЕДИА с улучшенным отображением */}
-{r.proof_media_urls && r.proof_media_urls.length > 0 && (
-  <>
-    <Label>Медиа доказательства</Label>
-    <MediaGrid>
-      {r.proof_media_urls.map((path, i) => {
-        const url = mediaUrls[path];
-        const isLoading = loadingMedia[path];
-        const totalFiles = r.proof_media_urls ? r.proof_media_urls.length : 0;
-        
-        console.log(`🖼️ [ADMIN CHALLENGE] Отображение медиа ${i + 1}:`, {
-          path,
-          hasUrl: !!url,
-          isLoading,
-          status: r.status
-        });
-
-        if (isLoading) {
-          return (
-            <MediaItem key={i}>
-              <MediaPreview $isLoading>
-                <LoadingSpinner />
-              </MediaPreview>
-            </MediaItem>
-          );
-        }
-
-        if (!url) {
-          return (
-            <MediaItem key={i}>
-              <MediaPreview $error>
-                <div>❌</div>
-              </MediaPreview>
-              <MediaCount>Ошибка</MediaCount>
-            </MediaItem>
-          );
-        }
-
-        const isVideo = path.toLowerCase().includes('.mp4')
-          || path.toLowerCase().includes('.mov')
-          || path.toLowerCase().includes('.webm');
-
-        return (
-          <MediaItem key={i}>
-            {isVideo ? (
-              <video
-                src={url}
-                controls
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  borderRadius: 12,
-                  background: '#000',
-                }}
-              />
-            ) : (
-              <img
-                src={url}
-                alt={`proof-${i}`}
-                onClick={() => openFullscreen(url)}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  borderRadius: 12,
-                  cursor: 'pointer',
-                  background: '#111',
-                }}
-              />
-            )}
-            <MediaCount>{i + 1}/{totalFiles}</MediaCount>
-          </MediaItem>
-        );
-      })}
-    </MediaGrid>
-  </>
-)}
-
-                  {r.rejection_reason && (
-                    <>
-                      <Label>Причина отклонения</Label>
-                      <Reason>{r.rejection_reason}</Reason>
-                    </>
-                  )}
-                </ReportBody>
-
-                {r.status === 'pending' && (
+                {showRequests && (
                   <>
-                    {rejectingReportId !== r.id ? (
-                      <Actions>
-                        <ApproveButton onClick={() => updateStatus(r.id, 'approved')}>
-                          ✓ Засчитать
-                        </ApproveButton>
-                        <RejectButton
-                          onClick={() => {
-                            console.log('🔴 [ADMIN CHALLENGE] Начало отклонения отчета:', r.id);
-                            setRejectingReportId(r.id);
-                            setRejectionText('');
-                          }}
-                        >
-                          ✕ Отклонить
-                        </RejectButton>
-                      </Actions>
-                    ) : (
-                      <div style={{ marginTop: 12 }}>
-                        <Label>Причина отклонения</Label>
-                        <textarea
-                          value={rejectionText}
-                          onChange={e => setRejectionText(e.target.value)}
-                          placeholder="Опишите причину..."
-                          style={{
-                            width: '100%',
-                            minHeight: 60,
-                            padding: 10,
-                            borderRadius: 8,
-                            background: '#111',
-                            color: '#fff',
-                            border: '1px solid rgba(255,255,255,0.15)',
-                            fontSize: 13,
-                          }}
-                        />
-                        <Actions style={{ marginTop: 8 }}>
-                          <ApproveButton
-                            disabled={!rejectionText.trim()}
-                            onClick={() => updateStatus(r.id, 'rejected', rejectionText)}
-                          >
-                            Подтвердить
-                          </ApproveButton>
-                          <RejectButton
-                            onClick={() => {
-                              setRejectingReportId(null);
-                              setRejectionText('');
-                            }}
-                          >
-                            Отмена
-                          </RejectButton>
-                        </Actions>
+                    {limitReached && (
+                      <div style={{ color: '#ff3b30', fontSize: 13, marginBottom: 12 }}>
+                        ⚠️ Лимит достигнут
                       </div>
+                    )}
+
+                    {requests.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: 20, opacity: 0.5 }}>
+                        Нет активных заявок
+                      </div>
+                    ) : (
+                      <ParticipantsList>
+                        {requests.map(request => (
+                          <AdminRequestCard key={request.id}>
+                            <RequestUserInfo>
+                              <RequestAvatar>
+                                {getInitials(request.users.username)}
+                              </RequestAvatar>
+                              <div>
+                                <RequestUsername>
+                                  {getDisplayName(request.users)}
+                                </RequestUsername>
+                                <RequestMeta>
+                                  <RequestDate>
+                                    {formatDate(request.created_at)}
+                                  </RequestDate>
+                                </RequestMeta>
+                              </div>
+                            </RequestUserInfo>
+                            <RequestActions>
+                              <RequestApproveButton
+                                onClick={() => handleApproveRequest(request.id, request.user_id)}
+                                disabled={processing === request.id || limitReached}
+                              >
+                                ✓
+                              </RequestApproveButton>
+                              <RequestRejectButton
+                                onClick={() => handleRejectRequest(request.id)}
+                                disabled={processing === request.id}
+                              >
+                                ✕
+                              </RequestRejectButton>
+                            </RequestActions>
+                          </AdminRequestCard>
+                        ))}
+                      </ParticipantsList>
                     )}
                   </>
                 )}
-              </ReportCard>
-            ))
-          )}
-        </Content>
-      </ScrollContent>
+              </RequestsSection>
+            )}
+
+            {/* Участники */}
+            <SettingsSection>
+              <SettingsTitle>👥 Участники ({participantsCount})</SettingsTitle>
+              {participants.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 20, opacity: 0.5 }}>
+                  Пока нет участников
+                </div>
+              ) : (
+                <ParticipantsList>
+                  {participants.map(p => (
+                    <ParticipantCard key={p.id}>
+                      <ParticipantName>
+                        <RequestAvatar style={{ background: 'rgba(255,255,255,0.1)' }}>
+                          {getInitials(p.users.username)}
+                        </RequestAvatar>
+                        <span>{getDisplayName(p.users)}</span>
+                      </ParticipantName>
+                      <RemoveButton onClick={() => removeParticipant(p.id, p.user_id)}>
+                        ✕
+                      </RemoveButton>
+                    </ParticipantCard>
+                  ))}
+                </ParticipantsList>
+              )}
+            </SettingsSection>
+
+            {/* Кнопки действий */}
+            <SettingsSection>
+              <SettingsTitle>⚙️ Действия</SettingsTitle>
+              {challenge.entry_type !== 'free' && onNavigateToRequests && (
+                <SettingsButton onClick={onNavigateToRequests} style={{ marginBottom: 8 }}>
+                  📬 Заявки (полный список)
+                </SettingsButton>
+              )}
+              {onNavigateToSettings && (
+                <SettingsButton onClick={onNavigateToSettings}>
+                  ⚙️ Настройки вызова
+                </SettingsButton>
+              )}
+            </SettingsSection>
+
+            {/* Опасная зона */}
+            <DangerZone>
+              <SettingsTitle>🗑️ Опасная зона</SettingsTitle>
+              <DangerButton onClick={() => console.log('Delete challenge')}>
+                Удалить вызов
+              </DangerButton>
+            </DangerZone>
+          </ScrollContent>
+        </LeftPanel>
+
+        {/* 👉 ПРАВАЯ ПАНЕЛЬ - ОТЧЕТЫ */}
+        <RightPanel>
+          <PanelHeader>
+            <Title>{challenge.title}</Title>
+            <Meta>
+              <span>День {dayIndex + 1} / {challenge.duration_days}</span>
+            </Meta>
+          </PanelHeader>
+
+          {/* Переключатель дней */}
+          <DaySwitcher>
+            <NavButton
+              disabled={dayIndex === 0}
+              onClick={() => setDayIndex(d => d - 1)}
+            >
+              ←
+            </NavButton>
+            <DayInfo>
+              <DayNumber>День {dayIndex + 1}</DayNumber>
+              <DayDate>{currentDate.toLocaleDateString('ru-RU')}</DayDate>
+            </DayInfo>
+            <NavButton
+              disabled={dayIndex + 1 >= challenge.duration_days}
+              onClick={() => setDayIndex(d => d + 1)}
+            >
+              →
+            </NavButton>
+          </DaySwitcher>
+
+          {/* Статистика отчетов */}
+          <StatsRow>
+            <StatItem onClick={() => setActiveTab('all')}>
+              <StatValue $active={activeTab === 'all'}>{stats.all}</StatValue>
+              <StatLabel>Всего</StatLabel>
+            </StatItem>
+            <StatItem onClick={() => setActiveTab('pending')}>
+              <StatValue $active={activeTab === 'pending'}>{stats.pending}</StatValue>
+              <StatLabel>Ожидают</StatLabel>
+            </StatItem>
+            <StatItem onClick={() => setActiveTab('approved')}>
+              <StatValue $active={activeTab === 'approved'}>{stats.approved}</StatValue>
+              <StatLabel>Принято</StatLabel>
+            </StatItem>
+            <StatItem onClick={() => setActiveTab('rejected')}>
+              <StatValue $active={activeTab === 'rejected'}>{stats.rejected}</StatValue>
+              <StatLabel>Отклонено</StatLabel>
+            </StatItem>
+          </StatsRow>
+
+          <ScrollContent>
+            <Content>
+              {filteredReports.length === 0 ? (
+                <EmptyState>Нет отчетов в этой категории</EmptyState>
+              ) : (
+                filteredReports.map(r => (
+                  <ReportCard key={r.id} $status={r.status}>
+                    <ReportHeader>
+                      <UserBlock>
+                        <StyledAvatar>
+                          {getInitials(r.participant?.user?.username)}
+                        </StyledAvatar>
+                        <UserText>
+                          <Username>
+                            @{r.participant?.user?.username ?? 'user'}
+                          </Username>
+                          <UserInfoRow>
+                            <UserMeta>{r.report_date}</UserMeta>
+                            {r.proof_media_urls && r.proof_media_urls.length > 0 && (
+                              <UserMeta>📸 {r.proof_media_urls.length}</UserMeta>
+                            )}
+                          </UserInfoRow>
+                        </UserText>
+                      </UserBlock>
+                      <StatusBadge $status={r.status}>
+                        {r.status === 'pending' && '⏳'}
+                        {r.status === 'approved' && '✅'}
+                        {r.status === 'rejected' && '❌'}
+                      </StatusBadge>
+                    </ReportHeader>
+
+                    <ReportBody>
+                      <Label>Отчёт</Label>
+                      <Value>
+                        {challenge.report_mode === 'simple'
+                          ? r.is_done ? '✅ Выполнил' : '❌ Не выполнил'
+                          : `📊 ${r.value ?? 0} ${challenge.metric_name ?? ''}`}
+                      </Value>
+
+                      {r.proof_text && r.proof_text.trim() && (
+                        <>
+                          <Label>Комментарий</Label>
+                          <CommentBox>{r.proof_text}</CommentBox>
+                        </>
+                      )}
+
+                      {r.proof_media_urls && r.proof_media_urls.length > 0 && (
+                        <>
+                          <Label>Медиа</Label>
+                          <MediaGrid>
+                            {r.proof_media_urls.map((path, i) => {
+                              const url = mediaUrls[path];
+                              const isLoading = loadingMedia[path];
+
+                              if (isLoading) {
+                                return (
+                                  <MediaItem key={i}>
+                                    <MediaPreview $isLoading>
+                                      <LoadingSpinner />
+                                    </MediaPreview>
+                                  </MediaItem>
+                                );
+                              }
+
+                              if (!url) return null;
+
+                              const isVideo = path.match(/\.(mp4|mov|webm)$/i);
+
+                              return (
+                                <MediaItem key={i}>
+                                  {isVideo ? (
+                                    <video
+                                      src={url}
+                                      controls
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'contain',
+                                        borderRadius: 12,
+                                      }}
+                                    />
+                                  ) : (
+                                    <img
+                                      src={url}
+                                      alt={`proof-${i}`}
+                                      onClick={() => setFullscreenImage(url)}
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'contain',
+                                        borderRadius: 12,
+                                        cursor: 'pointer',
+                                      }}
+                                    />
+                                  )}
+                                  <MediaCount>{i + 1}/{r.proof_media_urls!.length}</MediaCount>
+                                </MediaItem>
+                              );
+                            })}
+                          </MediaGrid>
+                        </>
+                      )}
+
+                      {r.rejection_reason && (
+                        <>
+                          <Label>Причина</Label>
+                          <Reason>{r.rejection_reason}</Reason>
+                        </>
+                      )}
+                    </ReportBody>
+
+                    {r.status === 'pending' && (
+                      <>
+                        {rejectingReportId !== r.id ? (
+                          <Actions>
+                            <ApproveButton onClick={() => updateStatus(r.id, 'approved')}>
+                              ✓
+                            </ApproveButton>
+                            <RejectButton
+                              onClick={() => {
+                                setRejectingReportId(r.id);
+                                setRejectionText('');
+                              }}
+                            >
+                              ✕
+                            </RejectButton>
+                          </Actions>
+                        ) : (
+                          <div style={{ marginTop: 12 }}>
+                            <textarea
+                              value={rejectionText}
+                              onChange={e => setRejectionText(e.target.value)}
+                              placeholder="Причина отклонения..."
+                              style={{
+                                width: '100%',
+                                minHeight: 60,
+                                padding: 10,
+                                borderRadius: 8,
+                                background: '#111',
+                                color: '#fff',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                fontSize: 13,
+                              }}
+                            />
+                            <Actions style={{ marginTop: 8 }}>
+                              <ApproveButton
+                                disabled={!rejectionText.trim()}
+                                onClick={() => updateStatus(r.id, 'rejected', rejectionText)}
+                              >
+                                Подтвердить
+                              </ApproveButton>
+                              <RejectButton
+                                onClick={() => {
+                                  setRejectingReportId(null);
+                                  setRejectionText('');
+                                }}
+                              >
+                                Отмена
+                              </RejectButton>
+                            </Actions>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </ReportCard>
+                ))
+              )}
+            </Content>
+          </ScrollContent>
+        </RightPanel>
+      </SplitContainer>
 
       {fullscreenImage && (
         <FullscreenOverlay onClick={() => setFullscreenImage(null)}>
-          <FullscreenClose onClick={() => setFullscreenImage(null)}>
-            ×
-          </FullscreenClose>
-          <FullscreenImage 
-            src={fullscreenImage} 
-            alt="fullscreen"
-            onClick={e => e.stopPropagation()}
-          />
+          <FullscreenClose>×</FullscreenClose>
+          <FullscreenImage src={fullscreenImage} onClick={e => e.stopPropagation()} />
         </FullscreenOverlay>
       )}
     </SafeArea>
