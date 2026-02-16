@@ -756,7 +756,20 @@ export default function InviteSettings({
     }
 
     console.log('✅ [DELETE] Вызов удален');
+    console.log('🔙 [NAVIGATION] Вызов onBack() после удаления');
     onBack(); // Возвращаемся в админ-панель
+  };
+
+  // 👇 Функция-обработчик для кнопки назад с логами
+  const handleBackClick = () => {
+    console.log('🔙 [NAVIGATION] Нажата кнопка назад');
+    console.log('📍 [NAVIGATION] Текущий экран: InviteSettings, challengeId:', challengeId);
+    console.log('🎯 [NAVIGATION] Вызов onBack() для перехода на экран admin');
+    
+    // Логируем стек вызовов для отладки
+    console.trace('[NAVIGATION] Стек вызовов:');
+    
+    onBack();
   };
 
   const limitReached = Boolean(limitEnabled && maxParticipants && participantsCount >= Number(maxParticipants));
@@ -767,7 +780,7 @@ export default function InviteSettings({
       <SafeArea>
         <Container>
           <HeaderRow>
-            <BackButton onClick={onBack}>
+            <BackButton onClick={handleBackClick}>
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
@@ -786,7 +799,7 @@ export default function InviteSettings({
     <SafeArea>
       <Container>
         <HeaderRow>
-          <BackButton onClick={onBack}>
+          <BackButton onClick={handleBackClick}>
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M15 18l-6-6 6-6" />
             </svg>
