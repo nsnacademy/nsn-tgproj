@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
-// Импорт Screen удален, так как не используется
-
 import {
   SafeArea,
   Header,
@@ -33,13 +31,16 @@ import {
   CommentBox,
   ScrollContent,
   FixedTop,
-  // SettingsButton удален
+  
+  StatsRow,
+  StatItem,
+  StatValue,
+  StatLabel,
 } from './styles';
 
 type Props = {
   challengeId: string;
-  onBack: () => void; // onBack будет вести в admin
-  // onNavigate удален, так как не используется
+  onBack: () => void;
 };
 
 type Challenge = {
@@ -73,6 +74,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   const [dayIndex, setDayIndex] = useState(0);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
 
   // 👉 состояние для отклонения
   const [rejectingReportId, setRejectingReportId] = useState<string | null>(null);
@@ -137,7 +139,6 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
           if (!report.proof_media_urls) continue;
 
           for (const path of report.proof_media_urls) {
-            // 👇 если уже есть — не запрашиваем
             if (mediaUrls[path]) continue;
 
             const { data: signed } = await supabase.storage
@@ -163,6 +164,19 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
   const currentDate = new Date(challenge.start_at);
   currentDate.setDate(currentDate.getDate() + dayIndex);
+
+  // Статистика по отчетам
+  const stats = {
+    all: reports.length,
+    pending: reports.filter(r => r.status === 'pending').length,
+    approved: reports.filter(r => r.status === 'approved').length,
+    rejected: reports.filter(r => r.status === 'rejected').length,
+  };
+
+  // Фильтрация отчетов по вкладке
+  const filteredReports = activeTab === 'all' 
+    ? reports 
+    : reports.filter(r => r.status === activeTab);
 
   /* === UPDATE STATUS === */
   const updateStatus = async (
@@ -212,20 +226,17 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       )
     );
 
-    // закрываем режим отклонения
     setRejectingReportId(null);
     setRejectionText('');
   };
 
-  // 👇 Функция для возврата в админ-панель
   const handleBackToAdmin = () => {
     console.log('[ADMIN] back to admin');
-    onBack(); // onBack должен вести в admin
+    onBack();
   };
 
   return (
     <SafeArea>
-      {/* FIXED HEADER + DAY SWITCHER */}
       <FixedTop>
         <Header>
           <BackButton onClick={handleBackToAdmin}>←</BackButton>
@@ -236,8 +247,6 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
               <span>{challenge.duration_days} дней</span>
             </Meta>
           </div>
-          
-          {/* SettingsButton полностью удален */}
         </Header>
 
         <DaySwitcher>
@@ -264,15 +273,42 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
             →
           </NavButton>
         </DaySwitcher>
+
+        {/* Статистика */}
+        <StatsRow>
+          <StatItem>
+            <StatValue $active={activeTab === 'all'} onClick={() => setActiveTab('all')}>
+              {stats.all}
+            </StatValue>
+            <StatLabel>Всего</StatLabel>
+          </StatItem>
+          <StatItem>
+            <StatValue $active={activeTab === 'pending'} onClick={() => setActiveTab('pending')}>
+              {stats.pending}
+            </StatValue>
+            <StatLabel>Ожидают</StatLabel>
+          </StatItem>
+          <StatItem>
+            <StatValue $active={activeTab === 'approved'} onClick={() => setActiveTab('approved')}>
+              {stats.approved}
+            </StatValue>
+            <StatLabel>Принято</StatLabel>
+          </StatItem>
+          <StatItem>
+            <StatValue $active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')}>
+              {stats.rejected}
+            </StatValue>
+            <StatLabel>Отклонено</StatLabel>
+          </StatItem>
+        </StatsRow>
       </FixedTop>
 
-      {/* SCROLLABLE CONTENT */}
       <ScrollContent>
         <Content>
-          {reports.length === 0 ? (
-            <EmptyState>Отчётов за этот день нет</EmptyState>
+          {filteredReports.length === 0 ? (
+            <EmptyState>Нет отчетов в этой категории</EmptyState>
           ) : (
-            reports.map(r => (
+            filteredReports.map(r => (
               <ReportCard key={r.id} $status={r.status}>
                 <ReportHeader>
                   <UserBlock>
@@ -288,22 +324,20 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
                   </UserBlock>
 
                   <StatusBadge $status={r.status}>
-                    {r.status.toUpperCase()}
+                    {r.status === 'pending' && '⏳'}
+                    {r.status === 'approved' && '✅'}
+                    {r.status === 'rejected' && '❌'}
                   </StatusBadge>
                 </ReportHeader>
 
                 <ReportBody>
-                  <Label>Отчёт пользователя</Label>
-
+                  <Label>Отчёт</Label>
                   <Value>
                     {challenge.report_mode === 'simple'
-                      ? r.is_done
-                        ? 'Отметил выполнение дня'
-                        : '—'
+                      ? r.is_done ? 'Выполнил' : 'Не выполнил'
                       : `${r.value ?? 0} ${challenge.metric_name ?? ''}`}
                   </Value>
 
-                  {/* 📝 КОММЕНТАРИЙ */}
                   {r.proof_text && r.proof_text.trim() && (
                     <>
                       <Label>Комментарий</Label>
@@ -311,50 +345,27 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
                     </>
                   )}
 
-                  {/* 📸 МЕДИА */}
                   {r.proof_media_urls && r.proof_media_urls.length > 0 && (
                     <>
-                      <Label>Медиа доказательства</Label>
-
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns:
-                            'repeat(auto-fill, minmax(120px, 1fr))',
-                          gap: 12,
-                          marginTop: 10,
-                        }}
-                      >
+                      <Label>Медиа</Label>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         {r.proof_media_urls.map((path, i) => {
                           const url = mediaUrls[path];
                           if (!url) return null;
 
-                          const isVideo = path.toLowerCase().includes('.mp4')
-                            || path.toLowerCase().includes('.mov')
-                            || path.toLowerCase().includes('.webm');
-
-                          return isVideo ? (
-                            <video
+                          return (
+                            <div
                               key={i}
-                              src={url}
-                              controls
-                              style={{
-                                width: '100%',
-                                borderRadius: 12,
-                                background: '#000',
-                              }}
-                            />
-                          ) : (
-                            <img
-                              key={i}
-                              src={url}
-                              alt="proof"
                               onClick={() => setFullscreenImage(url)}
                               style={{
-                                width: '100%',
-                                borderRadius: 12,
-                                objectFit: 'cover',
-                                cursor: 'zoom-in',
+                                width: 60,
+                                height: 60,
+                                borderRadius: 8,
+                                background: '#222',
+                                cursor: 'pointer',
+                                backgroundImage: `url(${url})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
                               }}
                             />
                           );
@@ -363,65 +374,55 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
                     </>
                   )}
 
-                  {/* ❌ ПРИЧИНА ОТКЛОНЕНИЯ */}
                   {r.rejection_reason && (
                     <>
-                      <Label>Причина отклонения</Label>
+                      <Label>Причина</Label>
                       <Reason>{r.rejection_reason}</Reason>
                     </>
                   )}
                 </ReportBody>
 
-                {/* ACTIONS */}
                 {r.status === 'pending' && (
                   <>
                     {rejectingReportId !== r.id ? (
                       <Actions>
-                        <ApproveButton
-                          onClick={() => updateStatus(r.id, 'approved')}
-                        >
-                          Засчитать
+                        <ApproveButton onClick={() => updateStatus(r.id, 'approved')}>
+                          ✓ Засчитать
                         </ApproveButton>
-
                         <RejectButton
                           onClick={() => {
                             setRejectingReportId(r.id);
                             setRejectionText('');
                           }}
                         >
-                          Отклонить
+                          ✕ Отклонить
                         </RejectButton>
                       </Actions>
                     ) : (
                       <div style={{ marginTop: 12 }}>
                         <Label>Причина отклонения</Label>
-
                         <textarea
                           value={rejectionText}
                           onChange={e => setRejectionText(e.target.value)}
-                          placeholder="Опишите причину отклонения"
+                          placeholder="Опишите причину..."
                           style={{
                             width: '100%',
-                            minHeight: 80,
-                            padding: 12,
-                            borderRadius: 12,
+                            minHeight: 60,
+                            padding: 10,
+                            borderRadius: 8,
                             background: '#111',
                             color: '#fff',
                             border: '1px solid rgba(255,255,255,0.15)',
-                            resize: 'none',
+                            fontSize: 13,
                           }}
                         />
-
-                        <Actions style={{ marginTop: 10 }}>
+                        <Actions style={{ marginTop: 8 }}>
                           <ApproveButton
                             disabled={!rejectionText.trim()}
-                            onClick={() =>
-                              updateStatus(r.id, 'rejected', rejectionText)
-                            }
+                            onClick={() => updateStatus(r.id, 'rejected', rejectionText)}
                           >
                             Подтвердить
                           </ApproveButton>
-
                           <RejectButton
                             onClick={() => {
                               setRejectingReportId(null);
@@ -447,7 +448,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.9)',
+            background: 'rgba(0,0,0,0.95)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
@@ -455,36 +456,31 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
             padding: 20,
           }}
         >
-          {/* КНОПКА ЗАКРЫТИЯ */}
           <button
             onClick={() => setFullscreenImage(null)}
             style={{
               position: 'absolute',
-              top: 112,
-              right: 16,
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
+              top: 100,
+              right: 20,
+              width: 40,
+              height: 40,
+              borderRadius: 20,
               border: 'none',
-              background: 'rgba(198, 66, 66, 0.6)',
+              background: 'rgba(255,255,255,0.2)',
               color: '#fff',
-              fontSize: 26,
+              fontSize: 24,
               cursor: 'pointer',
             }}
           >
             ×
           </button>
-
-          {/* ФОТО */}
           <img
             src={fullscreenImage}
             alt="fullscreen"
-            onClick={e => e.stopPropagation()}
             style={{
               maxWidth: '100%',
               maxHeight: '100%',
               borderRadius: 12,
-              objectFit: 'contain',
             }}
           />
         </div>

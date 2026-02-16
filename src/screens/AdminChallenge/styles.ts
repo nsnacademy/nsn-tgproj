@@ -288,4 +288,64 @@ export const ScrollContent = styled.div`
   gap: 16px;
 `;
 
-// SettingsButton полностью удален
+// Добавьте в styles.ts
+
+export const TabBar = styled.div`
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+`;
+
+export const Tab = styled.button<{ $active: boolean }>`
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  background: ${({ $active }) => ($active ? '#fff' : 'transparent')};
+  color: ${({ $active }) => ($active ? '#000' : '#fff')};
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${({ $active }) => ($active ? '#fff' : 'rgba(255,255,255,0.1)')};
+  }
+`;
+
+export const StatsRow = styled.div`
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 0;
+  margin-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+`;
+
+export const StatItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+`;
+
+export const StatValue = styled.div<{ $active?: boolean }>`
+  font-size: 18px;
+  font-weight: 600;
+  opacity: ${({ $active }) => ($active ? 1 : 0.5)};
+  cursor: pointer;
+  
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
+export const StatLabel = styled.div`
+  font-size: 10px;
+  opacity: 0.5;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
