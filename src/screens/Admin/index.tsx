@@ -43,8 +43,13 @@ import {
   checkIsCreator,
 } from '../../shared/lib/supabase';
 
-// ИМПОРТИРУЕМ ТИП ИЗ APP
-import type { Screen } from '../../app/App';
+type Screen =
+  | 'home'
+  | 'create'
+  | 'profile'
+  | 'admin'
+  | 'admin-challenge'
+  | 'invite-settings';
 
 type AdminProps = {
   screen: Screen;
@@ -418,8 +423,8 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
                   <CardActions>
                     <ActionButton
                       onClick={() => {
-                        console.log('[ADMIN] card click → admin-reports', ch.id);
-                        onNavigate('admin-reports', ch.id); // 👈 ИЗМЕНЕНО
+                        console.log('[ADMIN] card click → admin-challenge', ch.id);
+                        onNavigate('admin-challenge', ch.id);
                       }}
                     >
                       <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">

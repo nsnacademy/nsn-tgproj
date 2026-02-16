@@ -15,7 +15,7 @@ import ChallengeProgress from '../screens/ChallengeProgress';
 import ChallengeReport from '../screens/ChallengeReport';
 import Profile from '../screens/Profile';
 import Admin from '../screens/Admin';
-import AdminReports from '../screens/AdminReports'; // 👈 ИЗМЕНЕНО
+import AdminChallenge from '../screens/AdminChallenge';
 import InviteSettings from '../screens/InviteSettings';
 import ChallengePaid from '../screens/ChallengePaid';
 import ChallengeCondition from '../screens/ChallengeCondition';
@@ -38,7 +38,7 @@ export type Screen =
   | 'challenge-report'
   | 'profile'
   | 'admin'
-  | 'admin-reports'        // 👈 ИЗМЕНЕНО
+  | 'admin-challenge'
   | 'invite-settings';
 
 function App() {
@@ -333,17 +333,18 @@ function App() {
         />
       )}
 
-      {screen === 'admin-reports' && selectedChallengeId && (        // 👈 ИЗМЕНЕНО
-        <AdminReports
+      {screen === 'admin-challenge' && selectedChallengeId && (
+        <AdminChallenge
           challengeId={selectedChallengeId}
           onBack={() => navigate('admin')}
+          // onNavigate удален, так как не используется в AdminChallenge
         />
       )}
 
       {screen === 'invite-settings' && selectedChallengeId && (
         <InviteSettings
           challengeId={selectedChallengeId}
-          onBack={() => navigate('admin-reports', selectedChallengeId)} // 👈 ИЗМЕНЕНО
+          onBack={() => navigate('admin-challenge', selectedChallengeId)}
         />
       )}
     </>
