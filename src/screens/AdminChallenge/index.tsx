@@ -15,10 +15,9 @@ import {
   ReportCard,
   ReportHeader,
   UserBlock,
-  Avatar,
+  StyledAvatar, // 👈 Заменили Avatar на StyledAvatar
   UserText,
   Username,
-  SubmittedAt,
   StatusBadge,
   ReportBody,
   Label,
@@ -31,11 +30,20 @@ import {
   CommentBox,
   ScrollContent,
   FixedTop,
-  
   StatsRow,
   StatItem,
   StatValue,
   StatLabel,
+  MediaGrid,
+  MediaItem,
+  MediaPreview,
+  MediaCount,
+  UserInfoRow,
+  UserMeta,
+  FullscreenOverlay,
+  FullscreenClose,
+  FullscreenImage,
+  LoadingSpinner,
 } from './styles';
 
 type Props = {
@@ -75,6 +83,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+  const [loadingMedia, setLoadingMedia] = useState<Record<string, boolean>>({});
 
   // 👉 состояние для отклонения
   const [rejectingReportId, setRejectingReportId] = useState<string | null>(null);
@@ -82,31 +91,39 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
   /* === LOAD CHALLENGE === */
   useEffect(() => {
-    console.log('[ADMIN] load challenge', challengeId);
-
+    console.log('📋 [ADMIN CHALLENGE] Загрузка данных вызова:', challengeId);
+    
     supabase
       .from('challenges')
       .select('title, report_mode, metric_name, start_at, duration_days, entry_type')
       .eq('id', challengeId)
       .single()
       .then(({ data, error }) => {
-        console.log('[ADMIN] challenge response', { data, error });
-        if (data) setChallenge(data);
+        if (error) {
+          console.error('❌ [ADMIN CHALLENGE] Ошибка загрузки вызова:', error);
+        } else {
+          console.log('✅ [ADMIN CHALLENGE] Данные вызова загружены:', data);
+          setChallenge(data);
+        }
       });
   }, [challengeId]);
 
   /* === LOAD REPORTS === */
   useEffect(() => {
-    if (!challenge) return;
+    if (!challenge) {
+      console.log('⏳ [ADMIN CHALLENGE] Ожидание загрузки challenge...');
+      return;
+    }
 
     const date = new Date(challenge.start_at);
     date.setDate(date.getDate() + dayIndex);
     const reportDate = date.toISOString().slice(0, 10);
 
-    console.log('[ADMIN] load reports', {
+    console.log('🔍 [ADMIN CHALLENGE] Загрузка отчетов:', {
       challengeId,
       dayIndex,
       reportDate,
+      challengeTitle: challenge.title
     });
 
     supabase
@@ -120,38 +137,87 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
         proof_text,
         proof_media_urls,
         rejection_reason,
-        participant:participants (
-          user:users ( username )
+        participant:participants!inner (
+          user:users!inner ( 
+            username 
+          )
         )
       `)
       .eq('challenge_id', challengeId)
       .eq('report_date', reportDate)
       .returns<Report[]>()
-      .then(async ({ data }) => {
-        console.log('[ADMIN] reports raw', JSON.stringify(data, null, 2));
+      .then(async ({ data, error }) => {
+        if (error) {
+          console.error('❌ [ADMIN CHALLENGE] Ошибка загрузки отчетов:', error);
+          return;
+        }
+
+        console.log('✅ [ADMIN CHALLENGE] Отчеты загружены:', {
+          count: data?.length || 0,
+          reports: data?.map(r => ({
+            id: r.id,
+            username: r.participant?.user?.username,
+            status: r.status,
+            mediaCount: r.proof_media_urls?.length || 0
+          }))
+        });
+
         setReports(data ?? []);
 
-        if (!data) return;
+        if (!data || data.length === 0) {
+          console.log('ℹ️ [ADMIN CHALLENGE] Нет отчетов за этот день');
+          return;
+        }
 
-        const urls: Record<string, string> = {};
-
-        for (const report of data) {
-          if (!report.proof_media_urls) continue;
-
-          for (const path of report.proof_media_urls) {
-            if (mediaUrls[path]) continue;
-
-            const { data: signed } = await supabase.storage
-              .from('report-media')
-              .createSignedUrl(path, 60 * 60);
-
-            if (signed?.signedUrl) {
-              urls[path] = signed.signedUrl;
-            }
+        // Собираем все пути к медиа
+        const allMediaPaths: string[] = [];
+        data.forEach(report => {
+          if (report.proof_media_urls) {
+            allMediaPaths.push(...report.proof_media_urls);
           }
+        });
+
+        console.log('📸 [ADMIN CHALLENGE] Медиа файлы для загрузки:', {
+          total: allMediaPaths.length,
+          paths: allMediaPaths
+        });
+
+        // Загружаем signed URLs для каждого медиа
+        const urls: Record<string, string> = {};
+        
+        for (const path of allMediaPaths) {
+          if (mediaUrls[path]) {
+            console.log('♻️ [ADMIN CHALLENGE] Медиа уже загружено, используем кэш:', path);
+            continue;
+          }
+
+          setLoadingMedia(prev => ({ ...prev, [path]: true }));
+          console.log('⏳ [ADMIN CHALLENGE] Запрос signed URL для:', path);
+
+          const { data: signed, error: signedError } = await supabase.storage
+            .from('report-media')
+            .createSignedUrl(path, 60 * 60); // 1 час
+
+          if (signedError) {
+            console.error('❌ [ADMIN CHALLENGE] Ошибка получения signed URL:', {
+              path,
+              error: signedError
+            });
+          } else if (signed?.signedUrl) {
+            console.log('✅ [ADMIN CHALLENGE] Signed URL получен:', {
+              path,
+              url: signed.signedUrl.substring(0, 50) + '...'
+            });
+            urls[path] = signed.signedUrl;
+          }
+
+          setLoadingMedia(prev => ({ ...prev, [path]: false }));
         }
 
         if (Object.keys(urls).length > 0) {
+          console.log('📦 [ADMIN CHALLENGE] Обновление mediaUrls:', {
+            newUrls: Object.keys(urls).length
+          });
           setMediaUrls(prev => ({
             ...prev,
             ...urls,
@@ -160,7 +226,21 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       });
   }, [challenge, dayIndex, challengeId]);
 
-  if (!challenge) return null;
+  if (!challenge) {
+    console.log('⏳ [ADMIN CHALLENGE] Рендер заглушки загрузки...');
+    return (
+      <SafeArea>
+        <FixedTop>
+          <Header>
+            <BackButton onClick={onBack}>←</BackButton>
+            <div>
+              <Title>Загрузка...</Title>
+            </div>
+          </Header>
+        </FixedTop>
+      </SafeArea>
+    );
+  }
 
   const currentDate = new Date(challenge.start_at);
   currentDate.setDate(currentDate.getDate() + dayIndex);
@@ -173,10 +253,27 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
     rejected: reports.filter(r => r.status === 'rejected').length,
   };
 
+  console.log('📊 [ADMIN CHALLENGE] Статистика отчетов:', {
+    day: dayIndex + 1,
+    stats,
+    activeTab
+  });
+
   // Фильтрация отчетов по вкладке
   const filteredReports = activeTab === 'all' 
     ? reports 
     : reports.filter(r => r.status === activeTab);
+
+  console.log('🎨 [ADMIN CHALLENGE] Отчеты для отображения:', {
+    tab: activeTab,
+    count: filteredReports.length,
+    reports: filteredReports.map(r => ({
+      id: r.id,
+      username: r.participant?.user?.username,
+      status: r.status,
+      mediaCount: r.proof_media_urls?.length || 0
+    }))
+  });
 
   /* === UPDATE STATUS === */
   const updateStatus = async (
@@ -184,10 +281,10 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
     status: 'approved' | 'rejected',
     rejectionReason?: string
   ) => {
-    console.log('[ADMIN] updateStatus CLICK', {
+    console.log('🔄 [ADMIN CHALLENGE] Обновление статуса отчета:', {
       reportId,
       status,
-      rejectionReason,
+      rejectionReason
     });
 
     const payload =
@@ -207,13 +304,13 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       .eq('id', reportId)
       .select();
 
-    console.log('[ADMIN] updateStatus RESULT', { data, error });
-
     if (error) {
-      console.error('[ADMIN] updateStatus ERROR', error);
+      console.error('❌ [ADMIN CHALLENGE] Ошибка обновления статуса:', error);
       return;
     }
 
+    console.log('✅ [ADMIN CHALLENGE] Статус обновлен:', data);
+    
     setReports(prev =>
       prev.map(r =>
         r.id === reportId
@@ -231,8 +328,18 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   };
 
   const handleBackToAdmin = () => {
-    console.log('[ADMIN] back to admin');
+    console.log('👈 [ADMIN CHALLENGE] Возврат в админ-панель');
     onBack();
+  };
+
+  const openFullscreen = (url: string) => {
+    console.log('🖼️ [ADMIN CHALLENGE] Открытие полноэкранного режима:', url.substring(0, 50) + '...');
+    setFullscreenImage(url);
+  };
+
+  const getInitials = (username: string | null) => {
+    if (!username) return '?';
+    return username.charAt(0).toUpperCase();
   };
 
   return (
@@ -252,7 +359,10 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
         <DaySwitcher>
           <NavButton
             disabled={dayIndex === 0}
-            onClick={() => setDayIndex(d => d - 1)}
+            onClick={() => {
+              console.log('⬅️ [ADMIN CHALLENGE] Переключение на предыдущий день:', dayIndex);
+              setDayIndex(d => d - 1);
+            }}
           >
             ←
           </NavButton>
@@ -268,7 +378,10 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
           <NavButton
             disabled={dayIndex + 1 >= challenge.duration_days}
-            onClick={() => setDayIndex(d => d + 1)}
+            onClick={() => {
+              console.log('➡️ [ADMIN CHALLENGE] Переключение на следующий день:', dayIndex + 2);
+              setDayIndex(d => d + 1);
+            }}
           >
             →
           </NavButton>
@@ -276,28 +389,20 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
         {/* Статистика */}
         <StatsRow>
-          <StatItem>
-            <StatValue $active={activeTab === 'all'} onClick={() => setActiveTab('all')}>
-              {stats.all}
-            </StatValue>
+          <StatItem onClick={() => setActiveTab('all')}>
+            <StatValue $active={activeTab === 'all'}>{stats.all}</StatValue>
             <StatLabel>Всего</StatLabel>
           </StatItem>
-          <StatItem>
-            <StatValue $active={activeTab === 'pending'} onClick={() => setActiveTab('pending')}>
-              {stats.pending}
-            </StatValue>
+          <StatItem onClick={() => setActiveTab('pending')}>
+            <StatValue $active={activeTab === 'pending'}>{stats.pending}</StatValue>
             <StatLabel>Ожидают</StatLabel>
           </StatItem>
-          <StatItem>
-            <StatValue $active={activeTab === 'approved'} onClick={() => setActiveTab('approved')}>
-              {stats.approved}
-            </StatValue>
+          <StatItem onClick={() => setActiveTab('approved')}>
+            <StatValue $active={activeTab === 'approved'}>{stats.approved}</StatValue>
             <StatLabel>Принято</StatLabel>
           </StatItem>
-          <StatItem>
-            <StatValue $active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')}>
-              {stats.rejected}
-            </StatValue>
+          <StatItem onClick={() => setActiveTab('rejected')}>
+            <StatValue $active={activeTab === 'rejected'}>{stats.rejected}</StatValue>
             <StatLabel>Отклонено</StatLabel>
           </StatItem>
         </StatsRow>
@@ -312,14 +417,21 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
               <ReportCard key={r.id} $status={r.status}>
                 <ReportHeader>
                   <UserBlock>
-                    <Avatar />
+                    <StyledAvatar>
+                      {getInitials(r.participant?.user?.username)}
+                    </StyledAvatar>
                     <UserText>
                       <Username>
-                        @{r.participant.user.username ?? 'user'}
+                        @{r.participant?.user?.username ?? 'user'}
                       </Username>
-                      <SubmittedAt>
-                        Отправлено: {r.report_date}
-                      </SubmittedAt>
+                      <UserInfoRow>
+                        <UserMeta>Отправлено: {r.report_date}</UserMeta>
+                        {r.proof_media_urls && r.proof_media_urls.length > 0 && (
+                          <UserMeta>
+                            📸 {r.proof_media_urls.length} файл(ов)
+                          </UserMeta>
+                        )}
+                      </UserInfoRow>
                     </UserText>
                   </UserBlock>
 
@@ -334,8 +446,8 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
                   <Label>Отчёт</Label>
                   <Value>
                     {challenge.report_mode === 'simple'
-                      ? r.is_done ? 'Выполнил' : 'Не выполнил'
-                      : `${r.value ?? 0} ${challenge.metric_name ?? ''}`}
+                      ? r.is_done ? '✅ Выполнил' : '❌ Не выполнил'
+                      : `📊 ${r.value ?? 0} ${challenge.metric_name ?? ''}`}
                   </Value>
 
                   {r.proof_text && r.proof_text.trim() && (
@@ -345,38 +457,78 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
                     </>
                   )}
 
-                  {r.proof_media_urls && r.proof_media_urls.length > 0 && (
-                    <>
-                      <Label>Медиа</Label>
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        {r.proof_media_urls.map((path, i) => {
-                          const url = mediaUrls[path];
-                          if (!url) return null;
+                  {/* 📸 МЕДИА с улучшенным отображением */}
+{r.proof_media_urls && r.proof_media_urls.length > 0 && (
+  <>
+    <Label>Медиа доказательства</Label>
+    <MediaGrid>
+      {r.proof_media_urls.map((path, i) => {
+        const url = mediaUrls[path];
+        const isLoading = loadingMedia[path];
+        const totalFiles = r.proof_media_urls ? r.proof_media_urls.length : 0;
+        
+        console.log(`🖼️ [ADMIN CHALLENGE] Отображение медиа ${i + 1}:`, {
+          path,
+          hasUrl: !!url,
+          isLoading,
+          status: r.status
+        });
 
-                          return (
-                            <div
-                              key={i}
-                              onClick={() => setFullscreenImage(url)}
-                              style={{
-                                width: 60,
-                                height: 60,
-                                borderRadius: 8,
-                                background: '#222',
-                                cursor: 'pointer',
-                                backgroundImage: `url(${url})`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                              }}
-                            />
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
+        if (isLoading) {
+          return (
+            <MediaItem key={i}>
+              <MediaPreview $isLoading>
+                <LoadingSpinner />
+              </MediaPreview>
+            </MediaItem>
+          );
+        }
+
+        if (!url) {
+          return (
+            <MediaItem key={i}>
+              <MediaPreview $error>
+                <div>❌</div>
+              </MediaPreview>
+              <MediaCount>Ошибка</MediaCount>
+            </MediaItem>
+          );
+        }
+
+        const isVideo = path.toLowerCase().includes('.mp4')
+          || path.toLowerCase().includes('.mov')
+          || path.toLowerCase().includes('.webm');
+
+        return (
+          <MediaItem key={i}>
+            {isVideo ? (
+              <video
+                src={url}
+                controls
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: 8,
+                }}
+              />
+            ) : (
+              <MediaPreview 
+                $imageUrl={url}
+                onClick={() => openFullscreen(url)}
+              />
+            )}
+            <MediaCount>{i + 1}/{totalFiles}</MediaCount>
+          </MediaItem>
+        );
+      })}
+    </MediaGrid>
+  </>
+)}
 
                   {r.rejection_reason && (
                     <>
-                      <Label>Причина</Label>
+                      <Label>Причина отклонения</Label>
                       <Reason>{r.rejection_reason}</Reason>
                     </>
                   )}
@@ -391,6 +543,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
                         </ApproveButton>
                         <RejectButton
                           onClick={() => {
+                            console.log('🔴 [ADMIN CHALLENGE] Начало отклонения отчета:', r.id);
                             setRejectingReportId(r.id);
                             setRejectionText('');
                           }}
@@ -443,47 +596,16 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       </ScrollContent>
 
       {fullscreenImage && (
-        <div
-          onClick={() => setFullscreenImage(null)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.95)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 20,
-          }}
-        >
-          <button
-            onClick={() => setFullscreenImage(null)}
-            style={{
-              position: 'absolute',
-              top: 100,
-              right: 20,
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              border: 'none',
-              background: 'rgba(255,255,255,0.2)',
-              color: '#fff',
-              fontSize: 24,
-              cursor: 'pointer',
-            }}
-          >
+        <FullscreenOverlay onClick={() => setFullscreenImage(null)}>
+          <FullscreenClose onClick={() => setFullscreenImage(null)}>
             ×
-          </button>
-          <img
-            src={fullscreenImage}
+          </FullscreenClose>
+          <FullscreenImage 
+            src={fullscreenImage} 
             alt="fullscreen"
-            style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              borderRadius: 12,
-            }}
+            onClick={e => e.stopPropagation()}
           />
-        </div>
+        </FullscreenOverlay>
       )}
     </SafeArea>
   );

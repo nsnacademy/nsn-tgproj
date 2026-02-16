@@ -288,8 +288,11 @@ export const ScrollContent = styled.div`
   gap: 16px;
 `;
 
-// Добавьте в styles.ts
+/* ======================
+   НОВЫЕ СТИЛИ ДЛЯ УЛУЧШЕННОГО ИНТЕРФЕЙСА
+====================== */
 
+/* ВКЛАДКИ */
 export const TabBar = styled.div`
   display: flex;
   gap: 8px;
@@ -316,6 +319,7 @@ export const Tab = styled.button<{ $active: boolean }>`
   }
 `;
 
+/* СТРОКА СТАТИСТИКИ */
 export const StatsRow = styled.div`
   display: flex;
   justify-content: space-around;
@@ -330,13 +334,13 @@ export const StatItem = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  cursor: pointer;
 `;
 
 export const StatValue = styled.div<{ $active?: boolean }>`
   font-size: 18px;
   font-weight: 600;
   opacity: ${({ $active }) => ($active ? 1 : 0.5)};
-  cursor: pointer;
   
   &:hover {
     opacity: 0.8;
@@ -349,3 +353,184 @@ export const StatLabel = styled.div`
   text-transform: uppercase;
   letter-spacing: 0.5px;
 `;
+
+/* ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ */
+export const UserInfoRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+`;
+
+export const UserMeta = styled.span`
+  font-size: 11px;
+  opacity: 0.5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+/* СЕТКА МЕДИА */
+export const MediaGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+`;
+
+export const MediaItem = styled.div`
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+`;
+
+export const MediaPreview = styled.div<{ $imageUrl?: string; $isLoading?: boolean; $error?: boolean }>`
+  width: 100%;
+  height: 100%;
+  background: ${({ $imageUrl, $isLoading, $error }) => 
+    $error ? 'rgba(255,80,80,0.1)' :
+    $isLoading ? 'rgba(255,255,255,0.05)' :
+    $imageUrl ? `url(${$imageUrl})` : 'rgba(255,255,255,0.05)'};
+  background-size: cover;
+  background-position: center;
+  cursor: ${({ $imageUrl }) => $imageUrl ? 'pointer' : 'default'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.5);
+  font-size: 20px;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: ${({ $imageUrl }) => $imageUrl ? 'scale(1.05)' : 'none'};
+  }
+`;
+
+export const MediaCount = styled.div`
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.1);
+`;
+
+/* УЛУЧШЕННЫЙ АВАТАР */
+export const StyledAvatar = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+`;
+
+/* КОНТЕЙНЕР ДЛЯ МЕДИА В ПОЛНОЭКРАННОМ РЕЖИМЕ */
+export const FullscreenOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+`;
+
+export const FullscreenClose = styled.button`
+  position: absolute;
+  top: 100px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  border: none;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10000;
+
+  &:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+export const FullscreenImage = styled.img`
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 12px;
+  object-fit: contain;
+`;
+
+/* ИНДИКАТОР ЗАГРУЗКИ */
+export const LoadingSpinner = styled.div`
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.1);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+`;
+
+/* СЧЕТЧИК ФАЙЛОВ В ШАПКЕ */
+export const MediaBadge = styled.span`
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+  margin-left: 8px;
+`;
+
+/* КОНТЕЙНЕР ДЛЯ ТЕКСТА ПОЛЬЗОВАТЕЛЯ */
+export const UserTextContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+/* ИНФОРМАЦИЯ О МЕДИА */
+export const MediaInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+`;
+
+/* ПРЕДПРОСМОТР ВИДЕО */
+export const VideoPreview = styled.video`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+`;
+
+/* ОБНОВЛЕННЫЙ USERBLOCK (замена Avatar на StyledAvatar) */
