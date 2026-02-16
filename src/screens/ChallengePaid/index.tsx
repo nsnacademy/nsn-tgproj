@@ -68,6 +68,10 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
   const [requestSent, setRequestSent] = useState(false);
   const [participantsCount, setParticipantsCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  
+  // 👇 Новые состояния для проверки участия
+  const [isParticipant, setIsParticipant] = useState(false);
+  const [hasPendingRequest, setHasPendingRequest] = useState(false);
 
   useEffect(() => {
     console.log('🔍 [PAID] Загрузка данных для challengeId:', challengeId);
@@ -122,6 +126,49 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
         setParticipantsCount(count ?? 0);
       }
 
+      // 👇 Проверяем, участвует ли текущий пользователь
+      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      if (tgUser) {
+        console.log('👤 [PAID] Проверка участия для пользователя:', tgUser.id);
+        
+        // Получаем user.id из таблицы users
+        const { data: user } = await supabase
+          .from('users')
+          .select('id')
+          .eq('telegram_id', tgUser.id)
+          .single();
+
+        if (user) {
+          // Проверяем, есть ли пользователь в participants
+          const { data: participant } = await supabase
+            .from('participants')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('challenge_id', challengeId)
+            .maybeSingle();
+
+          if (participant) {
+            console.log('✅ [PAID] Пользователь уже участвует в вызове');
+            setIsParticipant(true);
+          }
+
+          // Проверяем, есть ли у пользователя pending заявка
+          const { data: pendingRequest } = await supabase
+            .from('entry_requests')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('challenge_id', challengeId)
+            .eq('status', 'pending')
+            .maybeSingle();
+
+          if (pendingRequest) {
+            console.log('⏳ [PAID] У пользователя есть активная заявка');
+            setHasPendingRequest(true);
+            setRequestSent(true);
+          }
+        }
+      }
+
       // Загружаем награды, если есть рейтинг
       if (data.has_rating) {
         console.log('🏆 [PAID] Загрузка наград...');
@@ -153,8 +200,8 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
   const handleSendRequest = async () => {
     console.log('📤 [PAID] Отправка запроса на вступление');
     
-    if (requestSent) {
-      console.log('⚠️ [PAID] Запрос уже отправлен');
+    if (requestSent || isParticipant || hasPendingRequest) {
+      console.log('⚠️ [PAID] Запрос уже отправлен или пользователь уже участвует');
       return;
     }
 
@@ -196,9 +243,11 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
         return;
       } else {
         console.log('ℹ️ [PAID] Заявка уже существует (дубликат)');
+        setHasPendingRequest(true);
       }
     } else {
       console.log('✅ [PAID] Заявка успешно создана');
+      setHasPendingRequest(true);
     }
   };
 
@@ -262,8 +311,29 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
     title: challenge.title,
     participantsCount,
     prizesCount: prizes.length,
-    limitReached
+    limitReached,
+    isParticipant,
+    hasPendingRequest
   });
+
+  // Определяем текст и состояние кнопки
+  let buttonText = 'Отправить запрос';
+  let buttonDisabled = false;
+  let hintText = 'Автор проверит оплату и подтвердит участие';
+
+  if (isParticipant) {
+    buttonText = '✓ Вы участвуете';
+    buttonDisabled = true;
+    hintText = 'Вы уже участник этого вызова';
+  } else if (hasPendingRequest || requestSent) {
+    buttonText = '⏳ Запрос отправлен';
+    buttonDisabled = true;
+    hintText = 'Ожидайте подтверждения автора';
+  } else if (limitReached) {
+    buttonText = '❌ Мест нет';
+    buttonDisabled = true;
+    hintText = 'Лимит участников исчерпан';
+  }
 
   return (
     <SafeArea>
@@ -379,22 +449,14 @@ export default function ChallengePaid({ challengeId, onBack }: Props) {
       <Footer>
         <RequestButton 
           onClick={handleSendRequest}
-          disabled={requestSent || limitReached}
-          $isSent={requestSent}
-          $disabled={limitReached}
+          disabled={buttonDisabled}
+          $isSent={hasPendingRequest || requestSent || isParticipant}
+          $disabled={buttonDisabled}
         >
-          {limitReached 
-            ? 'Мест нет' 
-            : requestSent 
-              ? 'Запрос отправлен' 
-              : 'Отправить запрос'}
+          {buttonText}
         </RequestButton>
         <RequestHint>
-          {limitReached 
-            ? 'Лимит участников исчерпан' 
-            : requestSent
-              ? 'Ожидайте подтверждения автора'
-              : 'Автор проверит оплату и подтвердит участие'}
+          {hintText}
         </RequestHint>
       </Footer>
     </SafeArea>
