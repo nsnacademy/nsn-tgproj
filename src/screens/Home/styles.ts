@@ -327,3 +327,4 @@ export const NavItem = styled.div<{ $active?: boolean }>`
       $active ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'};
   }
 `;
+
