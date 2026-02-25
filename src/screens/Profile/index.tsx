@@ -42,6 +42,7 @@ import {
 
 import { BottomNav, NavItem } from '../Home/styles';
 import {
+  supabase,
   getCurrentUser,
   checkIsCreator,
 } from '../../shared/lib/supabase';
@@ -53,6 +54,65 @@ type ProfileProps = {
   onNavigate: (screen: ProfileScreen) => void;
 };
 
+type ParticipantStats = {
+  challenges: number;
+  completed: number;
+  successRate: number;
+  streak: number;
+  rating: number | null;
+  totalUsers: number;
+  trend: number;
+  bestRank: number | null;
+};
+
+type CreatorStats = {
+  created: number;
+  participants: number;
+  applications: number;
+  reportsToCheck: number;
+  rating: number | null;
+  totalCreators: number;
+  trend: number;
+  byChallenges: number | null;
+  trust: number;
+  likes: number;
+};
+
+type ActiveChallenge = {
+  name: string;
+  progress: number;
+  total: number;
+};
+
+type PendingRequest = {
+  name: string;
+  new: number;
+  waiting: number;
+  reports: number;
+};
+
+type ParticipantWithChallenge = {
+  id: string;
+  challenge_id: string;
+  user_completed: boolean;
+  challenge_finished: boolean;
+  challenges: {
+    id: string;
+    title: string;
+    duration_days: number;
+  } | null;
+};
+
+type ChallengeWithRequests = {
+  title: string | null;
+  entry_requests: { status: string }[] | null;
+};
+
+type ChallengeWithReports = {
+  title: string | null;
+  reports: { status: string }[] | null;
+};
+
 export default function Profile({ screen, onNavigate }: ProfileProps) {
   const [adminMode, setAdminMode] = useState(() => {
     const saved = localStorage.getItem('adminMode');
@@ -62,59 +122,306 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   const [locked, setLocked] = useState(false);
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
   const [activeRole, setActiveRole] = useState<'participant' | 'creator'>('participant');
+  
+  // Данные из БД
+  const [username, setUsername] = useState<string>('');
+  const [participantStats, setParticipantStats] = useState<ParticipantStats>({
+    challenges: 0,
+    completed: 0,
+    successRate: 0,
+    streak: 0,
+    rating: null,
+    totalUsers: 0,
+    trend: 0,
+    bestRank: null
+  });
+  
+  const [creatorStats, setCreatorStats] = useState<CreatorStats>({
+    created: 0,
+    participants: 0,
+    applications: 0,
+    reportsToCheck: 0,
+    rating: null,
+    totalCreators: 0,
+    trend: 0,
+    byChallenges: null,
+    trust: 0,
+    likes: 0
+  });
+  
+  const [activeChallenges, setActiveChallenges] = useState<ActiveChallenge[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Моковые данные
-  const userData = {
-    name: 'Александр',
-    handle: 'alex_dev',
-    participantStats: {
-      challenges: 24,
-      completed: 18,
-      successRate: 75,
-      streak: 7,
-      rating: 47,
-      totalUsers: 1250,
-      trend: 15,
-      bestRank: 32
-    },
-    creatorStats: {
-      created: 5,
-      participants: 47,
-      applications: 3,
-      reportsToCheck: 5,
-      rating: 42,
-      totalCreators: 1250,
-      trend: 8,
-      byChallenges: 12,
-      trust: 98,
-      likes: 45
-    },
-    activeChallenges: [
-      { name: 'Марафон', progress: 5, total: 30 },
-      { name: 'Челлендж', progress: 3, total: 7 },
-      { name: '10000 шагов', progress: 12, total: 30 }
-    ],
-    pendingRequests: [
-      { name: 'Марафон', new: 2, waiting: 0, reports: 3 },
-      { name: 'Челлендж', new: 0, waiting: 1, reports: 2 },
-    ]
-  };
+  /* =========================
+     ЗАГРУЗКА ДАННЫХ ИЗ БД
+  ========================= */
 
   useEffect(() => {
-    async function checkAccess() {
+    async function loadProfileData() {
+      setLoading(true);
+      
       const user = await getCurrentUser();
       if (!user) {
-        setIsCreator(false);
+        setLoading(false);
         return;
       }
 
+      // Получаем username из таблицы users
+      const { data: userData } = await supabase
+        .from('users')
+        .select('username')
+        .eq('telegram_id', user.telegram_id)
+        .maybeSingle();
+
+      if (userData) {
+        setUsername(userData.username || 'user');
+      }
+
+      // Проверяем, создатель ли
       const creator = await checkIsCreator(user.id);
       setIsCreator(creator);
       if (creator) setActiveRole('creator');
+
+      // ===== СТАТИСТИКА УЧАСТНИКА =====
+      
+      // Всего вызовов
+      const { count: totalChallenges } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      // Завершенных вызовов
+      const { count: completedChallenges } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('user_completed', true);
+
+      // Успешность
+      const successRate = totalChallenges && totalChallenges > 0
+        ? Math.round(( (completedChallenges || 0) / totalChallenges) * 100) 
+        : 0;
+
+      // ===== АКТИВНЫЕ ВЫЗОВЫ =====
+      
+      const { data: participants } = await supabase
+        .from('participants')
+        .select(`
+          id,
+          challenge_id,
+          user_completed,
+          challenge_finished,
+          challenges (
+            id,
+            title,
+            duration_days
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('challenge_finished', false) as { data: ParticipantWithChallenge[] | null };
+
+      // Формируем список активных вызовов
+      const active: ActiveChallenge[] = [];
+      
+      if (participants) {
+        for (const p of participants) {
+          if (!p.challenges) continue;
+          
+          // Получаем прогресс из отчетов
+          const { data: reports } = await supabase
+            .from('reports')
+            .select('value, is_done')
+            .eq('participant_id', p.id)
+            .eq('status', 'approved');
+
+          const progress = reports?.length || 0;
+          const total = p.challenges.duration_days || 0;
+
+          active.push({
+            name: p.challenges.title || 'Без названия',
+            progress,
+            total
+          });
+        }
+      }
+      
+      setActiveChallenges(active);
+
+      // ===== РЕЙТИНГ УЧАСТНИКА =====
+      
+      const { data: ratingData } = await supabase
+        .from('ratings')
+        .select('place')
+        .eq('user_id', user.id)
+        .is('challenge_id', null)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Общее количество участников
+      const { count: totalUsers } = await supabase
+        .from('ratings')
+        .select('*', { count: 'exact', head: true })
+        .is('challenge_id', null);
+
+      // Лучший результат
+      const { data: bestRankData } = await supabase
+        .from('ratings')
+        .select('place')
+        .eq('user_id', user.id)
+        .is('challenge_id', null)
+        .order('place', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      setParticipantStats({
+        challenges: totalChallenges || 0,
+        completed: completedChallenges || 0,
+        successRate,
+        streak: 0, // Нужно будет доделать логику стрика
+        rating: ratingData?.place || null,
+        totalUsers: totalUsers || 0,
+        trend: 0, // Нужно будет доделать тренд
+        bestRank: bestRankData?.place || null
+      });
+
+      // ===== ДАННЫЕ СОЗДАТЕЛЯ =====
+      
+      if (creator) {
+        // Количество созданных вызовов
+        const { count: createdChallenges } = await supabase
+          .from('challenges')
+          .select('*', { count: 'exact', head: true })
+          .eq('creator_id', user.id);
+
+        // Всего участников в созданных вызовах
+        // Получаем ID созданных вызовов
+        const { data: createdChallengeIds } = await supabase
+          .from('challenges')
+          .select('id')
+          .eq('creator_id', user.id);
+
+        let totalParticipants = 0;
+        if (createdChallengeIds && createdChallengeIds.length > 0) {
+          const challengeIds = createdChallengeIds.map(c => c.id);
+          
+          const { count } = await supabase
+            .from('participants')
+            .select('*', { count: 'exact', head: true })
+            .in('challenge_id', challengeIds);
+          
+          totalParticipants = count || 0;
+        }
+
+        // Заявки на вступление
+        const { data: requestsData } = await supabase
+          .from('challenges')
+          .select(`
+            title,
+            entry_requests (
+              status
+            )
+          `)
+          .eq('creator_id', user.id) as { data: ChallengeWithRequests[] | null };
+
+        // Отчеты на проверку
+        const { data: reportsData } = await supabase
+          .from('challenges')
+          .select(`
+            title,
+            reports!inner (
+              status
+            )
+          `)
+          .eq('creator_id', user.id)
+          .eq('reports.status', 'pending') as { data: ChallengeWithReports[] | null };
+
+        // Считаем заявки и отчеты
+        let applications = 0;
+        let reportsToCheck = 0;
+        const pendingReqs: PendingRequest[] = [];
+
+        if (requestsData) {
+          for (const c of requestsData) {
+            const pendingCount = c.entry_requests?.filter(
+              (r) => r.status === 'pending'
+            ).length || 0;
+            
+            applications += pendingCount;
+            
+            if (pendingCount > 0) {
+              pendingReqs.push({
+                name: c.title || 'Без названия',
+                new: pendingCount,
+                waiting: 0,
+                reports: 0
+              });
+            }
+          }
+        }
+
+        if (reportsData) {
+          for (const c of reportsData) {
+            const reportsCount = c.reports?.length || 0;
+            reportsToCheck += reportsCount;
+            
+            const existing = pendingReqs.find(r => r.name === c.title);
+            if (existing) {
+              existing.reports = reportsCount;
+            } else if (reportsCount > 0) {
+              pendingReqs.push({
+                name: c.title || 'Без названия',
+                new: 0,
+                waiting: 0,
+                reports: reportsCount
+              });
+            }
+          }
+        }
+
+        setPendingRequests(pendingReqs);
+
+        // Рейтинг создателя
+        const { data: creatorRating } = await supabase
+          .from('ratings')
+          .select('place')
+          .eq('user_id', user.id)
+          .not('challenge_id', 'is', null)
+          .order('place', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        // Количество создателей
+        const { count: totalCreators } = await supabase
+          .from('challenges')
+          .select('creator_id', { count: 'exact', head: true });
+
+        setCreatorStats({
+          created: createdChallenges || 0,
+          participants: totalParticipants,
+          applications,
+          reportsToCheck,
+          rating: creatorRating?.place || null,
+          totalCreators: totalCreators || 0,
+          trend: 0,
+          byChallenges: null,
+          trust: 0,
+          likes: 0
+        });
+      }
+
+      setLoading(false);
     }
 
-    checkAccess();
-  }, []);
+    if (screen === 'profile') {
+      loadProfileData();
+    }
+  }, [screen]);
+
+  /* =========================
+     TOGGLE ADMIN MODE
+  ========================= */
 
   const onToggleAdmin = () => {
     if (locked || !isCreator) return;
@@ -129,12 +436,28 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
     }, 250);
   };
 
+  /* =========================
+     Сброс при выходе из админки
+  ========================= */
+
   useEffect(() => {
     if (screen === 'profile') {
       localStorage.setItem('adminMode', 'false');
       setAdminMode(false);
     }
   }, [screen]);
+
+  if (loading) {
+    return (
+      <SafeArea>
+        <Container>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+            <StatLabel>Загрузка...</StatLabel>
+          </div>
+        </Container>
+      </SafeArea>
+    );
+  }
 
   return (
     <SafeArea>
@@ -168,8 +491,8 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             </svg>
           </UserAvatar>
           <UserInfo>
-            <UserName>{userData.name}</UserName>
-            <UserHandle>@{userData.handle}</UserHandle>
+            <UserName>{username}</UserName>
+            <UserHandle>@{username}</UserHandle>
           </UserInfo>
         </UserCard>
 
@@ -197,62 +520,78 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             {/* Быстрая статистика */}
             <StatsGrid>
               <StatItem>
-                <StatValue>{userData.participantStats.challenges}</StatValue>
+                <StatValue>{participantStats.challenges}</StatValue>
                 <StatLabel>Вызовов</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>{userData.participantStats.completed}</StatValue>
+                <StatValue>{participantStats.completed}</StatValue>
                 <StatLabel>Завершено</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>{userData.participantStats.successRate}%</StatValue>
+                <StatValue>{participantStats.successRate}%</StatValue>
                 <StatLabel>Успешность</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>{userData.participantStats.streak}</StatValue>
+                <StatValue>{participantStats.streak}</StatValue>
                 <StatLabel>Дней</StatLabel>
               </StatItem>
             </StatsGrid>
 
             {/* Активные вызовы */}
-            <SectionHeader>
-              <SectionTitle>Активные вызовы</SectionTitle>
-              <SectionBadge>{userData.activeChallenges.length}</SectionBadge>
-            </SectionHeader>
+            {activeChallenges.length > 0 && (
+              <>
+                <SectionHeader>
+                  <SectionTitle>Активные вызовы</SectionTitle>
+                  <SectionBadge>{activeChallenges.length}</SectionBadge>
+                </SectionHeader>
 
-            {userData.activeChallenges.map((ch, index) => (
-              <RequestRow key={index} style={{ marginBottom: 12 }}>
-                <RequestName>{ch.name}</RequestName>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <ProgressBar>
-                    <ProgressFill $width={(ch.progress / ch.total) * 100} />
-                  </ProgressBar>
-                  <ProgressText>
-                    {ch.progress}/{ch.total}
-                  </ProgressText>
-                </div>
-              </RequestRow>
-            ))}
+                {activeChallenges.map((ch, index) => (
+                  <RequestRow key={index} style={{ marginBottom: 12 }}>
+                    <RequestName>{ch.name}</RequestName>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <ProgressBar>
+                        <ProgressFill $width={ch.total > 0 ? (ch.progress / ch.total) * 100 : 0} />
+                      </ProgressBar>
+                      <ProgressText>
+                        {ch.progress}/{ch.total}
+                      </ProgressText>
+                    </div>
+                  </RequestRow>
+                ))}
+              </>
+            )}
 
             {/* Рейтинг участника */}
-            <RatingSection>
-              <RatingTitle>Рейтинг</RatingTitle>
-              <RatingGrid>
-                <RatingRow>
-                  <RatingLabel>Общий</RatingLabel>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <RatingValue>#{userData.participantStats.rating}</RatingValue>
-                    <RatingValue $secondary>из {userData.participantStats.totalUsers}</RatingValue>
-                    <RatingTrend>+{userData.participantStats.trend}</RatingTrend>
-                  </div>
-                </RatingRow>
-                <RatingDivider />
-                <RatingRow>
-                  <RatingLabel>Лучший</RatingLabel>
-                  <RatingValue>#{userData.participantStats.bestRank}</RatingValue>
-                </RatingRow>
-              </RatingGrid>
-            </RatingSection>
+            {(participantStats.rating || participantStats.bestRank) && (
+              <RatingSection>
+                <RatingTitle>Рейтинг</RatingTitle>
+                <RatingGrid>
+                  {participantStats.rating && (
+                    <RatingRow>
+                      <RatingLabel>Общий</RatingLabel>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <RatingValue>#{participantStats.rating}</RatingValue>
+                        <RatingValue $secondary>из {participantStats.totalUsers}</RatingValue>
+                        {participantStats.trend > 0 && (
+                          <RatingTrend>+{participantStats.trend}</RatingTrend>
+                        )}
+                      </div>
+                    </RatingRow>
+                  )}
+                  
+                  {participantStats.rating && participantStats.bestRank && (
+                    <RatingDivider />
+                  )}
+                  
+                  {participantStats.bestRank && (
+                    <RatingRow>
+                      <RatingLabel>Лучший</RatingLabel>
+                      <RatingValue>#{participantStats.bestRank}</RatingValue>
+                    </RatingRow>
+                  )}
+                </RatingGrid>
+              </RatingSection>
+            )}
           </ParticipantSection>
         )}
 
@@ -262,67 +601,80 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             {/* Статистика создателя */}
             <StatsGrid>
               <StatItem>
-                <StatValue>{userData.creatorStats.created}</StatValue>
+                <StatValue>{creatorStats.created}</StatValue>
                 <StatLabel>Создано</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>{userData.creatorStats.participants}</StatValue>
+                <StatValue>{creatorStats.participants}</StatValue>
                 <StatLabel>Участников</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>{userData.creatorStats.applications}</StatValue>
+                <StatValue>{creatorStats.applications}</StatValue>
                 <StatLabel>Заявки</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>{userData.creatorStats.reportsToCheck}</StatValue>
+                <StatValue>{creatorStats.reportsToCheck}</StatValue>
                 <StatLabel>Отчеты</StatLabel>
               </StatItem>
             </StatsGrid>
 
             {/* Заявки и отчеты по вызовам */}
-            <SectionHeader>
-              <SectionTitle>Заявки и отчеты</SectionTitle>
-            </SectionHeader>
+            {pendingRequests.length > 0 && (
+              <>
+                <SectionHeader>
+                  <SectionTitle>Заявки и отчеты</SectionTitle>
+                </SectionHeader>
 
-            {userData.pendingRequests.map((req, index) => (
-              <RequestRow key={index}>
-                <RequestName>{req.name}</RequestName>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {req.new > 0 && <RequestBadge $type="new">{req.new} нов.</RequestBadge>}
-                  {req.waiting > 0 && <RequestBadge $type="waiting">{req.waiting} ждет</RequestBadge>}
-                  {req.reports > 0 && <ReportBadge>{req.reports} отч.</ReportBadge>}
-                </div>
-              </RequestRow>
-            ))}
+                {pendingRequests.map((req, index) => (
+                  <RequestRow key={index}>
+                    <RequestName>{req.name}</RequestName>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {req.new > 0 && <RequestBadge $type="new">{req.new} нов.</RequestBadge>}
+                      {req.waiting > 0 && <RequestBadge $type="waiting">{req.waiting} ждет</RequestBadge>}
+                      {req.reports > 0 && <ReportBadge>{req.reports} отч.</ReportBadge>}
+                    </div>
+                  </RequestRow>
+                ))}
+              </>
+            )}
 
             {/* Рейтинг создателя */}
-            <RatingSection>
-              <RatingTitle>Рейтинг создателя</RatingTitle>
-              <RatingGrid>
-                <RatingRow>
-                  <RatingLabel>Общий</RatingLabel>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <RatingValue>#{userData.creatorStats.rating}</RatingValue>
-                    <RatingValue $secondary>из {userData.creatorStats.totalCreators}</RatingValue>
-                    <RatingTrend>+{userData.creatorStats.trend}</RatingTrend>
-                  </div>
-                </RatingRow>
-                
-                <RatingDivider />
-                
-                <RatingRow>
-                  <RatingLabel>По вызовам</RatingLabel>
-                  <RatingValue>#{userData.creatorStats.byChallenges}</RatingValue>
-                </RatingRow>
-                
-                <RatingRow>
-                  <RatingLabel>Доверие</RatingLabel>
-                  <TrustBadge>
-                    {userData.creatorStats.trust}% ({userData.creatorStats.likes})
-                  </TrustBadge>
-                </RatingRow>
-              </RatingGrid>
-            </RatingSection>
+            {creatorStats.rating && (
+              <RatingSection>
+                <RatingTitle>Рейтинг создателя</RatingTitle>
+                <RatingGrid>
+                  <RatingRow>
+                    <RatingLabel>Общий</RatingLabel>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <RatingValue>#{creatorStats.rating}</RatingValue>
+                      <RatingValue $secondary>из {creatorStats.totalCreators}</RatingValue>
+                      {creatorStats.trend > 0 && (
+                        <RatingTrend>+{creatorStats.trend}</RatingTrend>
+                      )}
+                    </div>
+                  </RatingRow>
+                  
+                  {creatorStats.byChallenges && (
+                    <>
+                      <RatingDivider />
+                      <RatingRow>
+                        <RatingLabel>По вызовам</RatingLabel>
+                        <RatingValue>#{creatorStats.byChallenges}</RatingValue>
+                      </RatingRow>
+                    </>
+                  )}
+                  
+                  {creatorStats.trust > 0 && (
+                    <RatingRow>
+                      <RatingLabel>Доверие</RatingLabel>
+                      <TrustBadge>
+                        {creatorStats.trust}% ({creatorStats.likes})
+                      </TrustBadge>
+                    </RatingRow>
+                  )}
+                </RatingGrid>
+              </RatingSection>
+            )}
           </CreatorSection>
         )}
       </Container>
