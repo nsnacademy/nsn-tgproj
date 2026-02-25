@@ -7,6 +7,39 @@ import {
   Text,
   Toggle,
   ToggleKnob,
+  UserCard,
+  UserAvatar,
+  UserInfo,
+  UserName,
+  UserHandle,
+  StatsGrid,
+  StatCard,
+  StatIcon,
+  StatContent,
+  StatNumber,
+  StatLabel,
+  StatTrend,
+  ActivitySection,
+  ActivityHeader,
+  ActivityTitle,
+  ActivityBadge,
+  ActivityCalendar,
+  DayCell,
+  Legend,
+  LegendItem,
+  LegendColor,
+  LegendText,
+  RatingSection,
+  RatingTitle,
+  RatingList,
+  RatingItem,
+  RatingLabel,
+  RatingValueWrapper,
+  RatingNumber,
+  RatingTotal,
+  RatingChange,
+  RatingDivider,
+  RatingBadge,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -135,188 +168,157 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           </Toggle>
         </div>
 
-        <Text style={{ marginBottom: 24 }}>
-          Включите админ-режим для модерации вызовов
+        <Text style={{ marginBottom: 16, fontSize: 13, opacity: 0.6 }}>
+          {isCreator 
+            ? "Включите админ-режим для модерации вызовов"
+            : "Админ-режим доступен только создателю вызова"}
         </Text>
 
-        {/* 🔒 ACCESS INFO */}
-        {isCreator === false && (
-          <Text
-            style={{
-              marginBottom: 24,
-              fontSize: 13,
-              opacity: 0.6,
-            }}
-          >
-            Админ-режим доступен только создателю вызова
-          </Text>
-        )}
-
-        {/* ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 16, 
-          marginBottom: 24,
-          background: 'rgba(255,255,255,0.05)',
-          borderRadius: 16,
-          padding: 16
-        }}>
-          <div style={{ 
-            width: 56, 
-            height: 56, 
-            borderRadius: 28, 
-            background: 'rgba(255,255,255,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <svg width="32" height="32" fill="none" stroke="#fff" strokeWidth="2">
-              <circle cx="16" cy="12" r="6" />
-              <path d="M4 32c2-6 8-10 12-10s10 4 12 10" />
+        {/* USER CARD */}
+        <UserCard>
+          <UserAvatar>
+            <svg width="36" height="36" fill="none" stroke="#fff" strokeWidth="2">
+              <circle cx="18" cy="14" r="7" />
+              <path d="M5 36c2-7 9-12 13-12s11 5 13 12" />
             </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 600 }}>{userData.name}</div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>@{userData.handle}</div>
-          </div>
-        </div>
+          </UserAvatar>
+          <UserInfo>
+            <UserName>{userData.name}</UserName>
+            <UserHandle>@{userData.handle}</UserHandle>
+          </UserInfo>
+        </UserCard>
 
-        {/* СТАТИСТИКА */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(4, 1fr)', 
-          gap: 8,
-          marginBottom: 24
-        }}>
-          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{userData.stats.challenges}</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Вызовов</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{userData.stats.completed}</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Завершено</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{userData.stats.successRate}%</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Успешность</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{userData.stats.streak}</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Дней подряд</div>
-          </div>
-        </div>
+        {/* STATS GRID */}
+        <StatsGrid>
+          <StatCard>
+            <StatIcon>
+              <svg width="20" height="20" fill="none" stroke="#fff" strokeWidth="2">
+                <rect x="3" y="3" width="14" height="14" rx="2" />
+                <line x1="3" y1="9" x2="17" y2="9" />
+              </svg>
+            </StatIcon>
+            <StatContent>
+              <StatNumber>{userData.stats.challenges}</StatNumber>
+              <StatLabel>Всего вызовов</StatLabel>
+            </StatContent>
+          </StatCard>
 
-        {/* КАЛЕНДАРЬ АКТИВНОСТИ */}
-        <div style={{ 
-          background: 'rgba(255,255,255,0.05)', 
-          borderRadius: 16, 
-          padding: 16,
-          marginBottom: 24
-        }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            marginBottom: 12 
-          }}>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>Активность</span>
-            <span style={{ fontSize: 13, opacity: 0.6 }}>последние 30 дней</span>
-          </div>
+          <StatCard>
+            <StatIcon>
+              <svg width="20" height="20" fill="none" stroke="#fff" strokeWidth="2">
+                <path d="M3 6l5 5 8-8" />
+                <circle cx="18" cy="6" r="1.5" />
+                <path d="M16 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h8" />
+              </svg>
+            </StatIcon>
+            <StatContent>
+              <StatNumber>{userData.stats.completed}</StatNumber>
+              <StatLabel>Завершено</StatLabel>
+              <StatTrend>+3 на этой неделе</StatTrend>
+            </StatContent>
+          </StatCard>
+
+          <StatCard>
+            <StatIcon>
+              <svg width="20" height="20" fill="none" stroke="#fff" strokeWidth="2">
+                <circle cx="10" cy="10" r="8" />
+                <path d="M10 6v4l3 3" />
+              </svg>
+            </StatIcon>
+            <StatContent>
+              <StatNumber>{userData.stats.successRate}%</StatNumber>
+              <StatLabel>Успешность</StatLabel>
+              <StatTrend>Выше среднего</StatTrend>
+            </StatContent>
+          </StatCard>
+
+          <StatCard>
+            <StatIcon>
+              <svg width="20" height="20" fill="none" stroke="#fff" strokeWidth="2">
+                <path d="M4 4v12a4 4 0 0 0 4 4h8" />
+                <path d="M12 12v4" />
+                <path d="M16 8v8" />
+                <path d="M8 8v8" />
+              </svg>
+            </StatIcon>
+            <StatContent>
+              <StatNumber>{userData.stats.streak}</StatNumber>
+              <StatLabel>Дней подряд</StatLabel>
+              <StatTrend>Личный рекорд</StatTrend>
+            </StatContent>
+          </StatCard>
+        </StatsGrid>
+
+        {/* ACTIVITY SECTION */}
+        <ActivitySection>
+          <ActivityHeader>
+            <ActivityTitle>Активность</ActivityTitle>
+            <ActivityBadge>30 дней</ActivityBadge>
+          </ActivityHeader>
           
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(30, 1fr)', 
-            gap: 2,
-            marginBottom: 8
-          }}>
+          <ActivityCalendar>
             {calendarDays.map((level, index) => (
-              <div
-                key={index}
-                style={{
-                  aspectRatio: '1',
-                  borderRadius: 2,
-                  background: (() => {
-                    switch (level) {
-                      case 0: return 'rgba(255, 255, 255, 0.1)';
-                      case 1: return 'rgba(76, 175, 80, 0.3)';
-                      case 2: return 'rgba(76, 175, 80, 0.5)';
-                      case 3: return 'rgba(76, 175, 80, 0.7)';
-                      case 4: return 'rgba(76, 175, 80, 1)';
-                      default: return 'rgba(255, 255, 255, 0.1)';
-                    }
-                  })()
-                }}
-                title={`Активность: уровень ${level}`}
-              />
+              <DayCell key={index} $level={level} />
             ))}
-          </div>
+          </ActivityCalendar>
           
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            fontSize: 12, 
-            color: 'rgba(255,255,255,0.4)' 
-          }}>
-            <span>Меньше</span>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {[0,1,2,3,4].map(level => (
-                <div
-                  key={level}
-                  style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: 2,
-                    background: level === 0 ? 'rgba(255,255,255,0.1)' : 
-                                level === 1 ? 'rgba(76,175,80,0.3)' :
-                                level === 2 ? 'rgba(76,175,80,0.5)' :
-                                level === 3 ? 'rgba(76,175,80,0.7)' :
-                                'rgba(76,175,80,1)'
-                  }}
-                />
-              ))}
-            </div>
-            <span>Больше</span>
-          </div>
-        </div>
+          <Legend>
+            <LegendItem>
+              <LegendColor $level={0} />
+              <LegendText>Нет</LegendText>
+            </LegendItem>
+            <LegendItem>
+              <LegendColor $level={1} />
+              <LegendText>1</LegendText>
+            </LegendItem>
+            <LegendItem>
+              <LegendColor $level={2} />
+              <LegendText>2-3</LegendText>
+            </LegendItem>
+            <LegendItem>
+              <LegendColor $level={3} />
+              <LegendText>4-5</LegendText>
+            </LegendItem>
+            <LegendItem>
+              <LegendColor $level={4} />
+              <LegendText>6+</LegendText>
+            </LegendItem>
+          </Legend>
+        </ActivitySection>
 
-        {/* РЕЙТИНГ */}
-        <div style={{ 
-          background: 'rgba(255,255,255,0.05)', 
-          borderRadius: 16, 
-          padding: 16,
-          marginBottom: 24
-        }}>
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Мой рейтинг</div>
+        {/* RATING SECTION */}
+        <RatingSection>
+          <RatingTitle>Мой рейтинг</RatingTitle>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 14, opacity: 0.7 }}>Общий рейтинг</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: 20, fontSize: 14, fontWeight: 600 }}>
-                #{userData.rating.current}
-              </span>
-              <span style={{ fontSize: 13, opacity: 0.5 }}>из {userData.rating.total}</span>
-            </div>
-          </div>
-          
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '12px 0' }} />
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 14, opacity: 0.7 }}>Рост за неделю</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#4CAF50' }}>+{userData.rating.change} позиций</span>
-          </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 14, opacity: 0.7 }}>Лучший результат</span>
-            <span style={{ fontSize: 14, fontWeight: 600 }}>#{userData.rating.best}</span>
-          </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 14, opacity: 0.7 }}>В топ 10%</span>
-            <span style={{ color: '#4CAF50' }}>✓ Да</span>
-          </div>
-        </div>
+          <RatingList>
+            <RatingItem>
+              <RatingLabel>Общий рейтинг</RatingLabel>
+              <RatingValueWrapper>
+                <RatingNumber>#{userData.rating.current}</RatingNumber>
+                <RatingTotal>из {userData.rating.total}</RatingTotal>
+              </RatingValueWrapper>
+            </RatingItem>
+            
+            <RatingDivider />
+            
+            <RatingItem>
+              <RatingLabel>Рост за неделю</RatingLabel>
+              <RatingChange $positive={userData.rating.change > 0}>
+                +{userData.rating.change} позиций
+              </RatingChange>
+            </RatingItem>
+            
+            <RatingItem>
+              <RatingLabel>Лучший результат</RatingLabel>
+              <RatingNumber>#{userData.rating.best}</RatingNumber>
+            </RatingItem>
+            
+            <RatingItem>
+              <RatingLabel>В топ 10%</RatingLabel>
+              <RatingBadge>✓ Да</RatingBadge>
+            </RatingItem>
+          </RatingList>
+        </RatingSection>
       </Container>
 
       {/* BOTTOM NAV */}
@@ -325,13 +327,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           $active={screen === 'home'}
           onClick={() => onNavigate('home')}
         >
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 10.5L12 3l9 7.5" />
             <path d="M5 9.5V21h14V9.5" />
           </svg>
@@ -341,13 +337,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           $active={screen === 'create'}
           onClick={() => onNavigate('create')}
         >
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="3" y="3" width="7" height="7" rx="1.5" />
             <rect x="14" y="3" width="7" height="7" rx="1.5" />
             <rect x="3" y="14" width="7" height="7" rx="1.5" />
@@ -356,13 +346,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
         </NavItem>
 
         <NavItem $active={false}>
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="6" y1="18" x2="6" y2="14" />
             <line x1="12" y1="18" x2="12" y2="10" />
             <line x1="18" y1="18" x2="18" y2="6" />
@@ -373,13 +357,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           $active={screen === 'profile'}
           onClick={() => onNavigate('profile')}
         >
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="7" r="4" />
             <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
           </svg>
