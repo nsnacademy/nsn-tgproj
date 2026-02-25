@@ -82,21 +82,19 @@ export const UserCard = styled.div`
   align-items: center;
   gap: 16px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  padding: 16px 20px;
+  border-radius: 16px;
+  padding: 16px;
   margin-bottom: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
 `;
 
 export const UserAvatar = styled.div`
   width: 56px;
   height: 56px;
   border-radius: 28px;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  background: rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.2);
 `;
 
 export const UserInfo = styled.div`
@@ -106,184 +104,130 @@ export const UserInfo = styled.div`
 export const UserName = styled.div`
   font-size: 18px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 4px;
 `;
 
 export const UserHandle = styled.div`
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.5);
+`;
+
+export const CreatorBadge = styled.span`
+  background: rgba(255, 215, 0, 0.15);
+  color: #FFD700;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 30px;
+  font-weight: 500;
 `;
 
 // ===== STATS GRID =====
 export const StatsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
   margin-bottom: 24px;
 `;
 
-export const StatCard = styled.div`
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 18px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(5px);
-`;
-
-export const StatIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
+export const StatItem = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #FFD700;
+  border-radius: 12px;
+  padding: 12px 4px;
+  text-align: center;
 `;
 
-export const StatContent = styled.div`
-  flex: 1;
-`;
-
-export const StatNumber = styled.div`
-  font-size: 20px;
+export const StatValue = styled.div`
+  font-size: 18px;
   font-weight: 700;
-  line-height: 1.2;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 `;
 
 export const StatLabel = styled.div`
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.5);
-  font-weight: 500;
-  margin-bottom: 2px;
+  text-transform: uppercase;
 `;
 
-export const StatTrend = styled.div`
-  font-size: 10px;
-  color: rgba(76, 175, 80, 0.8);
-  font-weight: 500;
-`;
-
-// ===== ACTIVITY SECTION =====
-export const ActivitySection = styled.div`
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 24px;
-  padding: 20px;
-  margin-bottom: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
-`;
-
-export const ActivityHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-`;
-
-export const ActivityTitle = styled.div`
-  font-size: 16px;
-  font-weight: 600;
-`;
-
-export const ActivityBadge = styled.div`
+// ===== REQUESTS SECTION =====
+export const RequestsSection = styled.div`
   background: rgba(255, 255, 255, 0.05);
-  padding: 4px 10px;
-  border-radius: 30px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-`;
-
-export const ActivityCalendar = styled.div`
-  display: grid;
-  grid-template-columns: repeat(30, 1fr);
-  gap: 3px;
-  margin-bottom: 16px;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 12px;
   border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px;
 `;
 
-export const DayCell = styled.div<{ $level: number }>`
-  aspect-ratio: 1;
-  border-radius: 4px;
-  background: ${({ $level }) => {
-    switch ($level) {
-      case 0: return 'rgba(255, 255, 255, 0.05)';
-      case 1: return 'rgba(255, 215, 0, 0.2)';
-      case 2: return 'rgba(255, 215, 0, 0.4)';
-      case 3: return 'rgba(255, 215, 0, 0.6)';
-      case 4: return 'rgba(255, 215, 0, 0.9)';
-      default: return 'rgba(255, 255, 255, 0.05)';
-    }
-  }};
-  transition: transform 0.2s ease;
-  
-  &:hover {
-    transform: scale(1.2);
-  }
+export const RequestsHeader = styled.div`
+  margin-bottom: 16px;
 `;
 
-export const Legend = styled.div`
+export const RequestsTitle = styled.div`
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+`;
+
+export const RequestsGrid = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  flex-direction: column;
   gap: 12px;
 `;
 
-export const LegendItem = styled.div`
+export const RequestRow = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 4px;
 `;
 
-export const LegendColor = styled.div<{ $level: number }>`
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  background: ${({ $level }) => {
-    switch ($level) {
-      case 0: return 'rgba(255, 255, 255, 0.1)';
-      case 1: return 'rgba(255, 215, 0, 0.2)';
-      case 2: return 'rgba(255, 215, 0, 0.4)';
-      case 3: return 'rgba(255, 215, 0, 0.6)';
-      case 4: return 'rgba(255, 215, 0, 0.9)';
-      default: return 'rgba(255, 255, 255, 0.1)';
-    }
-  }};
+export const RequestName = styled.span`
+  font-size: 14px;
+  color: #fff;
 `;
 
-export const LegendText = styled.span`
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.4);
+export const RequestBadge = styled.span<{ $type: 'new' | 'waiting' }>`
+  background: ${({ $type }) => 
+    $type === 'new' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(255, 152, 0, 0.15)'};
+  color: ${({ $type }) => 
+    $type === 'new' ? '#4CAF50' : '#FF9800'};
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 30px;
+  font-weight: 500;
+`;
+
+export const ReportBadge = styled.span`
+  background: rgba(33, 150, 243, 0.15);
+  color: #2196F3;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 30px;
+  font-weight: 500;
 `;
 
 // ===== RATING SECTION =====
 export const RatingSection = styled.div`
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 24px;
-  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 16px;
   margin-bottom: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
 `;
 
 export const RatingTitle = styled.div`
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 16px;
 `;
 
-export const RatingList = styled.div`
+export const RatingGrid = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 `;
 
-export const RatingItem = styled.div`
+export const RatingRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -294,46 +238,32 @@ export const RatingLabel = styled.span`
   color: rgba(255, 255, 255, 0.5);
 `;
 
-export const RatingValueWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
+export const RatingValue = styled.span<{ $secondary?: boolean }>`
+  font-size: 14px;
+  font-weight: ${({ $secondary }) => $secondary ? '400' : '600'};
+  color: ${({ $secondary }) => $secondary ? 'rgba(255,255,255,0.5)' : '#fff'};
 `;
 
-export const RatingNumber = styled.span`
-  font-size: 16px;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 4px 10px;
+export const RatingTrend = styled.span`
+  font-size: 12px;
+  color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 2px 6px;
   border-radius: 30px;
-`;
-
-export const RatingTotal = styled.span`
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.3);
-`;
-
-export const RatingChange = styled.span<{ $positive: boolean }>`
-  font-size: 15px;
-  font-weight: 600;
-  color: ${({ $positive }) => $positive ? '#4CAF50' : '#F44336'};
-  background: ${({ $positive }) => 
-    $positive ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)'};
-  padding: 4px 10px;
-  border-radius: 30px;
+  font-weight: 500;
 `;
 
 export const RatingDivider = styled.div`
   height: 1px;
-  background: rgba(255, 255, 255, 0.05);
-  margin: 6px 0;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 4px 0;
 `;
 
-export const RatingBadge = styled.span`
-  font-size: 15px;
+export const TrustBadge = styled.span`
+  background: rgba(255, 215, 0, 0.1);
+  color: #FFD700;
+  font-size: 13px;
   font-weight: 600;
-  color: #4CAF50;
-  background: rgba(76, 175, 80, 0.1);
-  padding: 4px 12px;
+  padding: 4px 10px;
   border-radius: 30px;
 `;

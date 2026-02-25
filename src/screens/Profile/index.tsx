@@ -4,7 +4,6 @@ import {
   SafeArea,
   Container,
   Title,
-  Text,
   Toggle,
   ToggleKnob,
   UserCard,
@@ -12,34 +11,28 @@ import {
   UserInfo,
   UserName,
   UserHandle,
+  CreatorBadge,
   StatsGrid,
-  StatCard,
-  StatIcon,
-  StatContent,
-  StatNumber,
+  StatItem,
+  StatValue,
   StatLabel,
-  StatTrend,
-  ActivitySection,
-  ActivityHeader,
-  ActivityTitle,
-  ActivityBadge,
-  ActivityCalendar,
-  DayCell,
-  Legend,
-  LegendItem,
-  LegendColor,
-  LegendText,
+  RequestsSection,
+  RequestsHeader,
+  RequestsTitle,
+  RequestsGrid,
+  RequestRow,
+  RequestName,
+  RequestBadge,
+  ReportBadge,
   RatingSection,
   RatingTitle,
-  RatingList,
-  RatingItem,
+  RatingGrid,
+  RatingRow,
   RatingLabel,
-  RatingValueWrapper,
-  RatingNumber,
-  RatingTotal,
-  RatingChange,
+  RatingValue,
+  RatingTrend,
   RatingDivider,
-  RatingBadge,
+  TrustBadge,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -70,29 +63,24 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
     name: 'Александр',
     handle: 'alex_dev',
     stats: {
-      challenges: 24,
+      participation: 24,
       completed: 18,
-      successRate: 75,
-      streak: 7
+      created: 5,
+      participants: 47
     },
+    requests: [
+      { name: 'Марафон', new: 2, waiting: 0, reports: 3 },
+      { name: 'Челлендж', new: 0, waiting: 1, reports: 2 },
+    ],
     rating: {
-      current: 47,
+      overall: 42,
       total: 1250,
-      change: 15,
-      best: 32
+      trend: 8,
+      byChallenges: 12,
+      trust: 98,
+      likes: 45
     }
   };
-
-  // Генерация календаря
-  const generateCalendarDays = () => {
-    const days = [];
-    for (let i = 0; i < 30; i++) {
-      days.push(Math.floor(Math.random() * 5));
-    }
-    return days;
-  };
-
-  const calendarDays = generateCalendarDays();
 
   /* =========================
      CHECK CREATOR ACCESS
@@ -168,12 +156,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           </Toggle>
         </div>
 
-        <Text style={{ marginBottom: 16, fontSize: 13, opacity: 0.6 }}>
-          {isCreator 
-            ? "Включите админ-режим для модерации вызовов"
-            : "Админ-режим доступен только создателю вызова"}
-        </Text>
-
         {/* USER CARD */}
         <UserCard>
           <UserAvatar>
@@ -183,141 +165,80 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             </svg>
           </UserAvatar>
           <UserInfo>
-            <UserName>{userData.name}</UserName>
+            <UserName>
+              {userData.name}
+              {isCreator && <CreatorBadge>Создатель</CreatorBadge>}
+            </UserName>
             <UserHandle>@{userData.handle}</UserHandle>
           </UserInfo>
         </UserCard>
 
         {/* STATS GRID */}
         <StatsGrid>
-          <StatCard>
-            <StatIcon>
-              <svg width="20" height="20" fill="none" stroke="#fff" strokeWidth="2">
-                <rect x="3" y="3" width="14" height="14" rx="2" />
-                <line x1="3" y1="9" x2="17" y2="9" />
-              </svg>
-            </StatIcon>
-            <StatContent>
-              <StatNumber>{userData.stats.challenges}</StatNumber>
-              <StatLabel>Всего вызовов</StatLabel>
-            </StatContent>
-          </StatCard>
-
-          <StatCard>
-            <StatIcon>
-              <svg width="20" height="20" fill="none" stroke="#fff" strokeWidth="2">
-                <path d="M3 6l5 5 8-8" />
-                <circle cx="18" cy="6" r="1.5" />
-                <path d="M16 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h8" />
-              </svg>
-            </StatIcon>
-            <StatContent>
-              <StatNumber>{userData.stats.completed}</StatNumber>
-              <StatLabel>Завершено</StatLabel>
-              <StatTrend>+3 на этой неделе</StatTrend>
-            </StatContent>
-          </StatCard>
-
-          <StatCard>
-            <StatIcon>
-              <svg width="20" height="20" fill="none" stroke="#fff" strokeWidth="2">
-                <circle cx="10" cy="10" r="8" />
-                <path d="M10 6v4l3 3" />
-              </svg>
-            </StatIcon>
-            <StatContent>
-              <StatNumber>{userData.stats.successRate}%</StatNumber>
-              <StatLabel>Успешность</StatLabel>
-              <StatTrend>Выше среднего</StatTrend>
-            </StatContent>
-          </StatCard>
-
-          <StatCard>
-            <StatIcon>
-              <svg width="20" height="20" fill="none" stroke="#fff" strokeWidth="2">
-                <path d="M4 4v12a4 4 0 0 0 4 4h8" />
-                <path d="M12 12v4" />
-                <path d="M16 8v8" />
-                <path d="M8 8v8" />
-              </svg>
-            </StatIcon>
-            <StatContent>
-              <StatNumber>{userData.stats.streak}</StatNumber>
-              <StatLabel>Дней подряд</StatLabel>
-              <StatTrend>Личный рекорд</StatTrend>
-            </StatContent>
-          </StatCard>
+          <StatItem>
+            <StatValue>{userData.stats.participation}</StatValue>
+            <StatLabel>Участие</StatLabel>
+          </StatItem>
+          <StatItem>
+            <StatValue>✅ {userData.stats.completed}</StatValue>
+            <StatLabel>Завершено</StatLabel>
+          </StatItem>
+          <StatItem>
+            <StatValue>{userData.stats.created}</StatValue>
+            <StatLabel>Создано</StatLabel>
+          </StatItem>
+          <StatItem>
+            <StatValue>{userData.stats.participants}</StatValue>
+            <StatLabel>Участников</StatLabel>
+          </StatItem>
         </StatsGrid>
 
-        {/* ACTIVITY SECTION */}
-        <ActivitySection>
-          <ActivityHeader>
-            <ActivityTitle>Активность</ActivityTitle>
-            <ActivityBadge>30 дней</ActivityBadge>
-          </ActivityHeader>
-          
-          <ActivityCalendar>
-            {calendarDays.map((level, index) => (
-              <DayCell key={index} $level={level} />
+        {/* REQUESTS & REPORTS */}
+        <RequestsSection>
+          <RequestsHeader>
+            <RequestsTitle>🔔 ЗАЯВКИ (3) • 📝 ОТЧЕТЫ (5)</RequestsTitle>
+          </RequestsHeader>
+          <RequestsGrid>
+            {userData.requests.map((req, index) => (
+              <RequestRow key={index}>
+                <RequestName>{req.name}</RequestName>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {req.new > 0 && <RequestBadge $type="new">{req.new} нов.</RequestBadge>}
+                  {req.waiting > 0 && <RequestBadge $type="waiting">{req.waiting} ждет</RequestBadge>}
+                  {req.reports > 0 && <ReportBadge>{req.reports} отч.</ReportBadge>}
+                </div>
+              </RequestRow>
             ))}
-          </ActivityCalendar>
-          
-          <Legend>
-            <LegendItem>
-              <LegendColor $level={0} />
-              <LegendText>Нет</LegendText>
-            </LegendItem>
-            <LegendItem>
-              <LegendColor $level={1} />
-              <LegendText>1</LegendText>
-            </LegendItem>
-            <LegendItem>
-              <LegendColor $level={2} />
-              <LegendText>2-3</LegendText>
-            </LegendItem>
-            <LegendItem>
-              <LegendColor $level={3} />
-              <LegendText>4-5</LegendText>
-            </LegendItem>
-            <LegendItem>
-              <LegendColor $level={4} />
-              <LegendText>6+</LegendText>
-            </LegendItem>
-          </Legend>
-        </ActivitySection>
+          </RequestsGrid>
+        </RequestsSection>
 
-        {/* RATING SECTION */}
+        {/* CREATOR RATING */}
         <RatingSection>
-          <RatingTitle>Мой рейтинг</RatingTitle>
-          
-          <RatingList>
-            <RatingItem>
-              <RatingLabel>Общий рейтинг</RatingLabel>
-              <RatingValueWrapper>
-                <RatingNumber>#{userData.rating.current}</RatingNumber>
-                <RatingTotal>из {userData.rating.total}</RatingTotal>
-              </RatingValueWrapper>
-            </RatingItem>
+          <RatingTitle>🏆 РЕЙТИНГ СОЗДАТЕЛЯ</RatingTitle>
+          <RatingGrid>
+            <RatingRow>
+              <RatingLabel>Общий:</RatingLabel>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <RatingValue>#{userData.rating.overall}</RatingValue>
+                <RatingValue $secondary>из {userData.rating.total}</RatingValue>
+                <RatingTrend>↑ +{userData.rating.trend}</RatingTrend>
+              </div>
+            </RatingRow>
             
             <RatingDivider />
             
-            <RatingItem>
-              <RatingLabel>Рост за неделю</RatingLabel>
-              <RatingChange $positive={userData.rating.change > 0}>
-                +{userData.rating.change} позиций
-              </RatingChange>
-            </RatingItem>
+            <RatingRow>
+              <RatingLabel>По вызовам:</RatingLabel>
+              <RatingValue>#{userData.rating.byChallenges}</RatingValue>
+            </RatingRow>
             
-            <RatingItem>
-              <RatingLabel>Лучший результат</RatingLabel>
-              <RatingNumber>#{userData.rating.best}</RatingNumber>
-            </RatingItem>
-            
-            <RatingItem>
-              <RatingLabel>В топ 10%</RatingLabel>
-              <RatingBadge>✓ Да</RatingBadge>
-            </RatingItem>
-          </RatingList>
+            <RatingRow>
+              <RatingLabel>Доверие:</RatingLabel>
+              <TrustBadge>
+                {userData.rating.trust}% ({userData.rating.likes} 👍)
+              </TrustBadge>
+            </RatingRow>
+          </RatingGrid>
         </RatingSection>
       </Container>
 
