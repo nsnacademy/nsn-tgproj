@@ -7,12 +7,28 @@ import {
   Text,
   Toggle,
   ToggleKnob,
-  StatsGrid,
-  StatCard,
-  StatValue,
+  UserInfoBlock,
+  UserAvatar,
+  UserName,
+  UserHandle,
+  StatsRow,
+  StatItem,
+  StatNumber,
   StatLabel,
+  CalendarBlock,
+  CalendarTitle,
   CalendarGrid,
   CalendarDay,
+  CalendarLegend,
+  LegendItem,
+  RatingBlock,
+  RatingTitle,
+  RatingRow,
+  RatingLabel,
+  RatingValue,
+  RatingBadge,
+  RatingChange,
+  Divider,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -37,33 +53,34 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   
   const [locked, setLocked] = useState(false);
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
-  
-  // Моковые данные для демонстрации
-  const mockStats = {
-    challenges: 24,
-    completed: 18,
-    successRate: 75,
-    streak: 7
+
+  // Моковые данные
+  const userData = {
+    name: 'Александр',
+    handle: 'alex_dev',
+    stats: {
+      challenges: 24,
+      completed: 18,
+      successRate: 75,
+      streak: 7
+    },
+    rating: {
+      current: 47,
+      total: 1250,
+      change: 15,
+      best: 32
+    }
   };
-  
-  const mockRating = {
-    globalRank: 47,
-    totalParticipants: 1250,
-    weeklyChange: 15,
-    bestRank: 32
-  };
-  
+
   // Генерация календаря
   const generateCalendarDays = () => {
     const days = [];
     for (let i = 0; i < 30; i++) {
-      days.push({
-        level: Math.floor(Math.random() * 5) // 0-4
-      });
+      days.push(Math.floor(Math.random() * 5));
     }
     return days;
   };
-  
+
   const calendarDays = generateCalendarDays();
 
   /* =========================
@@ -92,7 +109,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   const onToggleAdmin = () => {
     if (locked || !isCreator) return;
 
-    // 👇 Сохраняем в localStorage
     localStorage.setItem('adminMode', 'true');
     setAdminMode(true);
     setLocked(true);
@@ -107,7 +123,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
      Сброс при выходе из админки
   ========================= */
 
-  // Если мы вернулись на профиль из админки, сбрасываем состояние
   useEffect(() => {
     if (screen === 'profile') {
       localStorage.setItem('adminMode', 'false');
@@ -128,137 +143,119 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: 24,
+            marginBottom: 12,
           }}
         >
           <Title>Профиль</Title>
-
-          <Toggle
-            $active={adminMode}
-            $disabled={!isCreator}
-            onClick={onToggleAdmin}
-          >
-            <ToggleKnob $active={adminMode} />
-          </Toggle>
         </div>
 
-        {/* 👤 ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-          <div style={{ 
-            width: 56, 
-            height: 56, 
-            borderRadius: 28, 
-            background: 'rgba(255,255,255,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <svg width="32" height="32" fill="none" stroke="#fff" strokeWidth="2">
-              <circle cx="16" cy="12" r="6" />
-              <path d="M4 32c2-6 8-10 12-10s10 4 12 10" />
+        {/* ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ */}
+        <UserInfoBlock>
+          <UserAvatar>
+            <svg width="40" height="40" fill="none" stroke="#fff" strokeWidth="2">
+              <circle cx="20" cy="15" r="8" />
+              <path d="M5 38c3-8 10-12 15-12s12 4 15 12" />
             </svg>
-          </div>
+          </UserAvatar>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 600 }}>Имя пользователя</div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>@username</div>
+            <UserName>{userData.name}</UserName>
+            <UserHandle>@{userData.handle}</UserHandle>
           </div>
-        </div>
+        </UserInfoBlock>
 
-        {/* 📊 СТАТИСТИКА */}
-        <StatsGrid>
-          <StatCard>
-            <StatValue>{mockStats.challenges}</StatValue>
+        {/* СТАТИСТИКА */}
+        <StatsRow>
+          <StatItem>
+            <StatNumber>{userData.stats.challenges}</StatNumber>
             <StatLabel>Вызовов</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{mockStats.completed}</StatValue>
+          </StatItem>
+          <StatItem>
+            <StatNumber>{userData.stats.completed}</StatNumber>
             <StatLabel>Завершено</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{mockStats.successRate}%</StatValue>
+          </StatItem>
+          <StatItem>
+            <StatNumber>{userData.stats.successRate}%</StatNumber>
             <StatLabel>Успешность</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{mockStats.streak}</StatValue>
+          </StatItem>
+          <StatItem>
+            <StatNumber>{userData.stats.streak}</StatNumber>
             <StatLabel>Дней подряд</StatLabel>
-          </StatCard>
-        </StatsGrid>
+          </StatItem>
+        </StatsRow>
 
-        {/* 🔥 КАЛЕНДАРЬ АКТИВНОСТИ */}
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 16, marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>Активность</span>
-            <span style={{ fontSize: 13, opacity: 0.6 }}>последние 30 дней</span>
-          </div>
+        {/* КАЛЕНДАРЬ АКТИВНОСТИ */}
+        <CalendarBlock>
+          <CalendarTitle>
+            Активность
+            <span style={{ fontSize: 13, fontWeight: 'normal', opacity: 0.6, marginLeft: 8 }}>
+              последние 30 дней
+            </span>
+          </CalendarTitle>
           
           <CalendarGrid>
-            {calendarDays.map((day, index) => (
-              <CalendarDay key={index} $level={day.level} />
+            {calendarDays.map((level, index) => (
+              <CalendarDay key={index} $level={level} />
             ))}
           </CalendarGrid>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+          <CalendarLegend>
             <span>Меньше</span>
-            <div style={{ display: 'flex', gap: 4 }}>
+            <LegendItem>
               <CalendarDay $level={0} style={{ width: 12, height: 12 }} />
               <CalendarDay $level={1} style={{ width: 12, height: 12 }} />
               <CalendarDay $level={2} style={{ width: 12, height: 12 }} />
               <CalendarDay $level={3} style={{ width: 12, height: 12 }} />
               <CalendarDay $level={4} style={{ width: 12, height: 12 }} />
-            </div>
+            </LegendItem>
             <span>Больше</span>
-          </div>
-        </div>
+          </CalendarLegend>
+        </CalendarBlock>
 
-        {/* 🏆 РЕЙТИНГ */}
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 16, marginBottom: 16 }}>
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Мой рейтинг</div>
+        {/* РЕЙТИНГ */}
+        <RatingBlock>
+          <RatingTitle>Мой рейтинг</RatingTitle>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 14, opacity: 0.7 }}>Общий рейтинг</span>
+          <RatingRow>
+            <RatingLabel>Общий рейтинг</RatingLabel>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: 20, fontSize: 14, fontWeight: 600 }}>
-                #{mockRating.globalRank}
-              </span>
-              <span style={{ fontSize: 13, opacity: 0.5 }}>из {mockRating.totalParticipants}</span>
+              <RatingBadge>#{userData.rating.current}</RatingBadge>
+              <RatingValue>из {userData.rating.total}</RatingValue>
             </div>
-          </div>
+          </RatingRow>
           
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '12px 0' }} />
+          <Divider />
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 14, opacity: 0.7 }}>Рост за неделю</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#4CAF50' }}>+{mockRating.weeklyChange} позиций</span>
-          </div>
+          <RatingRow>
+            <RatingLabel>Рост за неделю</RatingLabel>
+            <RatingChange $positive={userData.rating.change > 0}>
+              +{userData.rating.change} позиций
+            </RatingChange>
+          </RatingRow>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 14, opacity: 0.7 }}>Лучший результат</span>
-            <span style={{ fontSize: 14, fontWeight: 600 }}>#{mockRating.bestRank}</span>
-          </div>
+          <RatingRow>
+            <RatingLabel>Лучший результат</RatingLabel>
+            <RatingValue $bold>#{userData.rating.best}</RatingValue>
+          </RatingRow>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 14, opacity: 0.7 }}>В топ 10%</span>
-            <span style={{ color: '#4CAF50' }}>✓ Да</span>
-          </div>
-        </div>
+          <RatingRow>
+            <RatingLabel>В топ 10%</RatingLabel>
+            <RatingValue $positive>✓ Да</RatingValue>
+          </RatingRow>
+        </RatingBlock>
 
-        {/* 🔧 АДМИН-РЕЖИМ */}
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 16 }}>
+        {/* АДМИН-РЕЖИМ (как было) */}
+        <div style={{ marginTop: 24 }}>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              marginBottom: 12,
             }}
           >
-            <div>
-              <Text style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>
-                Админ-режим
-              </Text>
-              <Text style={{ fontSize: 13, opacity: 0.6, margin: '4px 0 0' }}>
-                Включите для модерации вызовов
-              </Text>
-            </div>
+            <Text style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>
+              Админ-режим
+            </Text>
 
             <Toggle
               $active={adminMode}
@@ -269,7 +266,10 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             </Toggle>
           </div>
 
-          {/* 🔒 ACCESS INFO */}
+          <Text>
+            Включите админ-режим для модерации вызовов
+          </Text>
+
           {isCreator === false && (
             <Text
               style={{
