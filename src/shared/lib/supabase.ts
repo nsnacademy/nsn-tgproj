@@ -60,39 +60,3 @@ export async function checkIsCreator(userId: string): Promise<boolean> {
   return (data?.length ?? 0) > 0;
 }
 
-// Добавьте эти функции в ваш существующий файл supabase.ts
-
-export async function getUserProfile(userId: string) {
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
-    
-  if (error) return null;
-  return data;
-}
-
-export async function getUserActivity(userId: string, days: number = 30) {
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-  
-  const { data, error } = await supabase
-    .from('user_daily_activity')
-    .select('date, completed')
-    .eq('user_id', userId)
-    .gte('date', startDate.toISOString().split('T')[0])
-    .order('date', { ascending: false });
-    
-  if (error) return [];
-  return data || [];
-}
-
-export async function getUserRating(userId: string) {
-  // Это пример - адаптируйте под вашу структуру БД
-  const { data, error } = await supabase
-    .rpc('get_user_rating', { p_user_id: userId });
-    
-  if (error) return null;
-  return data;
-}
