@@ -175,10 +175,83 @@ export const RequestsGrid = styled.div`
   gap: 12px;
 `;
 
+
+
+// ===== ROLE SWITCHER =====
+export const RoleSwitch = styled.div`
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 30px;
+  padding: 4px;
+  margin-bottom: 24px;
+`;
+
+export const RoleButton = styled.button<{ $active: boolean }>`
+  flex: 1;
+  background: ${({ $active }) => $active ? '#FFD700' : 'transparent'};
+  color: ${({ $active }) => $active ? '#000' : '#fff'};
+  border: none;
+  padding: 10px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+`;
+
+// ===== SECTION HEADER =====
+export const SectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0 12px;
+`;
+
+export const SectionTitle = styled.div`
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+`;
+
+export const SectionBadge = styled.div`
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+`;
+
+// ===== PROGRESS BAR =====
+export const ProgressBar = styled.div`
+  width: 80px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+`;
+
+export const ProgressFill = styled.div<{ $width: number }>`
+  width: ${({ $width }) => $width}%;
+  height: 100%;
+  background: #FFD700;
+`;
+
+export const ProgressText = styled.span`
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  min-width: 40px;
+`;
+
+// ===== PARTICIPANT/CREATOR SECTIONS =====
+export const ParticipantSection = styled.div``;
+export const CreatorSection = styled.div``;
+
+// ===== REQUESTS =====
 export const RequestRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 8px;
 `;
 
 export const RequestName = styled.span`
@@ -194,7 +267,6 @@ export const RequestBadge = styled.span<{ $type: 'new' | 'waiting' }>`
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 30px;
-  font-weight: 500;
 `;
 
 export const ReportBadge = styled.span`
@@ -203,28 +275,27 @@ export const ReportBadge = styled.span`
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 30px;
-  font-weight: 500;
 `;
 
-// ===== RATING SECTION =====
+// ===== RATING =====
 export const RatingSection = styled.div`
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 16px;
-  margin-bottom: 24px;
+  margin-top: 20px;
 `;
 
 export const RatingTitle = styled.div`
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 12px;
 `;
 
 export const RatingGrid = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 `;
 
 export const RatingRow = styled.div`
@@ -250,7 +321,6 @@ export const RatingTrend = styled.span`
   background: rgba(76, 175, 80, 0.1);
   padding: 2px 6px;
   border-radius: 30px;
-  font-weight: 500;
 `;
 
 export const RatingDivider = styled.div`
@@ -263,65 +333,6 @@ export const TrustBadge = styled.span`
   background: rgba(255, 215, 0, 0.1);
   color: #FFD700;
   font-size: 13px;
-  font-weight: 600;
   padding: 4px 10px;
   border-radius: 30px;
-`;
-
-// ===== ROLE SWITCHER =====
-export const RoleSwitch = styled.div`
-  display: flex;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 30px;
-  padding: 4px;
-  margin-bottom: 24px;
-`;
-
-export const RoleButton = styled.button<{ $active: boolean }>`
-  flex: 1;
-  background: ${({ $active }) => $active ? '#FFD700' : 'transparent'};
-  color: ${({ $active }) => $active ? '#000' : '#fff'};
-  border: none;
-  padding: 10px;
-  border-radius: 30px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-`;
-
-// ===== SECTION HEADER =====
-export const SectionHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 20px 0 12px;
-`;
-
-export const SectionTitle = styled.div`
-  font-size: 16px;
-  font-weight: 600;
-`;
-
-export const SectionBadge = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
-`;
-
-// ===== PARTICIPANT/CREATOR SECTIONS =====
-export const ParticipantSection = styled.div``;
-export const CreatorSection = styled.div``;
-
-// ===== EMPTY STATE =====
-export const EmptyState = styled.div`
-  text-align: center;
-  padding: 32px 0;
-`;
-
-export const EmptyText = styled.div`
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.3);
 `;

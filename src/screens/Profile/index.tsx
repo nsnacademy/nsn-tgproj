@@ -35,6 +35,9 @@ import {
   RatingTrend,
   RatingDivider,
   TrustBadge,
+  ProgressBar,
+  ProgressFill,
+  ProgressText,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -84,11 +87,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
       trend: 8,
       byChallenges: 12,
       trust: 98,
-      likes: 45,
-      topPlaces: [
-        { name: 'Марафон', place: 1 },
-        { name: 'Челлендж', place: 2 }
-      ]
+      likes: 45
     },
     activeChallenges: [
       { name: 'Марафон', progress: 5, total: 30 },
@@ -181,13 +180,13 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
               $active={activeRole === 'participant'} 
               onClick={() => setActiveRole('participant')}
             >
-              Как участник
+              Участник
             </RoleButton>
             <RoleButton 
               $active={activeRole === 'creator'} 
               onClick={() => setActiveRole('creator')}
             >
-              Как создатель
+              Создатель
             </RoleButton>
           </RoleSwitch>
         )}
@@ -202,7 +201,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
                 <StatLabel>Вызовов</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>✅ {userData.participantStats.completed}</StatValue>
+                <StatValue>{userData.participantStats.completed}</StatValue>
                 <StatLabel>Завершено</StatLabel>
               </StatItem>
               <StatItem>
@@ -210,56 +209,46 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
                 <StatLabel>Успешность</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>🔥 {userData.participantStats.streak}</StatValue>
+                <StatValue>{userData.participantStats.streak}</StatValue>
                 <StatLabel>Дней</StatLabel>
               </StatItem>
             </StatsGrid>
 
             {/* Активные вызовы */}
             <SectionHeader>
-              <SectionTitle>▶️ Активные вызовы</SectionTitle>
+              <SectionTitle>Активные вызовы</SectionTitle>
               <SectionBadge>{userData.activeChallenges.length}</SectionBadge>
             </SectionHeader>
 
             {userData.activeChallenges.map((ch, index) => (
-              <RequestRow key={index} style={{ marginBottom: 8 }}>
+              <RequestRow key={index} style={{ marginBottom: 12 }}>
                 <RequestName>{ch.name}</RequestName>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ 
-                    width: 80, 
-                    height: 4, 
-                    background: 'rgba(255,255,255,0.1)',
-                    borderRadius: 2,
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{ 
-                      width: `${(ch.progress / ch.total) * 100}%`, 
-                      height: '100%', 
-                      background: '#FFD700' 
-                    }} />
-                  </div>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                  <ProgressBar>
+                    <ProgressFill $width={(ch.progress / ch.total) * 100} />
+                  </ProgressBar>
+                  <ProgressText>
                     {ch.progress}/{ch.total}
-                  </span>
+                  </ProgressText>
                 </div>
               </RequestRow>
             ))}
 
             {/* Рейтинг участника */}
             <RatingSection>
-              <RatingTitle>🏆 Мой рейтинг</RatingTitle>
+              <RatingTitle>Рейтинг</RatingTitle>
               <RatingGrid>
                 <RatingRow>
-                  <RatingLabel>Общий:</RatingLabel>
+                  <RatingLabel>Общий</RatingLabel>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <RatingValue>#{userData.participantStats.rating}</RatingValue>
                     <RatingValue $secondary>из {userData.participantStats.totalUsers}</RatingValue>
-                    <RatingTrend>↑ +{userData.participantStats.trend}</RatingTrend>
+                    <RatingTrend>+{userData.participantStats.trend}</RatingTrend>
                   </div>
                 </RatingRow>
                 <RatingDivider />
                 <RatingRow>
-                  <RatingLabel>Лучший:</RatingLabel>
+                  <RatingLabel>Лучший</RatingLabel>
                   <RatingValue>#{userData.participantStats.bestRank}</RatingValue>
                 </RatingRow>
               </RatingGrid>
@@ -281,18 +270,18 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
                 <StatLabel>Участников</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>🔔 {userData.creatorStats.applications}</StatValue>
+                <StatValue>{userData.creatorStats.applications}</StatValue>
                 <StatLabel>Заявки</StatLabel>
               </StatItem>
               <StatItem>
-                <StatValue>📝 {userData.creatorStats.reportsToCheck}</StatValue>
+                <StatValue>{userData.creatorStats.reportsToCheck}</StatValue>
                 <StatLabel>Отчеты</StatLabel>
               </StatItem>
             </StatsGrid>
 
             {/* Заявки и отчеты по вызовам */}
             <SectionHeader>
-              <SectionTitle>📋 Заявки и отчеты</SectionTitle>
+              <SectionTitle>Заявки и отчеты</SectionTitle>
             </SectionHeader>
 
             {userData.pendingRequests.map((req, index) => (
@@ -308,52 +297,30 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
 
             {/* Рейтинг создателя */}
             <RatingSection>
-              <RatingTitle>🏆 Рейтинг создателя</RatingTitle>
+              <RatingTitle>Рейтинг создателя</RatingTitle>
               <RatingGrid>
                 <RatingRow>
-                  <RatingLabel>Общий:</RatingLabel>
+                  <RatingLabel>Общий</RatingLabel>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <RatingValue>#{userData.creatorStats.rating}</RatingValue>
                     <RatingValue $secondary>из {userData.creatorStats.totalCreators}</RatingValue>
-                    <RatingTrend>↑ +{userData.creatorStats.trend}</RatingTrend>
+                    <RatingTrend>+{userData.creatorStats.trend}</RatingTrend>
                   </div>
                 </RatingRow>
                 
                 <RatingDivider />
                 
                 <RatingRow>
-                  <RatingLabel>По вызовам:</RatingLabel>
+                  <RatingLabel>По вызовам</RatingLabel>
                   <RatingValue>#{userData.creatorStats.byChallenges}</RatingValue>
                 </RatingRow>
                 
                 <RatingRow>
-                  <RatingLabel>Доверие:</RatingLabel>
+                  <RatingLabel>Доверие</RatingLabel>
                   <TrustBadge>
-                    {userData.creatorStats.trust}% ({userData.creatorStats.likes} 👍)
+                    {userData.creatorStats.trust}% ({userData.creatorStats.likes})
                   </TrustBadge>
                 </RatingRow>
-
-                {userData.creatorStats.topPlaces.length > 0 && (
-                  <>
-                    <RatingDivider />
-                    <RatingRow>
-                      <RatingLabel>🏅 Достижения:</RatingLabel>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {userData.creatorStats.topPlaces.map((p, i) => (
-                          <span key={i} style={{ 
-                            background: 'rgba(255,215,0,0.1)', 
-                            color: '#FFD700',
-                            padding: '2px 6px',
-                            borderRadius: 12,
-                            fontSize: 11
-                          }}>
-                            {p.place === 1 ? '🥇' : p.place === 2 ? '🥈' : '🥉'} {p.name}
-                          </span>
-                        ))}
-                      </div>
-                    </RatingRow>
-                  </>
-                )}
               </RatingGrid>
             </RatingSection>
           </CreatorSection>
