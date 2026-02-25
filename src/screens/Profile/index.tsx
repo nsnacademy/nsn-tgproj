@@ -184,7 +184,8 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           participantStats,
           activeChallengesData,
           ratingData,
-          creatorData
+          creatorChallengesData,
+          creatorTrustData  // 👈 переименовано с creatorStatsData на creatorTrustData
         ] = await Promise.allSettled([
           // Username
           supabase
@@ -286,7 +287,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             };
           })(),
           
-          // Данные создателя
+          // Данные создателя (вызовы, заявки, отчеты)
           (async () => {
             const isUserCreator = await checkIsCreator(user.id);
             if (!isUserCreator) return null;
@@ -389,6 +390,23 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
               rating: creatorRating.data?.place || null,
               totalCreators: totalCreatorsCount.count || 0
             };
+          })(),
+
+          // 👇 НОВЫЙ ЗАПРОС: доверие и лайки создателя (переименовано)
+          (async () => {
+            const isUserCreator = await checkIsCreator(user.id);
+            if (!isUserCreator) return { trust: 0, likes: 0 };
+
+            const { data } = await supabase
+              .from('creator_stats')
+              .select('trust_percent, likes_count')
+              .eq('creator_id', user.id)
+              .maybeSingle();
+
+            return {
+              trust: data?.trust_percent || 0,
+              likes: data?.likes_count || 0
+            };
           })()
         ]);
 
@@ -411,9 +429,14 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           ? ratingData.value 
           : { rating: null, totalUsers: 0, bestRank: null };
 
-        const creatorStatsData = creatorData.status === 'fulfilled' 
-          ? creatorData.value 
+        const creatorChallenges = creatorChallengesData.status === 'fulfilled' 
+          ? creatorChallengesData.value 
           : null;
+
+        // 👇 НОВОЕ: обрабатываем данные доверия (используем creatorTrustData)
+        const trustStats = creatorTrustData.status === 'fulfilled'
+          ? creatorTrustData.value
+          : { trust: 0, likes: 0 };
 
         const successRate = participantStatsData.total > 0
           ? Math.round((participantStatsData.completed / participantStatsData.total) * 100)
@@ -433,19 +456,20 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             bestRank: ratingStats.bestRank
           },
           creatorStats: {
-            created: creatorStatsData?.created || 0,
-            participants: creatorStatsData?.participants || 0,
-            applications: creatorStatsData?.applications || 0,
-            reportsToCheck: creatorStatsData?.reportsToCheck || 0,
-            rating: creatorStatsData?.rating || null,
-            totalCreators: creatorStatsData?.totalCreators || 0,
+            created: creatorChallenges?.created || 0,
+            participants: creatorChallenges?.participants || 0,
+            applications: creatorChallenges?.applications || 0,
+            reportsToCheck: creatorChallenges?.reportsToCheck || 0,
+            rating: creatorChallenges?.rating || null,
+            totalCreators: creatorChallenges?.totalCreators || 0,
             trend: 0,
             byChallenges: null,
-            trust: 0,
-            likes: 0
+            // 👇 НОВОЕ: добавляем trust и likes из trustStats
+            trust: trustStats.trust,
+            likes: trustStats.likes
           },
           activeChallenges: activeChallengesList,
-          pendingRequests: creatorStatsData?.pendingRequests || []
+          pendingRequests: creatorChallenges?.pendingRequests || []
         });
       } catch (error) {
         console.error('Error loading profile data:', error);
@@ -643,6 +667,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
               </>
             )}
             
+            {/* 👇 НОВОЕ: отображаем доверие и лайки */}
             {userData.creatorStats.trust > 0 && (
               <RatingRow>
                 <RatingLabel>Доверие</RatingLabel>
