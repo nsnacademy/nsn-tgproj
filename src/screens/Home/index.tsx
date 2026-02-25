@@ -86,31 +86,42 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
 
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (!tgUser) {
+      console.log('[HOME] no tg user');
       setItems([]);
       setLoading(false);
       return;
     }
 
-    const { data: user } = await supabase
+    console.log('[HOME] tg user:', tgUser);
+
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('telegram_id', tgUser.id)
       .single();
 
+    if (userError) {
+      console.log('[HOME] user error:', userError);
+    }
+
     if (!user) {
-  setItems([]);
-  setLoading(false);
-  return;
-}
+      console.log('[HOME] no user found');
+      setItems([]);
+      setLoading(false);
+      return;
+    }
 
-/* 🔥 ВАЖНО: автозавершение просроченных вызовов */
-await supabase.rpc('finish_expired_challenges');
+    console.log('[HOME] found user:', user);
 
-/* 🔥 теперь грузим Home */
-const { data, error } = await supabase.rpc('get_home_challenges', {
-  p_user_id: user.id,
-});
+    /* 🔥 ВАЖНО: автозавершение просроченных вызовов */
+    console.log('[HOME] calling finish_expired_challenges');
+    await supabase.rpc('finish_expired_challenges');
 
+    /* 🔥 теперь грузим Home */
+    console.log('[HOME] calling get_home_challenges for user:', user.id);
+    const { data, error } = await supabase.rpc('get_home_challenges', {
+      p_user_id: user.id,
+    });
 
     if (error) {
       console.error('[HOME] rpc error', error);
@@ -119,16 +130,31 @@ const { data, error } = await supabase.rpc('get_home_challenges', {
       return;
     }
 
-    console.log('[HOME] items from rpc', data);
+    console.log('[HOME] items from rpc:', data);
+    console.log('[HOME] number of items:', data?.length || 0);
+    
+    // Логируем каждый элемент для отладки
+    if (data && data.length > 0) {
+      data.forEach((item: ChallengeItem, index: number) => {
+        console.log(`[HOME] Item ${index + 1}:`, {
+          title: item.title,
+          start_at: item.start_at,
+          duration_days: item.duration_days,
+          challenge_finished: item.challenge_finished,
+          user_progress: item.user_progress
+        });
+      });
+    }
+    
     setItems(data ?? []);
     setLoading(false);
   }
 
   useEffect(() => {
-  if (screen === 'home') {
-    load();
-  }
-}, [screen, refreshKey]);
+    if (screen === 'home') {
+      load();
+    }
+  }, [screen, refreshKey]);
 
 
   const active = items.filter(i => !i.challenge_finished);
@@ -183,15 +209,27 @@ const { data, error } = await supabase.rpc('get_home_challenges', {
               const start = new Date(item.start_at);
               const today = new Date();
               
+              console.log(`[HOME] Calculating days for: ${item.title}`);
+              console.log(`[HOME] Raw start_at: ${item.start_at}`);
+              console.log(`[HOME] Start date object:`, start);
+              console.log(`[HOME] Today:`, today);
+              
               // Создаем даты в UTC, обнуляя время
               const startUTC = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
               const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
               
+              console.log(`[HOME] Start UTC: ${new Date(startUTC).toISOString()}`);
+              console.log(`[HOME] Today UTC: ${new Date(todayUTC).toISOString()}`);
+              
               const diffDays = Math.floor((todayUTC - startUTC) / (1000 * 60 * 60 * 24));
+              console.log(`[HOME] diffDays: ${diffDays}`);
+              
               const currentDay = Math.min(
                 item.duration_days,
                 Math.max(1, diffDays + 1)
               );
+              
+              console.log(`[HOME] currentDay: ${currentDay} из ${item.duration_days}`);
 
               // 🔥 ЕДИНЫЙ ПРОЦЕНТ
               const progressPercent = item.has_goal && goalValue > 0
@@ -200,6 +238,8 @@ const { data, error } = await supabase.rpc('get_home_challenges', {
                     100,
                     Math.round((progressValue / item.duration_days) * 100)
                   );
+
+              console.log(`[HOME] progressPercent: ${progressPercent}%`);
 
               // Определяем статус вызова
               const getStatusText = () => {
