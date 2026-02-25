@@ -11,15 +11,17 @@ import {
   UserInfo,
   UserName,
   UserHandle,
-  CreatorBadge,
+  RoleSwitch,
+  RoleButton,
   StatsGrid,
   StatItem,
   StatValue,
   StatLabel,
-  RequestsSection,
-  RequestsHeader,
-  RequestsTitle,
-  RequestsGrid,
+  ParticipantSection,
+  CreatorSection,
+  SectionHeader,
+  SectionTitle,
+  SectionBadge,
   RequestRow,
   RequestName,
   RequestBadge,
@@ -49,7 +51,6 @@ type ProfileProps = {
 };
 
 export default function Profile({ screen, onNavigate }: ProfileProps) {
-  // 👇 Инициализируем из localStorage
   const [adminMode, setAdminMode] = useState(() => {
     const saved = localStorage.getItem('adminMode');
     return saved === 'true';
@@ -57,34 +58,48 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   
   const [locked, setLocked] = useState(false);
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
+  const [activeRole, setActiveRole] = useState<'participant' | 'creator'>('participant');
 
   // Моковые данные
   const userData = {
     name: 'Александр',
     handle: 'alex_dev',
-    stats: {
-      participation: 24,
+    participantStats: {
+      challenges: 24,
       completed: 18,
-      created: 5,
-      participants: 47
+      successRate: 75,
+      streak: 7,
+      rating: 47,
+      totalUsers: 1250,
+      trend: 15,
+      bestRank: 32
     },
-    requests: [
-      { name: 'Марафон', new: 2, waiting: 0, reports: 3 },
-      { name: 'Челлендж', new: 0, waiting: 1, reports: 2 },
-    ],
-    rating: {
-      overall: 42,
-      total: 1250,
+    creatorStats: {
+      created: 5,
+      participants: 47,
+      applications: 3,
+      reportsToCheck: 5,
+      rating: 42,
+      totalCreators: 1250,
       trend: 8,
       byChallenges: 12,
       trust: 98,
-      likes: 45
-    }
+      likes: 45,
+      topPlaces: [
+        { name: 'Марафон', place: 1 },
+        { name: 'Челлендж', place: 2 }
+      ]
+    },
+    activeChallenges: [
+      { name: 'Марафон', progress: 5, total: 30 },
+      { name: 'Челлендж', progress: 3, total: 7 },
+      { name: '10000 шагов', progress: 12, total: 30 }
+    ],
+    pendingRequests: [
+      { name: 'Марафон', new: 2, waiting: 0, reports: 3 },
+      { name: 'Челлендж', new: 0, waiting: 1, reports: 2 },
+    ]
   };
-
-  /* =========================
-     CHECK CREATOR ACCESS
-  ========================= */
 
   useEffect(() => {
     async function checkAccess() {
@@ -96,14 +111,11 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
 
       const creator = await checkIsCreator(user.id);
       setIsCreator(creator);
+      if (creator) setActiveRole('creator');
     }
 
     checkAccess();
   }, []);
-
-  /* =========================
-     TOGGLE ADMIN MODE
-  ========================= */
 
   const onToggleAdmin = () => {
     if (locked || !isCreator) return;
@@ -118,20 +130,12 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
     }, 250);
   };
 
-  /* =========================
-     Сброс при выходе из админки
-  ========================= */
-
   useEffect(() => {
     if (screen === 'profile') {
       localStorage.setItem('adminMode', 'false');
       setAdminMode(false);
     }
   }, [screen]);
-
-  /* =========================
-     RENDER
-  ========================= */
 
   return (
     <SafeArea>
@@ -142,7 +146,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: 24,
+            marginBottom: 16,
           }}
         >
           <Title>Профиль</Title>
@@ -165,99 +169,206 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             </svg>
           </UserAvatar>
           <UserInfo>
-            <UserName>
-              {userData.name}
-              {isCreator && <CreatorBadge>Создатель</CreatorBadge>}
-            </UserName>
+            <UserName>{userData.name}</UserName>
             <UserHandle>@{userData.handle}</UserHandle>
           </UserInfo>
         </UserCard>
 
-        {/* STATS GRID */}
-        <StatsGrid>
-          <StatItem>
-            <StatValue>{userData.stats.participation}</StatValue>
-            <StatLabel>Участие</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatValue>✅ {userData.stats.completed}</StatValue>
-            <StatLabel>Завершено</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatValue>{userData.stats.created}</StatValue>
-            <StatLabel>Создано</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatValue>{userData.stats.participants}</StatValue>
-            <StatLabel>Участников</StatLabel>
-          </StatItem>
-        </StatsGrid>
+        {/* ROLE SWITCHER (только для создателей) */}
+        {isCreator && (
+          <RoleSwitch>
+            <RoleButton 
+              $active={activeRole === 'participant'} 
+              onClick={() => setActiveRole('participant')}
+            >
+              Как участник
+            </RoleButton>
+            <RoleButton 
+              $active={activeRole === 'creator'} 
+              onClick={() => setActiveRole('creator')}
+            >
+              Как создатель
+            </RoleButton>
+          </RoleSwitch>
+        )}
 
-        {/* REQUESTS & REPORTS */}
-        <RequestsSection>
-          <RequestsHeader>
-            <RequestsTitle>🔔 ЗАЯВКИ (3) • 📝 ОТЧЕТЫ (5)</RequestsTitle>
-          </RequestsHeader>
-          <RequestsGrid>
-            {userData.requests.map((req, index) => (
+        {/* РЕЖИМ УЧАСТНИКА */}
+        {activeRole === 'participant' && (
+          <ParticipantSection>
+            {/* Быстрая статистика */}
+            <StatsGrid>
+              <StatItem>
+                <StatValue>{userData.participantStats.challenges}</StatValue>
+                <StatLabel>Вызовов</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>✅ {userData.participantStats.completed}</StatValue>
+                <StatLabel>Завершено</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>{userData.participantStats.successRate}%</StatValue>
+                <StatLabel>Успешность</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>🔥 {userData.participantStats.streak}</StatValue>
+                <StatLabel>Дней</StatLabel>
+              </StatItem>
+            </StatsGrid>
+
+            {/* Активные вызовы */}
+            <SectionHeader>
+              <SectionTitle>▶️ Активные вызовы</SectionTitle>
+              <SectionBadge>{userData.activeChallenges.length}</SectionBadge>
+            </SectionHeader>
+
+            {userData.activeChallenges.map((ch, index) => (
+              <RequestRow key={index} style={{ marginBottom: 8 }}>
+                <RequestName>{ch.name}</RequestName>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ 
+                    width: 80, 
+                    height: 4, 
+                    background: 'rgba(255,255,255,0.1)',
+                    borderRadius: 2,
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${(ch.progress / ch.total) * 100}%`, 
+                      height: '100%', 
+                      background: '#FFD700' 
+                    }} />
+                  </div>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                    {ch.progress}/{ch.total}
+                  </span>
+                </div>
+              </RequestRow>
+            ))}
+
+            {/* Рейтинг участника */}
+            <RatingSection>
+              <RatingTitle>🏆 Мой рейтинг</RatingTitle>
+              <RatingGrid>
+                <RatingRow>
+                  <RatingLabel>Общий:</RatingLabel>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <RatingValue>#{userData.participantStats.rating}</RatingValue>
+                    <RatingValue $secondary>из {userData.participantStats.totalUsers}</RatingValue>
+                    <RatingTrend>↑ +{userData.participantStats.trend}</RatingTrend>
+                  </div>
+                </RatingRow>
+                <RatingDivider />
+                <RatingRow>
+                  <RatingLabel>Лучший:</RatingLabel>
+                  <RatingValue>#{userData.participantStats.bestRank}</RatingValue>
+                </RatingRow>
+              </RatingGrid>
+            </RatingSection>
+          </ParticipantSection>
+        )}
+
+        {/* РЕЖИМ СОЗДАТЕЛЯ */}
+        {activeRole === 'creator' && (
+          <CreatorSection>
+            {/* Статистика создателя */}
+            <StatsGrid>
+              <StatItem>
+                <StatValue>{userData.creatorStats.created}</StatValue>
+                <StatLabel>Создано</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>{userData.creatorStats.participants}</StatValue>
+                <StatLabel>Участников</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>🔔 {userData.creatorStats.applications}</StatValue>
+                <StatLabel>Заявки</StatLabel>
+              </StatItem>
+              <StatItem>
+                <StatValue>📝 {userData.creatorStats.reportsToCheck}</StatValue>
+                <StatLabel>Отчеты</StatLabel>
+              </StatItem>
+            </StatsGrid>
+
+            {/* Заявки и отчеты по вызовам */}
+            <SectionHeader>
+              <SectionTitle>📋 Заявки и отчеты</SectionTitle>
+            </SectionHeader>
+
+            {userData.pendingRequests.map((req, index) => (
               <RequestRow key={index}>
                 <RequestName>{req.name}</RequestName>
-                <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
                   {req.new > 0 && <RequestBadge $type="new">{req.new} нов.</RequestBadge>}
                   {req.waiting > 0 && <RequestBadge $type="waiting">{req.waiting} ждет</RequestBadge>}
                   {req.reports > 0 && <ReportBadge>{req.reports} отч.</ReportBadge>}
                 </div>
               </RequestRow>
             ))}
-          </RequestsGrid>
-        </RequestsSection>
 
-        {/* CREATOR RATING */}
-        <RatingSection>
-          <RatingTitle>🏆 РЕЙТИНГ СОЗДАТЕЛЯ</RatingTitle>
-          <RatingGrid>
-            <RatingRow>
-              <RatingLabel>Общий:</RatingLabel>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <RatingValue>#{userData.rating.overall}</RatingValue>
-                <RatingValue $secondary>из {userData.rating.total}</RatingValue>
-                <RatingTrend>↑ +{userData.rating.trend}</RatingTrend>
-              </div>
-            </RatingRow>
-            
-            <RatingDivider />
-            
-            <RatingRow>
-              <RatingLabel>По вызовам:</RatingLabel>
-              <RatingValue>#{userData.rating.byChallenges}</RatingValue>
-            </RatingRow>
-            
-            <RatingRow>
-              <RatingLabel>Доверие:</RatingLabel>
-              <TrustBadge>
-                {userData.rating.trust}% ({userData.rating.likes} 👍)
-              </TrustBadge>
-            </RatingRow>
-          </RatingGrid>
-        </RatingSection>
+            {/* Рейтинг создателя */}
+            <RatingSection>
+              <RatingTitle>🏆 Рейтинг создателя</RatingTitle>
+              <RatingGrid>
+                <RatingRow>
+                  <RatingLabel>Общий:</RatingLabel>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <RatingValue>#{userData.creatorStats.rating}</RatingValue>
+                    <RatingValue $secondary>из {userData.creatorStats.totalCreators}</RatingValue>
+                    <RatingTrend>↑ +{userData.creatorStats.trend}</RatingTrend>
+                  </div>
+                </RatingRow>
+                
+                <RatingDivider />
+                
+                <RatingRow>
+                  <RatingLabel>По вызовам:</RatingLabel>
+                  <RatingValue>#{userData.creatorStats.byChallenges}</RatingValue>
+                </RatingRow>
+                
+                <RatingRow>
+                  <RatingLabel>Доверие:</RatingLabel>
+                  <TrustBadge>
+                    {userData.creatorStats.trust}% ({userData.creatorStats.likes} 👍)
+                  </TrustBadge>
+                </RatingRow>
+
+                {userData.creatorStats.topPlaces.length > 0 && (
+                  <>
+                    <RatingDivider />
+                    <RatingRow>
+                      <RatingLabel>🏅 Достижения:</RatingLabel>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {userData.creatorStats.topPlaces.map((p, i) => (
+                          <span key={i} style={{ 
+                            background: 'rgba(255,215,0,0.1)', 
+                            color: '#FFD700',
+                            padding: '2px 6px',
+                            borderRadius: 12,
+                            fontSize: 11
+                          }}>
+                            {p.place === 1 ? '🥇' : p.place === 2 ? '🥈' : '🥉'} {p.name}
+                          </span>
+                        ))}
+                      </div>
+                    </RatingRow>
+                  </>
+                )}
+              </RatingGrid>
+            </RatingSection>
+          </CreatorSection>
+        )}
       </Container>
 
       {/* BOTTOM NAV */}
       <BottomNav>
-        <NavItem
-          $active={screen === 'home'}
-          onClick={() => onNavigate('home')}
-        >
+        <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 10.5L12 3l9 7.5" />
             <path d="M5 9.5V21h14V9.5" />
           </svg>
         </NavItem>
-
-        <NavItem
-          $active={screen === 'create'}
-          onClick={() => onNavigate('create')}
-        >
+        <NavItem $active={screen === 'create'} onClick={() => onNavigate('create')}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="3" y="3" width="7" height="7" rx="1.5" />
             <rect x="14" y="3" width="7" height="7" rx="1.5" />
@@ -265,7 +376,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             <rect x="14" y="14" width="7" height="7" rx="1.5" />
           </svg>
         </NavItem>
-
         <NavItem $active={false}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="6" y1="18" x2="6" y2="14" />
@@ -273,11 +383,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             <line x1="18" y1="18" x2="18" y2="6" />
           </svg>
         </NavItem>
-
-        <NavItem
-          $active={screen === 'profile'}
-          onClick={() => onNavigate('profile')}
-        >
+        <NavItem $active={screen === 'profile'} onClick={() => onNavigate('profile')}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="7" r="4" />
             <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />

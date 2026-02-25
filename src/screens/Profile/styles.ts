@@ -267,3 +267,61 @@ export const TrustBadge = styled.span`
   padding: 4px 10px;
   border-radius: 30px;
 `;
+
+// ===== ROLE SWITCHER =====
+export const RoleSwitch = styled.div`
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 30px;
+  padding: 4px;
+  margin-bottom: 24px;
+`;
+
+export const RoleButton = styled.button<{ $active: boolean }>`
+  flex: 1;
+  background: ${({ $active }) => $active ? '#FFD700' : 'transparent'};
+  color: ${({ $active }) => $active ? '#000' : '#fff'};
+  border: none;
+  padding: 10px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+`;
+
+// ===== SECTION HEADER =====
+export const SectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0 12px;
+`;
+
+export const SectionTitle = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+`;
+
+export const SectionBadge = styled.div`
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+`;
+
+// ===== PARTICIPANT/CREATOR SECTIONS =====
+export const ParticipantSection = styled.div``;
+export const CreatorSection = styled.div``;
+
+// ===== EMPTY STATE =====
+export const EmptyState = styled.div`
+  text-align: center;
+  padding: 32px 0;
+`;
+
+export const EmptyText = styled.div`
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.3);
+`;
