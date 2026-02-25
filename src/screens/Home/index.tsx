@@ -205,7 +205,7 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
               const progressValue = Number(item.user_progress ?? 0);
               const goalValue = Number(item.goal_value ?? 0);
 
-              // ИСПРАВЛЕНО: правильный подсчет дней с учетом UTC
+              // ИСПРАВЛЕНО: правильный подсчет дней с учетом будущих дат
               const start = new Date(item.start_at);
               const today = new Date();
               
@@ -215,21 +215,30 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
               console.log(`[HOME] Today:`, today);
               
               // Создаем даты в UTC, обнуляя время
-              const startUTC = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
-              const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+              const startUTC = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+              const todayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
               
               console.log(`[HOME] Start UTC: ${new Date(startUTC).toISOString()}`);
               console.log(`[HOME] Today UTC: ${new Date(todayUTC).toISOString()}`);
               
+              // Вычисляем разницу в днях (может быть отрицательной, если челлендж еще не начался)
               const diffDays = Math.floor((todayUTC - startUTC) / (1000 * 60 * 60 * 24));
               console.log(`[HOME] diffDays: ${diffDays}`);
               
-              const currentDay = Math.min(
-                item.duration_days,
-                Math.max(1, diffDays + 1)
-              );
+              // ИСПРАВЛЕНО: если челлендж еще не начался (diffDays < 0), показываем день 1
+              // Если начался, но прошло больше дней чем длительность, показываем последний день
+              let currentDay;
+              if (diffDays < 0) {
+                // Челлендж еще не начался
+                currentDay = 1;
+                console.log(`[HOME] Challenge hasn't started yet, showing day 1`);
+              } else {
+                // Челлендж начался, считаем день с учетом максимальной длительности
+                currentDay = Math.min(item.duration_days, diffDays + 1);
+                console.log(`[HOME] Challenge started, calculated day: ${currentDay}`);
+              }
               
-              console.log(`[HOME] currentDay: ${currentDay} из ${item.duration_days}`);
+              console.log(`[HOME] final currentDay: ${currentDay} из ${item.duration_days}`);
 
               // 🔥 ЕДИНЫЙ ПРОЦЕНТ
               const progressPercent = item.has_goal && goalValue > 0
@@ -246,6 +255,7 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                 if (item.challenge_finished) {
                   return item.user_completed ? 'Успешно завершён' : 'Завершён';
                 }
+                if (diffDays < 0) return 'Скоро начнётся';
                 if (progressPercent >= 100) return 'Выполняется';
                 return 'В процессе';
               };
@@ -310,7 +320,11 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                       </ProgressBar>
 
                       <DaysInfo>
-                        День {currentDay} из {item.duration_days}
+                        {diffDays < 0 ? (
+                          <>Старт {new Date(item.start_at).toLocaleDateString('ru-RU')}</>
+                        ) : (
+                          <>День {currentDay} из {item.duration_days}</>
+                        )}
                         {item.challenge_finished && (
                           <span style={{ marginLeft: '8px', opacity: 0.7 }}>
                             • {item.user_completed ? '✓' : '✗'}
@@ -330,8 +344,11 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                           item.participant_id
                         )
                       }
+                      disabled={diffDays < 0}
+                      style={diffDays < 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
-                      {progressPercent >= 100 ? 'Посмотреть результат' : 'Продолжить вызов'}
+                      {diffDays < 0 ? 'Доступно с ' + new Date(item.start_at).toLocaleDateString('ru-RU') : 
+                       progressPercent >= 100 ? 'Посмотреть результат' : 'Продолжить вызов'}
                     </PrimaryButton>
                   ) : (
                     <PrimaryButton
