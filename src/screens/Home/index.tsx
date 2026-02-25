@@ -179,16 +179,15 @@ const { data, error } = await supabase.rpc('get_home_challenges', {
               const progressValue = Number(item.user_progress ?? 0);
               const goalValue = Number(item.goal_value ?? 0);
 
+              // ИСПРАВЛЕНО: правильный подсчет дней с учетом UTC
               const start = new Date(item.start_at);
               const today = new Date();
-              start.setHours(0, 0, 0, 0);
-              today.setHours(0, 0, 0, 0);
-
-              const diffDays = Math.floor(
-                (today.getTime() - start.getTime()) /
-                  (1000 * 60 * 60 * 24)
-              );
-
+              
+              // Создаем даты в UTC, обнуляя время
+              const startUTC = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+              const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+              
+              const diffDays = Math.floor((todayUTC - startUTC) / (1000 * 60 * 60 * 24));
               const currentDay = Math.min(
                 item.duration_days,
                 Math.max(1, diffDays + 1)
