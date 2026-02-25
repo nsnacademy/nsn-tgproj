@@ -7,28 +7,6 @@ import {
   Text,
   Toggle,
   ToggleKnob,
-  UserInfoBlock,
-  UserAvatar,
-  UserName,
-  UserHandle,
-  StatsRow,
-  StatItem,
-  StatNumber,
-  StatLabel,
-  CalendarBlock,
-  CalendarTitle,
-  CalendarGrid,
-  CalendarDay,
-  CalendarLegend,
-  LegendItem,
-  RatingBlock,
-  RatingTitle,
-  RatingRow,
-  RatingLabel,
-  RatingValue,
-  RatingBadge,
-  RatingChange,
-  Divider,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -143,144 +121,201 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: 12,
+            marginBottom: 24,
           }}
         >
           <Title>Профиль</Title>
+
+          <Toggle
+            $active={adminMode}
+            $disabled={!isCreator}
+            onClick={onToggleAdmin}
+          >
+            <ToggleKnob $active={adminMode} />
+          </Toggle>
         </div>
 
-        {/* ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ */}
-        <UserInfoBlock>
-          <UserAvatar>
-            <svg width="40" height="40" fill="none" stroke="#fff" strokeWidth="2">
-              <circle cx="20" cy="15" r="8" />
-              <path d="M5 38c3-8 10-12 15-12s12 4 15 12" />
-            </svg>
-          </UserAvatar>
-          <div>
-            <UserName>{userData.name}</UserName>
-            <UserHandle>@{userData.handle}</UserHandle>
-          </div>
-        </UserInfoBlock>
+        <Text style={{ marginBottom: 24 }}>
+          Включите админ-режим для модерации вызовов
+        </Text>
 
-        {/* СТАТИСТИКА */}
-        <StatsRow>
-          <StatItem>
-            <StatNumber>{userData.stats.challenges}</StatNumber>
-            <StatLabel>Вызовов</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatNumber>{userData.stats.completed}</StatNumber>
-            <StatLabel>Завершено</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatNumber>{userData.stats.successRate}%</StatNumber>
-            <StatLabel>Успешность</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatNumber>{userData.stats.streak}</StatNumber>
-            <StatLabel>Дней подряд</StatLabel>
-          </StatItem>
-        </StatsRow>
-
-        {/* КАЛЕНДАРЬ АКТИВНОСТИ */}
-        <CalendarBlock>
-          <CalendarTitle>
-            Активность
-            <span style={{ fontSize: 13, fontWeight: 'normal', opacity: 0.6, marginLeft: 8 }}>
-              последние 30 дней
-            </span>
-          </CalendarTitle>
-          
-          <CalendarGrid>
-            {calendarDays.map((level, index) => (
-              <CalendarDay key={index} $level={level} />
-            ))}
-          </CalendarGrid>
-          
-          <CalendarLegend>
-            <span>Меньше</span>
-            <LegendItem>
-              <CalendarDay $level={0} style={{ width: 12, height: 12 }} />
-              <CalendarDay $level={1} style={{ width: 12, height: 12 }} />
-              <CalendarDay $level={2} style={{ width: 12, height: 12 }} />
-              <CalendarDay $level={3} style={{ width: 12, height: 12 }} />
-              <CalendarDay $level={4} style={{ width: 12, height: 12 }} />
-            </LegendItem>
-            <span>Больше</span>
-          </CalendarLegend>
-        </CalendarBlock>
-
-        {/* РЕЙТИНГ */}
-        <RatingBlock>
-          <RatingTitle>Мой рейтинг</RatingTitle>
-          
-          <RatingRow>
-            <RatingLabel>Общий рейтинг</RatingLabel>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <RatingBadge>#{userData.rating.current}</RatingBadge>
-              <RatingValue>из {userData.rating.total}</RatingValue>
-            </div>
-          </RatingRow>
-          
-          <Divider />
-          
-          <RatingRow>
-            <RatingLabel>Рост за неделю</RatingLabel>
-            <RatingChange $positive={userData.rating.change > 0}>
-              +{userData.rating.change} позиций
-            </RatingChange>
-          </RatingRow>
-          
-          <RatingRow>
-            <RatingLabel>Лучший результат</RatingLabel>
-            <RatingValue $bold>#{userData.rating.best}</RatingValue>
-          </RatingRow>
-          
-          <RatingRow>
-            <RatingLabel>В топ 10%</RatingLabel>
-            <RatingValue $positive>✓ Да</RatingValue>
-          </RatingRow>
-        </RatingBlock>
-
-        {/* АДМИН-РЕЖИМ (как было) */}
-        <div style={{ marginTop: 24 }}>
-          <div
+        {/* 🔒 ACCESS INFO */}
+        {isCreator === false && (
+          <Text
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 12,
+              marginBottom: 24,
+              fontSize: 13,
+              opacity: 0.6,
             }}
           >
-            <Text style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>
-              Админ-режим
-            </Text>
-
-            <Toggle
-              $active={adminMode}
-              $disabled={!isCreator}
-              onClick={onToggleAdmin}
-            >
-              <ToggleKnob $active={adminMode} />
-            </Toggle>
-          </div>
-
-          <Text>
-            Включите админ-режим для модерации вызовов
+            Админ-режим доступен только создателю вызова
           </Text>
+        )}
 
-          {isCreator === false && (
-            <Text
-              style={{
-                marginTop: 12,
-                fontSize: 13,
-                opacity: 0.6,
-              }}
-            >
-              Админ-режим доступен только создателю вызова
-            </Text>
-          )}
+        {/* ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 16, 
+          marginBottom: 24,
+          background: 'rgba(255,255,255,0.05)',
+          borderRadius: 16,
+          padding: 16
+        }}>
+          <div style={{ 
+            width: 56, 
+            height: 56, 
+            borderRadius: 28, 
+            background: 'rgba(255,255,255,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <svg width="32" height="32" fill="none" stroke="#fff" strokeWidth="2">
+              <circle cx="16" cy="12" r="6" />
+              <path d="M4 32c2-6 8-10 12-10s10 4 12 10" />
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 600 }}>{userData.name}</div>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>@{userData.handle}</div>
+          </div>
+        </div>
+
+        {/* СТАТИСТИКА */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(4, 1fr)', 
+          gap: 8,
+          marginBottom: 24
+        }}>
+          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{userData.stats.challenges}</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Вызовов</div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{userData.stats.completed}</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Завершено</div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{userData.stats.successRate}%</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Успешность</div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '12px 4px', textAlign: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{userData.stats.streak}</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>Дней подряд</div>
+          </div>
+        </div>
+
+        {/* КАЛЕНДАРЬ АКТИВНОСТИ */}
+        <div style={{ 
+          background: 'rgba(255,255,255,0.05)', 
+          borderRadius: 16, 
+          padding: 16,
+          marginBottom: 24
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: 12 
+          }}>
+            <span style={{ fontSize: 16, fontWeight: 600 }}>Активность</span>
+            <span style={{ fontSize: 13, opacity: 0.6 }}>последние 30 дней</span>
+          </div>
+          
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(30, 1fr)', 
+            gap: 2,
+            marginBottom: 8
+          }}>
+            {calendarDays.map((level, index) => (
+              <div
+                key={index}
+                style={{
+                  aspectRatio: '1',
+                  borderRadius: 2,
+                  background: (() => {
+                    switch (level) {
+                      case 0: return 'rgba(255, 255, 255, 0.1)';
+                      case 1: return 'rgba(76, 175, 80, 0.3)';
+                      case 2: return 'rgba(76, 175, 80, 0.5)';
+                      case 3: return 'rgba(76, 175, 80, 0.7)';
+                      case 4: return 'rgba(76, 175, 80, 1)';
+                      default: return 'rgba(255, 255, 255, 0.1)';
+                    }
+                  })()
+                }}
+                title={`Активность: уровень ${level}`}
+              />
+            ))}
+          </div>
+          
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            fontSize: 12, 
+            color: 'rgba(255,255,255,0.4)' 
+          }}>
+            <span>Меньше</span>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[0,1,2,3,4].map(level => (
+                <div
+                  key={level}
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 2,
+                    background: level === 0 ? 'rgba(255,255,255,0.1)' : 
+                                level === 1 ? 'rgba(76,175,80,0.3)' :
+                                level === 2 ? 'rgba(76,175,80,0.5)' :
+                                level === 3 ? 'rgba(76,175,80,0.7)' :
+                                'rgba(76,175,80,1)'
+                  }}
+                />
+              ))}
+            </div>
+            <span>Больше</span>
+          </div>
+        </div>
+
+        {/* РЕЙТИНГ */}
+        <div style={{ 
+          background: 'rgba(255,255,255,0.05)', 
+          borderRadius: 16, 
+          padding: 16,
+          marginBottom: 24
+        }}>
+          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Мой рейтинг</div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 14, opacity: 0.7 }}>Общий рейтинг</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: 20, fontSize: 14, fontWeight: 600 }}>
+                #{userData.rating.current}
+              </span>
+              <span style={{ fontSize: 13, opacity: 0.5 }}>из {userData.rating.total}</span>
+            </div>
+          </div>
+          
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '12px 0' }} />
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 14, opacity: 0.7 }}>Рост за неделю</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#4CAF50' }}>+{userData.rating.change} позиций</span>
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 14, opacity: 0.7 }}>Лучший результат</span>
+            <span style={{ fontSize: 14, fontWeight: 600 }}>#{userData.rating.best}</span>
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 14, opacity: 0.7 }}>В топ 10%</span>
+            <span style={{ color: '#4CAF50' }}>✓ Да</span>
+          </div>
         </div>
       </Container>
 
