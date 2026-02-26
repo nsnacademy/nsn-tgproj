@@ -235,13 +235,16 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, [screen]);
 
-  const handleSave = async () => {
+    const handleSave = async () => {
     if (!stats) return;
     
     const currentUser = await getCurrentUser();
     if (!currentUser) return;
 
-    const { error } = await supabase
+    console.log('Saving profile for user:', currentUser.id);
+    console.log('Data to save:', editForm);
+
+    const { data, error } = await supabase
       .from('profiles')
       .upsert({
         user_id: currentUser.id,
@@ -253,9 +256,14 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         email: editForm.email,
         role: editForm.role,
         updated_at: new Date()
-      });
+      })
+      .select();
 
-    if (!error) {
+    if (error) {
+      console.error('Save error:', error);
+      alert('Ошибка при сохранении: ' + error.message);
+    } else {
+      console.log('Save successful:', data);
       setStats({
         ...stats,
         bio: editForm.bio,
