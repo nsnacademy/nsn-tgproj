@@ -257,25 +257,52 @@ export const InviteButton = styled.button`
   }
 `;
 
+export const HintText = styled.div`
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 6px;
+  font-style: italic;
+`;
+
+export const CategoryTabs = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+`;
+
+export const CategoryTab = styled.button<{ $active: boolean }>`
+  padding: 8px 16px;
+  background: ${({ $active }) => $active ? '#ffd700' : '#222'};
+  color: ${({ $active }) => $active ? '#000' : '#666'};
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  flex: 1;
+  min-width: fit-content;
+`;
+
 export const EditForm = styled.div`
   margin: 20px 0;
 `;
 
 export const EditRow = styled.div`
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 `;
 
 export const EditLabel = styled.div`
-  font-size: 12px;
-  color: #666;
+  font-size: 13px;
+  color: #fff;
   margin-bottom: 4px;
+  font-weight: 500;
 `;
 
 export const EditInput = styled.input`
   width: 100%;
   padding: 12px;
   background: #0a0a0a;
-  border: 1px solid #222;
+  border: 1px solid #333;
   border-radius: 8px;
   color: #fff;
   font-size: 14px;
@@ -290,11 +317,11 @@ export const EditTextArea = styled.textarea`
   width: 100%;
   padding: 12px;
   background: #0a0a0a;
-  border: 1px solid #222;
+  border: 1px solid #333;
   border-radius: 8px;
   color: #fff;
   font-size: 14px;
-  min-height: 80px;
+  min-height: 100px;
   resize: vertical;
 
   &:focus {
@@ -304,8 +331,8 @@ export const EditTextArea = styled.textarea`
 `;
 
 export const SaveButton = styled.button`
-  flex: 1;
-  padding: 12px;
+  flex: 2;
+  padding: 14px;
   background: #ffd700;
   border: none;
   border-radius: 8px;
@@ -317,7 +344,7 @@ export const SaveButton = styled.button`
 
 export const CancelButton = styled.button`
   flex: 1;
-  padding: 12px;
+  padding: 14px;
   background: #222;
   border: none;
   border-radius: 8px;

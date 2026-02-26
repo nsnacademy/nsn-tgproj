@@ -31,12 +31,15 @@ import {
   SectionDivider,
   SectionTitle,
   EditForm,
+  EditRow,
+  EditLabel,
   EditInput,
   EditTextArea,
-  EditRow,
   SaveButton,
   CancelButton,
-  EditLabel,
+  HintText,
+  CategoryTabs,
+  CategoryTab,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -61,6 +64,7 @@ type UserStats = {
   portfolio: string;
   telegram: string;
   email: string;
+  role: 'developer' | 'designer' | 'manager' | 'other';
   total_days: number;
   total_challenges: number;
   current_streak: number;
@@ -96,8 +100,37 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     experience: '',
     portfolio: '',
     telegram: '',
-    email: ''
+    email: '',
+    role: 'developer' as 'developer' | 'designer' | 'manager' | 'other'
   });
+
+  // Подсказки для разных ролей
+  const hints = {
+    developer: {
+      bio: 'Напишите о себе: стек, опыт, какие проекты интересны',
+      stack: 'Укажите технологии через запятую: React, TypeScript, Node, Python...',
+      experience: 'Например: 3 года в веб-разработке',
+      portfolio: 'GitHub, GitLab, личный сайт',
+    },
+    designer: {
+      bio: 'Расскажите о себе: специализация, стиль, инструменты',
+      stack: 'Инструменты: Figma, Sketch, Adobe XD, Photoshop...',
+      experience: 'Опыт работы в дизайне',
+      portfolio: 'Behance, Dribbble, личное портфолио',
+    },
+    manager: {
+      bio: 'Опишите опыт: какие проекты вели, команды, методологии',
+      stack: 'Инструменты: Jira, Trello, Notion, Slack...',
+      experience: 'Управленческий опыт',
+      portfolio: 'Ссылки на проекты, кейсы',
+    },
+    other: {
+      bio: 'Расскажите о себе и своих интересах',
+      stack: 'Ваши навыки и компетенции',
+      experience: 'Опыт работы',
+      portfolio: 'Ссылки на работы',
+    },
+  };
 
   useEffect(() => {
     async function checkOwnProfile() {
@@ -128,12 +161,11 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         .eq('id', targetUserId)
         .single();
 
-      // Загружаем профиль из отдельной таблицы
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('bio, stack, experience, portfolio, telegram, email')
+        .select('bio, stack, experience, portfolio, telegram, email, role')
         .eq('user_id', targetUserId)
-        .single();
+        .maybeSingle();
 
       if (userStats) {
         const newStats = {
@@ -144,6 +176,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           portfolio: profileData?.portfolio || '',
           telegram: profileData?.telegram || '',
           email: profileData?.email || '',
+          role: profileData?.role || 'developer',
           total_days: userStats.total_days || 0,
           total_challenges: userStats.total_challenges || 0,
           current_streak: userStats.current_streak || 0,
@@ -160,7 +193,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           experience: newStats.experience,
           portfolio: newStats.portfolio,
           telegram: newStats.telegram,
-          email: newStats.email
+          email: newStats.email,
+          role: newStats.role,
         });
       }
     }
@@ -205,7 +239,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     const currentUser = await getCurrentUser();
     if (!currentUser) return;
 
-    // Сохраняем в таблицу profiles
     const { error } = await supabase
       .from('profiles')
       .upsert({
@@ -216,6 +249,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         portfolio: editForm.portfolio,
         telegram: editForm.telegram,
         email: editForm.email,
+        role: editForm.role,
         updated_at: new Date()
       });
 
@@ -227,7 +261,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         experience: editForm.experience,
         portfolio: editForm.portfolio,
         telegram: editForm.telegram,
-        email: editForm.email
+        email: editForm.email,
+        role: editForm.role,
       });
       setIsEditing(false);
     }
@@ -247,6 +282,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   const callsPercent = stats.total_days > 0 
     ? Math.round((stats.total_calls / stats.total_days) * 100) - 100 
     : 0;
+
+  const currentHints = hints[editForm.role];
 
   return (
     <SafeArea>
@@ -273,54 +310,93 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           {isEditing ? (
             /* РЕДАКТИРОВАНИЕ */
             <EditForm>
+              <CategoryTabs>
+                <CategoryTab 
+                  $active={editForm.role === 'developer'} 
+                  onClick={() => setEditForm({...editForm, role: 'developer'})}
+                >
+                  Разработчик
+                </CategoryTab>
+                <CategoryTab 
+                  $active={editForm.role === 'designer'} 
+                  onClick={() => setEditForm({...editForm, role: 'designer'})}
+                >
+                  Дизайнер
+                </CategoryTab>
+                <CategoryTab 
+                  $active={editForm.role === 'manager'} 
+                  onClick={() => setEditForm({...editForm, role: 'manager'})}
+                >
+                  Менеджер
+                </CategoryTab>
+                <CategoryTab 
+                  $active={editForm.role === 'other'} 
+                  onClick={() => setEditForm({...editForm, role: 'other'})}
+                >
+                  Другое
+                </CategoryTab>
+              </CategoryTabs>
+
               <EditRow>
                 <EditLabel>О себе</EditLabel>
+                <HintText>{currentHints.bio}</HintText>
                 <EditTextArea 
                   value={editForm.bio}
                   onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
-                  placeholder="Напишите о себе"
+                  placeholder="Начните писать..."
                 />
               </EditRow>
+
               <EditRow>
-                <EditLabel>Навыки</EditLabel>
+                <EditLabel>Навыки и инструменты</EditLabel>
+                <HintText>{currentHints.stack}</HintText>
                 <EditInput 
                   value={editForm.stack}
                   onChange={(e) => setEditForm({...editForm, stack: e.target.value})}
-                  placeholder="React, TypeScript, Node"
+                  placeholder="Например: React, TypeScript, Figma..."
                 />
               </EditRow>
+
               <EditRow>
                 <EditLabel>Опыт</EditLabel>
+                <HintText>{currentHints.experience}</HintText>
                 <EditInput 
                   value={editForm.experience}
                   onChange={(e) => setEditForm({...editForm, experience: e.target.value})}
-                  placeholder="3 года"
+                  placeholder="Ваш опыт"
                 />
               </EditRow>
+
               <EditRow>
                 <EditLabel>Портфолио</EditLabel>
+                <HintText>{currentHints.portfolio}</HintText>
                 <EditInput 
                   value={editForm.portfolio}
                   onChange={(e) => setEditForm({...editForm, portfolio: e.target.value})}
-                  placeholder="github.com/username"
+                  placeholder="Ссылка на портфолио"
                 />
               </EditRow>
+
               <EditRow>
                 <EditLabel>Telegram</EditLabel>
+                <HintText>Для связи с вами</HintText>
                 <EditInput 
                   value={editForm.telegram}
                   onChange={(e) => setEditForm({...editForm, telegram: e.target.value})}
                   placeholder="@username"
                 />
               </EditRow>
+
               <EditRow>
                 <EditLabel>Email</EditLabel>
+                <HintText>Для рабочих контактов</HintText>
                 <EditInput 
                   value={editForm.email}
                   onChange={(e) => setEditForm({...editForm, email: e.target.value})}
                   placeholder="email@mail.com"
                 />
               </EditRow>
+
               <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                 <SaveButton onClick={handleSave}>Сохранить</SaveButton>
                 <CancelButton onClick={() => setIsEditing(false)}>Отмена</CancelButton>
@@ -389,7 +465,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                         <ContactValue>{stats.email}</ContactValue>
                       </ContactItem>
                     )}
-                    <EditButton onClick={() => setIsEditing(true)}>✎ Редактировать</EditButton>
+                    <EditButton onClick={() => setIsEditing(true)}>✎ Редактировать профиль</EditButton>
                   </ContactSection>
                 </>
               ) : (
@@ -412,7 +488,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                   </ContactSection>
 
                   <InviteButton>
-                    ПРИГЛАСИТЬ
+                    ПРИГЛАСИТЬ В ПРОЕКТ
                   </InviteButton>
                 </>
               )}
