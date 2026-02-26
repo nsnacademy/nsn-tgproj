@@ -10,44 +10,71 @@ export const SafeArea = styled.div`
 
 export const Container = styled.div`
   flex: 1;
-  padding: 60px 16px 20px;
-`;
-
-export const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0 20px;
+  padding: 90px 20px 140px;
 `;
 
 export const Title = styled.h1`
   font-size: 22px;
-  font-weight: 500;
-  color: #fff;
+  font-weight: 600;
+  margin-bottom: 24px;
 `;
 
-export const Toggle = styled.div<{ $active: boolean; $disabled?: boolean }>`
-  width: 36px;
-  height: 18px;
-  border-radius: 9px;
-  background: ${({ $active }) => $active ? '#fff' : '#222'};
+export const Text = styled.p`
+  font-size: 14px;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.5;
+  margin-top: 8px;
+`;
+
+export const Section = styled.div`
+  background: rgba(255,255,255,0.05);
+  border-radius: 16px;
+  padding: 16px;
+`;
+
+export const ToggleRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+export const ToggleLabel = styled.div`
+  font-size: 15px;
+  font-weight: 500;
+`;
+
+export const Toggle = styled.div<{
+  $active: boolean;
+  $disabled?: boolean;
+}>`
+  width: 46px;
+  height: 26px;
+  border-radius: 13px;
+  background: ${({ $active }) =>
+    $active ? '#fff' : 'rgba(255,255,255,0.3)'};
+
   position: relative;
-  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
-  opacity: ${({ $disabled }) => $disabled ? 0.4 : 1};
+  cursor: ${({ $disabled }) =>
+    $disabled ? 'not-allowed' : 'pointer'};
+
+  opacity: ${({ $disabled }) =>
+    $disabled ? 0.4 : 1};
+
   transition: all 0.2s ease;
 `;
 
 export const ToggleKnob = styled.div<{ $active: boolean }>`
-  width: 14px;
-  height: 14px;
-  border-radius: 7px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
   background: #000;
   position: absolute;
   top: 2px;
-  left: ${({ $active }) => $active ? '20px' : '2px'};
+  left: ${({ $active }) => ($active ? '22px' : '2px')};
   transition: all 0.2s ease;
 `;
 
+// Новые стили
 export const UserName = styled.h2`
   font-size: 20px;
   font-weight: 500;
@@ -57,10 +84,6 @@ export const UserName = styled.h2`
 export const UserHandle = styled.div`
   font-size: 12px;
   color: #666;
-`;
-
-export const UserAvatar = styled.div`
-  // не используется в этом дизайне
 `;
 
 export const Power = styled.div`
@@ -300,24 +323,4 @@ export const AdminNote = styled.div`
   text-align: center;
   padding: 12px 0;
   border-top: 1px solid #222;
-`;
-
-export const BottomNav = styled.div`
-  display: flex;
-  justify-content: space-around;
-  padding: 12px 16px;
-  border-top: 1px solid #222;
-`;
-
-export const NavItem = styled.div<{ $active: boolean }>`
-  color: ${({ $active }) => $active ? '#fff' : '#333'};
-  cursor: pointer;
-  
-  svg {
-    width: 18px;
-    height: 18px;
-    stroke: currentColor;
-    stroke-width: 2;
-    fill: none;
-  }
 `;
