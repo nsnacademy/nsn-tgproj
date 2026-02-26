@@ -90,7 +90,6 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   const [rejectingReportId, setRejectingReportId] = useState<string | null>(null);
   const [rejectionText, setRejectionText] = useState('');
 
-  /* === НОВАЯ ФУНКЦИЯ: Начисление баллов пользователю === */
     /* === НОВАЯ ФУНКЦИЯ: Начисление баллов пользователю === */
   const awardChallengePoints = async (userId: string, reportDate: string) => {
     console.log('🎯 [POWER INDEX] Начисление баллов пользователю:', {
@@ -135,6 +134,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       console.error('❌ [POWER INDEX] Исключение при начислении баллов:', err);
     }
   };
+
   /* === LOAD CHALLENGE === */
   useEffect(() => {
     console.log('📋 [ADMIN CHALLENGE] Загрузка данных вызова:', challengeId);
@@ -172,7 +172,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       challengeTitle: challenge.title
     });
 
-    supabase
+        supabase
       .from('reports')
       .select(`
         id,
@@ -184,7 +184,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
         proof_media_urls,
         rejection_reason,
         participant:participants!inner (
-          user_id,  // 👈 Добавил user_id
+          user_id,
           user:users!inner ( 
             username 
           )
