@@ -15,7 +15,7 @@ import {
   ReportCard,
   ReportHeader,
   UserBlock,
-  StyledAvatar, // 👈 Заменили Avatar на StyledAvatar
+  StyledAvatar,
   UserText,
   Username,
   StatusBadge,
@@ -70,6 +70,7 @@ type Report = {
   proof_media_urls: string[] | null;
   rejection_reason: string | null;
   participant: {
+    user_id: string;  // 👈 Добавил user_id
     user: {
       username: string | null;
     };
@@ -89,6 +90,51 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
   const [rejectingReportId, setRejectingReportId] = useState<string | null>(null);
   const [rejectionText, setRejectionText] = useState('');
 
+  /* === НОВАЯ ФУНКЦИЯ: Начисление баллов пользователю === */
+    /* === НОВАЯ ФУНКЦИЯ: Начисление баллов пользователю === */
+  const awardChallengePoints = async (userId: string, reportDate: string) => {
+    console.log('🎯 [POWER INDEX] Начисление баллов пользователю:', {
+      userId,
+      reportDate,
+      challengeId
+    });
+
+    try {
+      // Вызываем нашу SQL функцию
+      const { error } = await supabase
+        .rpc('award_challenge_completion', {
+          p_user_id: userId,
+          p_report_date: reportDate
+        });
+
+      if (error) {
+        console.error('❌ [POWER INDEX] Ошибка начисления баллов:', error);
+        return;
+      }
+
+      console.log('✅ [POWER INDEX] Баллы успешно начислены:', {
+        userId,
+        reportDate
+      });
+
+      // Получаем обновленный power_index пользователя для отображения
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('power_index')
+        .eq('id', userId)
+        .single();
+
+      if (!userError && userData) {
+        console.log('📊 [POWER INDEX] Новый индекс пользователя:', {
+          userId,
+          powerIndex: userData.power_index
+        });
+      }
+
+    } catch (err) {
+      console.error('❌ [POWER INDEX] Исключение при начислении баллов:', err);
+    }
+  };
   /* === LOAD CHALLENGE === */
   useEffect(() => {
     console.log('📋 [ADMIN CHALLENGE] Загрузка данных вызова:', challengeId);
@@ -138,6 +184,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
         proof_media_urls,
         rejection_reason,
         participant:participants!inner (
+          user_id,  // 👈 Добавил user_id
           user:users!inner ( 
             username 
           )
@@ -156,6 +203,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
           count: data?.length || 0,
           reports: data?.map(r => ({
             id: r.id,
+            userId: r.participant?.user_id, // 👈 Логируем userId
             username: r.participant?.user?.username,
             status: r.status,
             mediaCount: r.proof_media_urls?.length || 0
@@ -269,13 +317,14 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
     count: filteredReports.length,
     reports: filteredReports.map(r => ({
       id: r.id,
+      userId: r.participant?.user_id,
       username: r.participant?.user?.username,
       status: r.status,
       mediaCount: r.proof_media_urls?.length || 0
     }))
   });
 
-  /* === UPDATE STATUS === */
+  /* === ОБНОВЛЕННАЯ ФУНКЦИЯ: UPDATE STATUS === */
   const updateStatus = async (
     reportId: string,
     status: 'approved' | 'rejected',
@@ -285,6 +334,20 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
       reportId,
       status,
       rejectionReason
+    });
+
+    // Находим отчет, чтобы получить user_id и report_date
+    const targetReport = reports.find(r => r.id === reportId);
+    
+    if (!targetReport) {
+      console.error('❌ [ADMIN CHALLENGE] Отчет не найден:', reportId);
+      return;
+    }
+
+    console.log('👤 [ADMIN CHALLENGE] Данные отчета:', {
+      userId: targetReport.participant?.user_id,
+      reportDate: targetReport.report_date,
+      username: targetReport.participant?.user?.username
     });
 
     const payload =
@@ -311,6 +374,7 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
 
     console.log('✅ [ADMIN CHALLENGE] Статус обновлен:', data);
     
+    // Обновляем локальное состояние
     setReports(prev =>
       prev.map(r =>
         r.id === reportId
@@ -322,6 +386,18 @@ export default function AdminChallenge({ challengeId, onBack }: Props) {
           : r
       )
     );
+
+    // 👇 ЕСЛИ СТАТУС APPROVED - НАЧИСЛЯЕМ БАЛЛЫ
+    if (status === 'approved' && targetReport.participant?.user_id) {
+      console.log('🎯 [POWER INDEX] Начинаем начисление баллов за одобренный отчет');
+      
+      await awardChallengePoints(
+        targetReport.participant.user_id,
+        targetReport.report_date
+      );
+      
+      console.log('✅ [POWER INDEX] Процесс начисления баллов завершен');
+    }
 
     setRejectingReportId(null);
     setRejectionText('');
