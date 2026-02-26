@@ -16,13 +16,20 @@ import {
   StatValue,
   StatLabel,
   IndexBadge,
-  StatusBadge,
+  IndexValue,
+  IndexIcon,
+  InfoButton,
+  PopupOverlay,
+  Popup,
+  PopupClose,
+  PopupTitle,
+  PopupText,
+  PopupExample,
   CalendarSection,
   MonthTitle,
   WeekDays,
   DotsGrid,
   DayDot,
-  FriendLink,
 } from './styles';
 import { BottomNav, NavItem } from '../Home/styles';
 import {
@@ -67,6 +74,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [activeDays, setActiveDays] = useState<Set<string>>(new Set());
+  const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -149,7 +157,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   // Календарь 5 недель (35 дней)
   const today = new Date();
   const startDate = new Date(today);
-  startDate.setDate(today.getDate() - 34); // 35 дней назад
+  startDate.setDate(today.getDate() - 34);
   
   const days = [];
   for (let i = 0; i < 35; i++) {
@@ -163,6 +171,11 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   }
 
   const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+  // Пример расчета для попапа
+  const exampleIndex = Math.round(
+    (30 * 0.5) + (10 * 1) + (8 * 2) + 45
+  );
 
   return (
     <SafeArea>
@@ -192,10 +205,9 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
             </UserInfo>
 
             <IndexBadge>
-              <span style={{ fontSize: 20, fontWeight: 700 }}>⚡{Math.round(stats.power_index)}</span>
-              <StatusBadge $status={getStatusText(stats.power_index)}>
-                {getStatusText(stats.power_index)}
-              </StatusBadge>
+              <IndexValue>{Math.round(stats.power_index)}</IndexValue>
+              <IndexIcon>{getStatusText(stats.power_index)}</IndexIcon>
+              <InfoButton onClick={() => setShowInfo(true)}>i</InfoButton>
             </IndexBadge>
 
             <StatsGrid>
@@ -231,16 +243,43 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
               </DotsGrid>
             </CalendarSection>
 
-            <FriendLink>Друзья ›</FriendLink>
+            <Text style={{ marginTop: 8, fontSize: 11, color: '#666', textAlign: 'center' }}>
+              Желтые точки — дни с активностью
+            </Text>
           </>
         )}
 
         {isCreator === false && (
-          <Text style={{ marginTop: 8, fontSize: 12, opacity: 0.6 }}>
-            Админ-режим доступен только создателю вызова
+          <Text style={{ marginTop: 8, fontSize: 11, color: '#444', textAlign: 'center' }}>
+            Админ-режим только для создателя
           </Text>
         )}
       </Container>
+
+      {/* INFO POPUP */}
+      {showInfo && (
+        <>
+          <PopupOverlay onClick={() => setShowInfo(false)} />
+          <Popup>
+            <PopupClose onClick={() => setShowInfo(false)}>✕</PopupClose>
+            <PopupTitle>Индекс силы</PopupTitle>
+            <PopupText>
+              Показывает вашу общую активность. Чем выше, тем лучше.
+            </PopupText>
+            <PopupText style={{ marginTop: 12, fontWeight: 500 }}>
+              Как считается:
+            </PopupText>
+            <PopupText>• Дни ×0.5</PopupText>
+            <PopupText>• Рекордный стрик ×1</PopupText>
+            <PopupText>• Вызовы ×2</PopupText>
+            <PopupText>• Баллы за последние 30 дней</PopupText>
+            
+            <PopupExample>
+              Пример: 30 дней + стрик 10 + 8 вызовов + 45 баллов за месяц = {exampleIndex}
+            </PopupExample>
+          </Popup>
+        </>
+      )}
 
       <BottomNav>
         <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>

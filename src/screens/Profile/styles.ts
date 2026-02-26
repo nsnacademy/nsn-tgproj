@@ -10,20 +10,18 @@ export const SafeArea = styled.div`
 
 export const Container = styled.div`
   flex: 1;
-  padding: 70px 16px 80px;
+  padding: 60px 16px 80px;
 `;
 
 export const Title = styled.h1`
   font-size: 24px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-weight: 600;
+  color: #fff;
 `;
 
 export const Text = styled.p`
   font-size: 12px;
-  color: rgba(255,255,255,0.7);
+  color: rgba(255,255,255,0.5);
   line-height: 1.4;
 `;
 
@@ -38,12 +36,12 @@ export const UserAvatar = styled.div`
   width: 48px;
   height: 48px;
   border-radius: 24px;
-  background: linear-gradient(135deg, #6e45e2, #88d3ce);
+  background: #222;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 500;
   overflow: hidden;
 
   img {
@@ -55,111 +53,177 @@ export const UserAvatar = styled.div`
 
 export const UserName = styled.div`
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: 2px;
 `;
 
 export const UserHandle = styled.div`
   font-size: 12px;
-  color: rgba(255,255,255,0.4);
+  color: #666;
 `;
 
 export const IndexBadge = styled.div`
-  background: rgba(255,215,0,0.1);
-  border: 1px solid rgba(255,215,0,0.2);
-  border-radius: 30px;
-  padding: 10px 14px;
-  margin-bottom: 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 8px 0;
+  border-bottom: 1px solid #222;
+`;
+
+export const IndexValue = styled.span`
+  font-size: 26px;
+  font-weight: 600;
+`;
+
+export const IndexIcon = styled.span`
+  font-size: 18px;
+  color: #ffd700;
+`;
+
+export const InfoButton = styled.button`
+  width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #222;
+  color: #666;
+  border: none;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: auto;
+`;
+
+export const PopupOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 1000;
+`;
+
+export const Popup = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 280px;
+  width: 90%;
+  z-index: 1001;
+`;
+
+export const PopupClose = styled.div`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: #666;
+  font-size: 16px;
+  cursor: pointer;
+`;
+
+export const PopupTitle = styled.div`
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #ffd700;
+`;
+
+export const PopupText = styled.div`
+  font-size: 13px;
+  color: #999;
+  line-height: 1.5;
+  margin-bottom: 4px;
+`;
+
+export const PopupExample = styled.div`
+  margin-top: 16px;
+  padding: 12px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #fff;
+  border-left: 2px solid #ffd700;
 `;
 
 export const StatusBadge = styled.span<{ $status: string }>`
-  font-size: 18px;
+  font-size: 14px;
 `;
 
 export const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  margin-bottom: 24px;
+  gap: 8px;
+  margin-bottom: 28px;
 `;
 
 export const StatItem = styled.div`
-  background: rgba(255,255,255,0.03);
-  border-radius: 14px;
-  padding: 10px 4px;
   text-align: center;
 `;
 
 export const StatValue = styled.div`
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 500;
   margin-bottom: 2px;
 `;
 
 export const StatLabel = styled.div`
   font-size: 9px;
-  color: rgba(255,255,255,0.3);
+  color: #666;
   text-transform: uppercase;
 `;
 
 export const CalendarSection = styled.div`
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 `;
 
 export const MonthTitle = styled.div`
-  font-size: 12px;
-  color: rgba(255,255,255,0.5);
+  font-size: 11px;
+  color: #666;
   margin-bottom: 10px;
-  font-weight: 500;
+  text-transform: uppercase;
 `;
 
 export const WeekDays = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   
   span {
-    font-size: 10px;
+    font-size: 8px;
     text-align: center;
-    color: rgba(255,255,255,0.3);
+    color: #444;
+    text-transform: uppercase;
   }
 `;
 
 export const DotsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 2px;
 `;
 
 export const DayDot = styled.div<{ $active: boolean }>`
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 2px;
-  background: ${({ $active }) => $active ? '#FFD700' : 'rgba(255,255,255,0.1)'};
+  border-radius: 1px;
+  background: ${({ $active }) => $active ? '#ffd700' : '#1a1a1a'};
   transition: background 0.2s ease;
 `;
 
-export const FriendLink = styled.div`
-  padding: 12px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 14px;
-  text-align: center;
-  font-size: 13px;
-  color: rgba(255,255,255,0.5);
-  cursor: pointer;
-  margin-top: 8px;
-`;
-
 export const Toggle = styled.div<{ $active: boolean; $disabled?: boolean }>`
-  width: 40px;
-  height: 22px;
-  border-radius: 11px;
-  background: ${({ $active }) => $active ? '#fff' : 'rgba(255,255,255,0.3)'};
+  width: 36px;
+  height: 18px;
+  border-radius: 9px;
+  background: ${({ $active }) => $active ? '#fff' : '#222'};
   position: relative;
   cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
   opacity: ${({ $disabled }) => $disabled ? 0.4 : 1};
@@ -167,9 +231,9 @@ export const Toggle = styled.div<{ $active: boolean; $disabled?: boolean }>`
 `;
 
 export const ToggleKnob = styled.div<{ $active: boolean }>`
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
   background: #000;
   position: absolute;
   top: 2px;
