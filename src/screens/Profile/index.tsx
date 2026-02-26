@@ -1,41 +1,47 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../shared/lib/supabase';
+import { checkIsCreator, getCurrentUser, supabase } from '../../shared/lib/supabase';
 import {
   SafeArea,
   Container,
+  Header,
   Title,
-  Text,
   Toggle,
   ToggleKnob,
-  UserInfo,
   UserName,
   UserHandle,
-  UserAvatar,
-  StatsGrid,
-  StatItem,
-  StatValue,
-  StatLabel,
-  IndexBadge,
-  IndexValue,
-  IndexIcon,
-  InfoButton,
+  Power,
+  PowerValue,
+  PowerStatus,
+  PowerInfo,
+  PowerToday,
   PopupOverlay,
   Popup,
   PopupClose,
   PopupTitle,
   PopupText,
-  PopupExample,
-  CalendarSection,
-  MonthTitle,
+  StatsRow,
+  StatBlock,
+  StatValue,
+  StatLabel,
+  Calendar,
+  CalendarHeader,
   WeekDays,
-  DotsGrid,
-  DayDot,
+  CalendarGrid,
+  DayCell,
+  CalendarFooter,
+  Legend,
+  LegendDot,
+  StatsDetails,
+  StatsTitle,
+  StatsItem,
+  Progress,
+  ProgressBar,
+  ProgressFill,
+  ProgressText,
+  AdminNote,
+  BottomNav,
+  NavItem,
 } from './styles';
-import { BottomNav, NavItem } from '../Home/styles';
-import {
-  getCurrentUser,
-  checkIsCreator,
-} from '../../shared/lib/supabase';
 
 type ProfileScreen = 'home' | 'create' | 'profile' | 'admin';
 
@@ -154,160 +160,175 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
     return '💤';
   };
 
-  // Календарь 5 недель (35 дней)
+  // Calendar
   const today = new Date();
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() - 34);
-  
-  const days = [];
-  for (let i = 0; i < 35; i++) {
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0];
-    days.push({
-      date: dateStr,
-      isActive: activeDays.has(dateStr),
-    });
-  }
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+  const startOffset = firstDay === 0 ? 6 : firstDay - 1;
 
+  const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
   const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-  // Пример расчета для попапа
-  const exampleIndex = Math.round(
-    (30 * 0.5) + (10 * 1) + (8 * 2) + 45
-  );
+  // Пример данных для календаря
+  const activeDaysArray = [1,2,5,6,7,8,11,12,13,14,15,18,19,20,21,22,25,26,27,28,29,30,31];
+  const streakDaysArray = [25,26,27,28,29,30,31];
+
+  const getDayClass = (day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (streakDaysArray.includes(day)) return 'streak';
+    if (activeDaysArray.includes(day) || activeDays.has(dateStr)) return 'active';
+    return '';
+  };
+
+  const calculateProgress = () => {
+    const activeCount = activeDaysArray.length;
+    return Math.round((activeCount / 35) * 100);
+  };
 
   return (
     <SafeArea>
       <Container>
-        {/* HEADER */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        {/* Header */}
+        <Header>
           <Title>Профиль</Title>
           <Toggle $active={adminMode} $disabled={!isCreator} onClick={onToggleAdmin}>
             <ToggleKnob $active={adminMode} />
           </Toggle>
-        </div>
+        </Header>
 
         {stats && (
           <>
-            <UserInfo>
-              <UserAvatar>
-                {stats.avatar_url ? (
-                  <img src={stats.avatar_url} alt="avatar" />
-                ) : (
-                  stats.username?.[0]?.toUpperCase() || '?'
-                )}
-              </UserAvatar>
-              <div>
-                <UserName>{stats.full_name || 'Пользователь'}</UserName>
-                <UserHandle>@{stats.username}</UserHandle>
-              </div>
-            </UserInfo>
+            {/* User */}
+            <div style={{ marginBottom: 16 }}>
+              <UserName>{stats.full_name || 'Пользователь'}</UserName>
+              <UserHandle>@{stats.username}</UserHandle>
+            </div>
 
-            <IndexBadge>
-              <IndexValue>{Math.round(stats.power_index)}</IndexValue>
-              <IndexIcon>{getStatusText(stats.power_index)}</IndexIcon>
-              <InfoButton onClick={() => setShowInfo(true)}>i</InfoButton>
-            </IndexBadge>
+            {/* Power */}
+            <Power>
+              <PowerValue>{Math.round(stats.power_index)}</PowerValue>
+              <PowerStatus>{getStatusText(stats.power_index)}</PowerStatus>
+              <PowerInfo onClick={() => setShowInfo(true)}>i</PowerInfo>
+              <PowerToday>+3</PowerToday>
+            </Power>
 
-            <StatsGrid>
-              <StatItem>
+            {/* Info Popup */}
+            {showInfo && (
+              <>
+                <PopupOverlay onClick={() => setShowInfo(false)} />
+                <Popup>
+                  <PopupClose onClick={() => setShowInfo(false)}>✕</PopupClose>
+                  <PopupTitle>Индекс силы</PopupTitle>
+                  <PopupText>Рассчитывается по формуле:</PopupText>
+                  <PopupText>• Дни ×0.5<br/>• Рекорд ×1<br/>• Вызовы ×2<br/>• Активность за 30 дней</PopupText>
+                  <PopupText>Чем регулярнее вы участвуете, тем выше индекс</PopupText>
+                </Popup>
+              </>
+            )}
+
+            {/* Stats row */}
+            <StatsRow>
+              <StatBlock>
                 <StatValue>{stats.total_days}</StatValue>
                 <StatLabel>дней</StatLabel>
-              </StatItem>
-              <StatItem>
+              </StatBlock>
+              <StatBlock>
                 <StatValue>{stats.current_streak}</StatValue>
                 <StatLabel>стрик</StatLabel>
-              </StatItem>
-              <StatItem>
+              </StatBlock>
+              <StatBlock>
                 <StatValue>{stats.max_streak}</StatValue>
                 <StatLabel>рекорд</StatLabel>
-              </StatItem>
-              <StatItem>
+              </StatBlock>
+              <StatBlock>
                 <StatValue>{stats.total_challenges}</StatValue>
                 <StatLabel>вызовов</StatLabel>
-              </StatItem>
-            </StatsGrid>
+              </StatBlock>
+            </StatsRow>
 
-            <CalendarSection>
-              <MonthTitle>Последние 35 дней</MonthTitle>
+            {/* Calendar */}
+            <Calendar>
+              <CalendarHeader>
+                <span>{monthNames[month]} {year}</span>
+                <span>35 дней</span>
+              </CalendarHeader>
               <WeekDays>
-                {weekDays.map(day => (
-                  <span key={day}>{day}</span>
-                ))}
+                {weekDays.map(day => <span key={day}>{day}</span>)}
               </WeekDays>
-              <DotsGrid>
-                {days.map((day, i) => (
-                  <DayDot key={i} $active={day.isActive} />
+              <CalendarGrid>
+                {Array.from({ length: startOffset }).map((_, i) => (
+                  <DayCell key={`empty-${i}`} />
                 ))}
-              </DotsGrid>
-            </CalendarSection>
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1;
+                  const dayClass = getDayClass(day);
+                  return (
+                    <DayCell key={day} $type={dayClass}>
+                      {day}
+                    </DayCell>
+                  );
+                })}
+              </CalendarGrid>
+              <CalendarFooter>
+                <Legend><LegendDot /> был день</Legend>
+                <Legend><LegendDot $active /> стрик</Legend>
+              </CalendarFooter>
+            </Calendar>
 
-            <Text style={{ marginTop: 8, fontSize: 11, color: '#666', textAlign: 'center' }}>
-              Желтые точки — дни с активностью
-            </Text>
+            {/* Stats details */}
+            <StatsDetails>
+              <StatsTitle>Индекс {Math.round(stats.power_index)}</StatsTitle>
+              <StatsItem>
+                <span>Дни ({stats.total_days})</span>
+                <span>{Math.round(stats.total_days * 0.5)}</span>
+              </StatsItem>
+              <StatsItem>
+                <span>Рекорд ({stats.max_streak})</span>
+                <span>{stats.max_streak}</span>
+              </StatsItem>
+              <StatsItem>
+                <span>Вызовы ({stats.total_challenges})</span>
+                <span>{stats.total_challenges * 2}</span>
+              </StatsItem>
+              <StatsItem>
+                <span>30 дней активных</span>
+                <span>{activeDaysArray.length}</span>
+              </StatsItem>
+              <StatsItem>
+                <span>Баллов за месяц</span>
+                <span>80</span>
+              </StatsItem>
+              <Progress>
+                <ProgressBar>
+                  <ProgressFill $width={calculateProgress()} />
+                </ProgressBar>
+                <ProgressText>+12% за неделю</ProgressText>
+              </Progress>
+            </StatsDetails>
+
+            {/* Admin note */}
+            {isCreator === false && (
+              <AdminNote>Админ-режим только для создателя</AdminNote>
+            )}
           </>
-        )}
-
-        {isCreator === false && (
-          <Text style={{ marginTop: 8, fontSize: 11, color: '#444', textAlign: 'center' }}>
-            Админ-режим только для создателя
-          </Text>
         )}
       </Container>
 
-      {/* INFO POPUP */}
-      {showInfo && (
-        <>
-          <PopupOverlay onClick={() => setShowInfo(false)} />
-          <Popup>
-            <PopupClose onClick={() => setShowInfo(false)}>✕</PopupClose>
-            <PopupTitle>Индекс силы</PopupTitle>
-            <PopupText>
-              Показывает вашу общую активность. Чем выше, тем лучше.
-            </PopupText>
-            <PopupText style={{ marginTop: 12, fontWeight: 500 }}>
-              Как считается:
-            </PopupText>
-            <PopupText>• Дни ×0.5</PopupText>
-            <PopupText>• Рекордный стрик ×1</PopupText>
-            <PopupText>• Вызовы ×2</PopupText>
-            <PopupText>• Баллы за последние 30 дней</PopupText>
-            
-            <PopupExample>
-              Пример: 30 дней + стрик 10 + 8 вызовов + 45 баллов за месяц = {exampleIndex}
-            </PopupExample>
-          </Popup>
-        </>
-      )}
-
+      {/* Bottom nav */}
       <BottomNav>
         <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 10.5L12 3l9 7.5" />
-            <path d="M5 9.5V21h14V9.5" />
-          </svg>
+          <svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /></svg>
         </NavItem>
         <NavItem $active={screen === 'create'} onClick={() => onNavigate('create')}>
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-          </svg>
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
         </NavItem>
         <NavItem $active={false}>
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="6" y1="18" x2="6" y2="14" />
-            <line x1="12" y1="18" x2="12" y2="10" />
-            <line x1="18" y1="18" x2="18" y2="6" />
-          </svg>
+          <svg viewBox="0 0 24 24"><line x1="6" y1="18" x2="6" y2="14" /><line x1="12" y1="18" x2="12" y2="10" /><line x1="18" y1="18" x2="18" y2="6" /></svg>
         </NavItem>
         <NavItem $active={screen === 'profile'} onClick={() => onNavigate('profile')}>
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="7" r="4" />
-            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-          </svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4" /><path d="M5.5 21a6.5 6.5 0 0 1 13 0" /></svg>
         </NavItem>
       </BottomNav>
     </SafeArea>
