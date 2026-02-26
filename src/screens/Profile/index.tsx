@@ -75,6 +75,8 @@ type UserStats = {
   monthly_active: number;
   weekly_growth: number;
   percentile?: number;
+  rank?: number;
+  total_users?: number;
 };
 
 type SupabaseUser = {
@@ -177,13 +179,18 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         .maybeSingle();
 
       if (userStats) {
-        // Рассчитываем позицию пользователя (процентиль)
-        let percentile = 50; // по умолчанию
-        if (allUsers && allUsers.length > 0 && count && count > 0) {
-          const userIndex = allUsers.findIndex(u => u.power_index <= userStats.power_index);
-          if (userIndex >= 0) {
-            percentile = Math.round(((allUsers.length - userIndex) / allUsers.length) * 100);
-          }
+        // Рассчитываем позицию пользователя
+        let percentile = 50;
+        let rank = 0;
+        const totalUsers = count || 1;
+        
+        if (allUsers && allUsers.length > 0) {
+          // Находим место (1-based)
+          rank = allUsers.findIndex(u => u.power_index <= userStats.power_index) + 1;
+          
+          // Процент пользователей, которых ты обогнал
+          // (чем выше место, тем больше процент)
+          percentile = Math.round(((totalUsers - rank) / totalUsers) * 100);
         }
 
         const newStats = {
@@ -204,6 +211,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           monthly_active: Math.min(30, userStats.total_days || 0),
           weekly_growth: 12,
           percentile,
+          rank,
+          total_users: totalUsers,
         };
         setStats(newStats);
         setEditForm({
@@ -345,6 +354,19 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
   const currentHints = hints[editForm.role];
 
+  // Формируем текст для отображения рейтинга
+  const getRankText = () => {
+    if (!stats.rank || !stats.total_users) return '';
+    
+    if (stats.rank === 1) {
+      return '🥇 Лучший результат';
+    } else if (stats.rank <= Math.ceil(stats.total_users * 0.1)) {
+      return `🏆 Топ ${Math.round((stats.rank / stats.total_users) * 100)}%`;
+    } else {
+      return `👥 Лучше чем ${stats.percentile}% участников`;
+    }
+  };
+
   return (
     <SafeArea>
       <Container>
@@ -364,7 +386,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           {/* Индекс дисциплины из БД - без округления */}
           <IndexBadge>
             <IndexValue>⚡ {stats.power_index.toFixed(1)}</IndexValue>
-            <IndexPercent>· выше чем {stats.percentile}%</IndexPercent>
+            <IndexPercent>· {getRankText()}</IndexPercent>
           </IndexBadge>
 
           {isEditing ? (
