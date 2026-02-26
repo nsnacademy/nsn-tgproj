@@ -352,3 +352,15 @@ export const CancelButton = styled.button`
   font-size: 14px;
   cursor: pointer;
 `;
+
+export const CopyIcon = styled.span`
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 1;
+  }
+`;

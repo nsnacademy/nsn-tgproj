@@ -26,6 +26,7 @@ import {
   ContactItem,
   ContactLabel,
   ContactValue,
+  CopyIcon,
   EditButton,
   InviteButton,
   SectionDivider,
@@ -94,6 +95,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     bio: '',
     stack: '',
@@ -265,6 +267,16 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         role: editForm.role,
       });
       setIsEditing(false);
+    }
+  };
+
+  const handleCopy = async (text: string, type: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(type);
+      setTimeout(() => setCopied(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
     }
   };
 
@@ -456,13 +468,29 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                     {stats.telegram && (
                       <ContactItem>
                         <ContactLabel>Telegram</ContactLabel>
-                        <ContactValue>{stats.telegram}</ContactValue>
+                        <ContactValue>
+                          {stats.telegram}
+                          <CopyIcon 
+                            onClick={() => handleCopy(stats.telegram, 'telegram')}
+                            title={copied === 'telegram' ? 'Скопировано!' : 'Копировать'}
+                          >
+                            📋
+                          </CopyIcon>
+                        </ContactValue>
                       </ContactItem>
                     )}
                     {stats.email && (
                       <ContactItem>
                         <ContactLabel>Email</ContactLabel>
-                        <ContactValue>{stats.email}</ContactValue>
+                        <ContactValue>
+                          {stats.email}
+                          <CopyIcon 
+                            onClick={() => handleCopy(stats.email, 'email')}
+                            title={copied === 'email' ? 'Скопировано!' : 'Копировать'}
+                          >
+                            📋
+                          </CopyIcon>
+                        </ContactValue>
                       </ContactItem>
                     )}
                     <EditButton onClick={() => setIsEditing(true)}>✎ Редактировать профиль</EditButton>
@@ -476,13 +504,29 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                     {stats.telegram && (
                       <ContactItem>
                         <ContactLabel>Telegram</ContactLabel>
-                        <ContactValue>{stats.telegram}</ContactValue>
+                        <ContactValue>
+                          {stats.telegram}
+                          <CopyIcon 
+                            onClick={() => handleCopy(stats.telegram, 'telegram')}
+                            title={copied === 'telegram' ? 'Скопировано!' : 'Копировать'}
+                          >
+                            📋
+                          </CopyIcon>
+                        </ContactValue>
                       </ContactItem>
                     )}
                     {stats.email && (
                       <ContactItem>
                         <ContactLabel>Email</ContactLabel>
-                        <ContactValue>{stats.email}</ContactValue>
+                        <ContactValue>
+                          {stats.email}
+                          <CopyIcon 
+                            onClick={() => handleCopy(stats.email, 'email')}
+                            title={copied === 'email' ? 'Скопировано!' : 'Копировать'}
+                          >
+                            📋
+                          </CopyIcon>
+                        </ContactValue>
                       </ContactItem>
                     )}
                   </ContactSection>
