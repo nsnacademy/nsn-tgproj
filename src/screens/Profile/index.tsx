@@ -8,7 +8,6 @@ import {
   Text,
   Toggle,
   ToggleKnob,
-  UserName,
   UserHandle,
   UserBio,
   UserStack,
@@ -23,9 +22,6 @@ import {
   ActivityBar,
   ActivityFill,
   ActivityLabel,
-  ActivityGrid,
-  WeekDay,
-  DayCell,
   ContactSection,
   ContactItem,
   ContactLabel,
@@ -49,12 +45,11 @@ type ProfileScreen = 'home' | 'create' | 'profile' | 'admin';
 type ProfileProps = {
   screen: ProfileScreen;
   onNavigate: (screen: ProfileScreen) => void;
-  userId?: string; // Если передан userId, значит смотрим чужой профиль
+  userId?: string;
 };
 
 type UserStats = {
   username: string;
-  full_name: string | null;
   bio: string | null;
   stack: string[] | null;
   experience: string | null;
@@ -91,13 +86,10 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(true);
 
-  // Определяем, свой это профиль или чужой
   useEffect(() => {
     async function checkOwnProfile() {
       const currentUser = await getCurrentUser();
       if (!currentUser) return;
-      
-      // Если нет userId или он равен текущему пользователю - это свой профиль
       setIsOwnProfile(!userId || userId === currentUser.id);
     }
     checkOwnProfile();
@@ -108,21 +100,27 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       const currentUser = await getCurrentUser() as SupabaseUser | null;
       if (!currentUser) return;
 
-      // Если смотрим чужой профиль, используем переданный userId
       const targetUserId = userId || currentUser.id;
 
+      // Загружаем данные из БД
       const { data: userStats } = await supabase
         .from('users')
-        .select('username, total_days, total_challenges, current_streak, max_streak, power_index')
+        .select(`
+          username, 
+          total_days, 
+          total_challenges, 
+          current_streak, 
+          max_streak, 
+          power_index
+        `)
         .eq('id', targetUserId)
         .single();
 
+      // Здесь потом будет загрузка из profile_data
       if (userStats) {
-        // Здесь потом будет запрос к отдельной таблице profile_data
         setStats({
-          username: userStats.username,
-          full_name: currentUser.user_metadata?.full_name || null,
-          bio: 'Frontend-разработчик, 3 года в web',
+          username: userStats.username || 'user',
+          bio: 'Frontend-разработчик',
           stack: ['React', 'TypeScript', 'Node'],
           experience: '3 года',
           portfolio: 'github.com/alex',
@@ -134,8 +132,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           current_streak: userStats.current_streak || 0,
           max_streak: userStats.max_streak || 0,
           power_index: userStats.power_index || 0,
-          total_calls: 62,
-          monthly_active: 25,
+          total_calls: Math.round((userStats.total_challenges || 0) * 1.5),
+          monthly_active: Math.min(30, Math.round((userStats.total_days || 0) * 0.7)),
           weekly_growth: 12,
         });
       }
@@ -186,18 +184,16 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   }
 
   const monthPercent = Math.round((stats.monthly_active / 30) * 100);
-  const callsPercent = Math.round((stats.total_calls / stats.total_days) * 100) - 100;
-
-  // Генерация календаря активности (последние 30 дней)
-  const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  const activeDays = Array(30).fill(false).map((_, i) => i < stats.monthly_active);
+  const callsPercent = stats.total_days > 0 
+    ? Math.round((stats.total_calls / stats.total_days) * 100) - 100 
+    : 0;
 
   return (
     <SafeArea>
       <Container>
         {/* HEADER - НЕ ТРОГАЕМ */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <Title>{isOwnProfile ? 'Профиль' : `@${stats.username}`}</Title>
+          <Title>Профиль</Title>
           <Toggle $active={adminMode} $disabled={!isCreator} onClick={onToggleAdmin}>
             <ToggleKnob $active={adminMode} />
           </Toggle>
@@ -205,24 +201,23 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
         {/* ОСНОВНОЙ КОНТЕНТ */}
         <div style={{ marginTop: 20 }}>
-          {/* Имя и ник */}
-          <UserName>{stats.full_name || 'Пользователь'}</UserName>
-          <UserHandle>@{stats.username}</UserHandle>
+          {/* Только username */}
+          <UserHandle style={{ fontSize: 24, marginBottom: 16 }}>@{stats.username}</UserHandle>
 
-          {/* Индекс дисциплины */}
+          {/* Индекс дисциплины из БД */}
           <IndexBadge>
             <IndexValue>⚡ {Math.round(stats.power_index)}</IndexValue>
             <IndexPercent>· выше чем 78%</IndexPercent>
           </IndexBadge>
 
-          {/* О себе (для всех) */}
+          {/* О себе */}
           <UserBio>{stats.bio}</UserBio>
           <UserStack>{stats.stack?.join(' · ')}</UserStack>
           <UserStats>Опыт: {stats.experience} · Портфолио: {stats.portfolio}</UserStats>
 
           <SectionDivider />
 
-          {/* СТАТИСТИКА ДИСЦИПЛИНЫ (для всех) */}
+          {/* СТАТИСТИКА */}
           <SectionTitle>Показатели</SectionTitle>
           <StatsRow>
             <StatItem>
@@ -244,17 +239,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             <ActivityFill $width={monthPercent} />
           </ActivityBar>
           <ActivityLabel>
-            {stats.monthly_active}/30 дней в месяце · {stats.total_calls} вызовов 
-            {callsPercent > 0 && ` (+${callsPercent}% к плану)`}
+            {stats.monthly_active}/30 дней · {stats.total_calls} вызовов 
+            {callsPercent > 0 && ` (+${callsPercent}%)`}
           </ActivityLabel>
-
-          {/* Календарь активности (30 дней) */}
-          <ActivityGrid>
-            {weekDays.map(day => <WeekDay key={day}>{day}</WeekDay>)}
-            {activeDays.map((active, i) => (
-              <DayCell key={i} $active={active} />
-            ))}
-          </ActivityGrid>
 
           {/* Динамика */}
           {stats.weekly_growth > 0 && (
@@ -265,11 +252,11 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
           <SectionDivider />
 
-          {/* КОНТАКТЫ И СТАТУС - РАЗНОЕ ДЛЯ СВОЕГО И ЧУЖОГО */}
+          {/* КОНТАКТЫ */}
           {isOwnProfile ? (
-            /* СВОЙ ПРОФИЛЬ - вижу редактирование */
+            /* СВОЙ ПРОФИЛЬ */
             <>
-              <SectionTitle>Мои контакты</SectionTitle>
+              <SectionTitle>Контакты</SectionTitle>
               <ContactSection>
                 <ContactItem>
                   <ContactLabel>Telegram</ContactLabel>
@@ -282,15 +269,15 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                 <EditButton>✎ Редактировать</EditButton>
               </ContactSection>
 
-              <SectionTitle>Мой статус</SectionTitle>
+              <SectionTitle>Статус</SectionTitle>
               <StatusSelector>
-                <StatusBadge $active={stats.status === 'searching'}>🔍 Ищу команду</StatusBadge>
-                <StatusBadge $active={stats.status === 'considering'}>🤔 Рассматриваю</StatusBadge>
+                <StatusBadge $active={stats.status === 'searching'}>🔍 Ищу</StatusBadge>
+                <StatusBadge $active={stats.status === 'considering'}>🤔 Смотрю</StatusBadge>
                 <StatusBadge $active={stats.status === 'busy'}>⏳ Занят</StatusBadge>
               </StatusSelector>
             </>
           ) : (
-            /* ЧУЖОЙ ПРОФИЛЬ - вижу приглашение */
+            /* ЧУЖОЙ ПРОФИЛЬ */
             <>
               <SectionTitle>Контакты</SectionTitle>
               <ContactSection>
@@ -307,22 +294,12 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               </ContactSection>
 
               <InviteButton>
-                ПРИГЛАСИТЬ В ВЫЗОВ
+                ПРИГЛАСИТЬ
               </InviteButton>
 
               {stats.status === 'searching' && (
                 <StatusBadge $active style={{ marginTop: 12, display: 'inline-block' }}>
-                  🔍 ИЩЕТ КОМАНДУ
-                </StatusBadge>
-              )}
-              {stats.status === 'considering' && (
-                <StatusBadge $active style={{ marginTop: 12, display: 'inline-block' }}>
-                  🤔 РАССМАТРИВАЕТ
-                </StatusBadge>
-              )}
-              {stats.status === 'busy' && (
-                <StatusBadge style={{ marginTop: 12, display: 'inline-block' }}>
-                  ⏳ ЗАНЯТ
+                  🔍 ИЩЕТ
                 </StatusBadge>
               )}
             </>
@@ -330,7 +307,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
           <SectionDivider />
 
-          {/* ACCESS INFO - НЕ ТРОГАЕМ */}
+          {/* ACCESS INFO */}
           {isCreator === false && (
             <Text style={{ marginTop: 8, fontSize: 12, color: '#666', textAlign: 'center' }}>
               Админ-режим только для создателя
@@ -339,7 +316,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         </div>
       </Container>
 
-      {/* BOTTOM NAV - НЕ ТРОГАЕМ */}
+      {/* BOTTOM NAV */}
       <BottomNav>
         <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
