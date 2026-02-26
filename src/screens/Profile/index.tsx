@@ -41,6 +41,7 @@ import {
   HintText,
   CategoryTabs,
   CategoryTab,
+  
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -77,6 +78,7 @@ type UserStats = {
   percentile?: number;
   rank?: number;
   total_users?: number;
+  hashtag?: string;
 };
 
 type SupabaseUser = {
@@ -85,6 +87,15 @@ type SupabaseUser = {
     full_name?: string;
     username?: string;
   };
+};
+
+// Функция для генерации хештега на основе индекса
+const getHashtag = (index: number): string => {
+  if (index >= 100) return '#хардкор';
+  if (index >= 50) return '#дисциплина';
+  if (index >= 25) return '#впути';
+  if (index >= 10) return '#новичок';
+  return '#старт';
 };
 
 export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
@@ -189,7 +200,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           rank = allUsers.findIndex(u => u.power_index <= userStats.power_index) + 1;
           
           // Процент пользователей, которых ты обогнал
-          // (чем выше место, тем больше процент)
           percentile = Math.round(((totalUsers - rank) / totalUsers) * 100);
         }
 
@@ -213,6 +223,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           percentile,
           rank,
           total_users: totalUsers,
+          hashtag: getHashtag(userStats.power_index || 0),
         };
         setStats(newStats);
         setEditForm({
@@ -354,17 +365,10 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
   const currentHints = hints[editForm.role];
 
-  // Формируем текст для отображения рейтинга
+  // Формируем текст для отображения места
   const getRankText = () => {
     if (!stats.rank || !stats.total_users) return '';
-    
-    if (stats.rank === 1) {
-      return '🥇 Лучший результат';
-    } else if (stats.rank <= Math.ceil(stats.total_users * 0.1)) {
-      return `🏆 Топ ${Math.round((stats.rank / stats.total_users) * 100)}%`;
-    } else {
-      return `👥 Лучше чем ${stats.percentile}% участников`;
-    }
+    return `${stats.rank} / ${stats.total_users}`;
   };
 
   return (
@@ -381,7 +385,10 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         {/* ОСНОВНОЙ КОНТЕНТ */}
         <div style={{ marginTop: 20 }}>
           {/* Только username */}
-          <UserHandle style={{ fontSize: 24, marginBottom: 16 }}>@{stats.username}</UserHandle>
+          <UserHandle style={{ fontSize: 24, marginBottom: 8 }}>@{stats.username}</UserHandle>
+          
+          {/* Хештег - просто текст */}
+          
 
           {/* Индекс дисциплины из БД - без округления */}
           <IndexBadge>
