@@ -82,7 +82,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   }, [screen]);
 
   /* =========================
-     RENDER
+     RENDE
   ========================= */
 
   return (
