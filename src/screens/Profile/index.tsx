@@ -235,7 +235,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, [screen]);
 
-    const handleSave = async () => {
+      const handleSave = async () => {
     if (!stats) return;
     
     const currentUser = await getCurrentUser();
@@ -244,26 +244,52 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     console.log('Saving profile for user:', currentUser.id);
     console.log('Data to save:', editForm);
 
-    const { data, error } = await supabase
+    // Сначала проверяем есть ли запись
+    const { data: existingProfile } = await supabase
       .from('profiles')
-      .upsert({
-        user_id: currentUser.id,
-        bio: editForm.bio,
-        stack: editForm.stack,
-        experience: editForm.experience,
-        portfolio: editForm.portfolio,
-        telegram: editForm.telegram,
-        email: editForm.email,
-        role: editForm.role,
-        updated_at: new Date()
-      })
-      .select();
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
 
-    if (error) {
-      console.error('Save error:', error);
-      alert('Ошибка при сохранении: ' + error.message);
+    let result;
+    
+    if (existingProfile) {
+      // Обновляем существующую
+      result = await supabase
+        .from('profiles')
+        .update({
+          bio: editForm.bio,
+          stack: editForm.stack,
+          experience: editForm.experience,
+          portfolio: editForm.portfolio,
+          telegram: editForm.telegram,
+          email: editForm.email,
+          role: editForm.role,
+          updated_at: new Date()
+        })
+        .eq('user_id', currentUser.id);
     } else {
-      console.log('Save successful:', data);
+      // Создаем новую
+      result = await supabase
+        .from('profiles')
+        .insert({
+          user_id: currentUser.id,
+          bio: editForm.bio,
+          stack: editForm.stack,
+          experience: editForm.experience,
+          portfolio: editForm.portfolio,
+          telegram: editForm.telegram,
+          email: editForm.email,
+          role: editForm.role,
+          updated_at: new Date()
+        });
+    }
+
+    if (result.error) {
+      console.error('Save error:', result.error);
+      alert('Ошибка при сохранении: ' + result.error.message);
+    } else {
+      console.log('Save successful');
       setStats({
         ...stats,
         bio: editForm.bio,
