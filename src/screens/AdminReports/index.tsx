@@ -126,7 +126,7 @@ export default function AdminReports({ challengeId, onBack }: Props) {
       challengeTitle: challenge.title
     });
 
-    supabase
+        supabase
       .from('reports')
       .select(`
         id,
@@ -138,8 +138,9 @@ export default function AdminReports({ challengeId, onBack }: Props) {
         proof_media_urls,
         rejection_reason,
         participant:participants!inner (
-          user:users!inner ( 
-            username 
+          user_id,
+          user:users (
+            username
           )
         )
       `)
