@@ -111,26 +111,51 @@ export const CalendarSection = styled.div`
 
 export const MonthTitle = styled.div`
   font-size: 13px;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.5);
   margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-weight: 500;
+`;
+
+export const WeekDays = styled.div`
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+  
+  span {
+    font-size: 11px;
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+  }
 `;
 
 export const CalendarGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(15, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 4px;
 `;
 
-export const DayDot = styled.div<{ $active: boolean }>`
-  width: 100%;
+export const DayCell = styled.div`
   aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+`;
+
+export const DayNumber = styled.span<{ $isToday?: boolean }>`
+  font-size: 13px;
+  font-weight: ${({ $isToday }) => $isToday ? '600' : '400'};
+  color: ${({ $isToday }) => $isToday ? '#fff' : 'rgba(255,255,255,0.4)'};
+`;
+
+export const DayDot = styled.div`
+  width: 4px;
+  height: 4px;
   border-radius: 2px;
-  background: ${({ $active }) => 
-    $active ? '#FFD700' : 'rgba(255,255,255,0.1)'
-  };
-  transition: background 0.2s ease;
+  background: #FFD700;
+  margin-top: 2px;
 `;
 
 export const FriendLink = styled.div`

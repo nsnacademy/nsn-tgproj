@@ -19,7 +19,10 @@ import {
   StatusBadge,
   CalendarSection,
   MonthTitle,
+  WeekDays,
   CalendarGrid,
+  DayCell,
+  DayNumber,
   DayDot,
   FriendLink,
 } from './styles';
@@ -72,7 +75,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
       const currentUser = await getCurrentUser() as SupabaseUser | null;
       if (!currentUser) return;
 
-      // Статистика
       const { data: userStats } = await supabase
         .from('users')
         .select('username, total_days, total_challenges, current_streak, max_streak, power_index')
@@ -92,7 +94,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
         });
       }
 
-      // Активные дни за последние 30 дней
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
@@ -151,19 +152,34 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  
+  // Получаем день недели первого числа (понедельник = 0, воскресенье = 6)
+  let startOffset = firstDay.getDay() - 1;
+  if (startOffset === -1) startOffset = 6;
   
   const days = [];
-  for (let d = 1; d <= daysInMonth; d++) {
+  
+  // Пустые ячейки
+  for (let i = 0; i < startOffset; i++) {
+    days.push(null);
+  }
+  
+  // Дни месяца
+  for (let d = 1; d <= lastDay.getDate(); d++) {
     const date = new Date(year, month, d);
     const dateStr = date.toISOString().split('T')[0];
     days.push({
       day: d,
       isActive: activeDays.has(dateStr),
+      isToday: d === today.getDate(),
     });
   }
 
-  const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+  const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
   return (
     <SafeArea>
@@ -178,7 +194,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
 
         {stats && (
           <>
-            {/* USER INFO */}
             <UserInfo>
               <UserAvatar>
                 {stats.avatar_url ? (
@@ -193,7 +208,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
               </div>
             </UserInfo>
 
-            {/* POWER INDEX */}
             <IndexBadge>
               <span style={{ fontSize: 24, fontWeight: 700 }}>⚡{Math.round(stats.power_index)}</span>
               <StatusBadge $status={getStatusText(stats.power_index)}>
@@ -201,7 +215,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
               </StatusBadge>
             </IndexBadge>
 
-            {/* STATS GRID */}
             <StatsGrid>
               <StatItem>
                 <StatValue>{stats.total_days}</StatValue>
@@ -221,12 +234,23 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
               </StatItem>
             </StatsGrid>
 
-            {/* MINI CALENDAR */}
             <CalendarSection>
               <MonthTitle>{monthNames[month]} {year}</MonthTitle>
+              <WeekDays>
+                {weekDays.map(day => (
+                  <span key={day}>{day}</span>
+                ))}
+              </WeekDays>
               <CalendarGrid>
                 {days.map((day, i) => (
-                  <DayDot key={i} $active={day.isActive} />
+                  <DayCell key={i}>
+                    {day && (
+                      <>
+                        <DayNumber $isToday={day.isToday}>{day.day}</DayNumber>
+                        {day.isActive && <DayDot />}
+                      </>
+                    )}
+                  </DayCell>
                 ))}
               </CalendarGrid>
             </CalendarSection>
