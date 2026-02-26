@@ -24,21 +24,10 @@ import {
   StatBlock,
   StatValue,
   StatLabel,
-  Calendar,
-  CalendarHeader,
-  WeekDays,
-  CalendarGrid,
-  DayCell,
-  CalendarFooter,
-  Legend,
-  LegendDot,
-  StatsDetails,
-  StatsTitle,
-  StatsItem,
-  Progress,
-  ProgressBar,
-  ProgressFill,
-  ProgressText,
+  ActivityStats,
+  ActivityStat,
+  ActivityLabel,
+  ActivityValue,
   AdminNote,
 } from './styles';
 
@@ -76,7 +65,6 @@ type SupabaseUser = {
 };
 
 export default function Profile({ screen, onNavigate }: ProfileProps) {
-  // 👇 Инициализируем из localStorage
   const [adminMode, setAdminMode] = useState(() => {
     const saved = localStorage.getItem('adminMode');
     return saved === 'true';
@@ -85,12 +73,8 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   const [locked, setLocked] = useState(false);
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
-  const [activeDays, setActiveDays] = useState<Set<string>>(new Set());
   const [showInfo, setShowInfo] = useState(false);
 
-  /* =========================
-     LOAD USER DATA
-  ========================= */
   useEffect(() => {
     async function loadData() {
       const currentUser = await getCurrentUser() as SupabaseUser | null;
@@ -114,26 +98,10 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
           power_index: userStats.power_index || 0,
         });
       }
-
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 35);
-      
-      const { data: logs } = await supabase
-        .from('daily_logs')
-        .select('date')
-        .eq('user_id', currentUser.id)
-        .gte('date', thirtyDaysAgo.toISOString().split('T')[0]);
-
-      const active = new Set(logs?.map(log => log.date) || []);
-      setActiveDays(active);
     }
 
     loadData();
   }, []);
-
-  /* =========================
-     CHECK CREATOR ACCESS
-  ========================= */
 
   useEffect(() => {
     async function checkAccess() {
@@ -150,14 +118,9 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
     checkAccess();
   }, []);
 
-  /* =========================
-     TOGGLE ADMIN MODE
-  ========================= */
-
   const onToggleAdmin = () => {
     if (locked || !isCreator) return;
 
-    // 👇 Сохраняем в localStorage
     localStorage.setItem('adminMode', 'true');
     setAdminMode(true);
     setLocked(true);
@@ -168,21 +131,12 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
     }, 250);
   };
 
-  /* =========================
-     Сброс при выходе из админки
-  ========================= */
-
-  // Если мы вернулись на профиль из админки, сбрасываем состояние
   useEffect(() => {
     if (screen === 'profile') {
       localStorage.setItem('adminMode', 'false');
       setAdminMode(false);
     }
   }, [screen]);
-
-  /* =========================
-     HELPER FUNCTIONS
-  ========================= */
 
   const getStatusText = (index: number) => {
     if (index >= 100) return '🔥';
@@ -191,41 +145,16 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
     return '💤';
   };
 
-  // Calendar
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDay = new Date(year, month, 1).getDay();
-  const startOffset = firstDay === 0 ? 6 : firstDay - 1;
-
-  const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-  const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-
-  // Пример данных для календаря (заменить на реальные из БД)
-  const activeDaysArray = [1,2,5,6,7,8,11,12,13,14,15,18,19,20,21,22,25,26,27,28,29,30,31];
-  const streakDaysArray = [25,26,27,28,29,30,31];
-
-  const getDayClass = (day: number) => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    if (streakDaysArray.includes(day)) return 'streak';
-    if (activeDaysArray.includes(day) || activeDays.has(dateStr)) return 'active';
-    return '';
-  };
-
-  const calculateProgress = () => {
-    const activeCount = activeDaysArray.length;
-    return Math.round((activeCount / 35) * 100);
-  };
-
-  /* =========================
-     RENDER
-  ========================= */
+  // Расчет для отображения
+  const daysScore = stats ? Math.round(stats.total_days * 0.5) : 0;
+  const recordScore = stats?.max_streak || 0;
+  const challengesScore = stats ? stats.total_challenges * 2 : 0;
+  const monthlyScore = 80; // Пример
+  const totalScore = stats ? Math.round(stats.power_index) : 0;
 
   return (
     <SafeArea>
       <Container>
-        {/* HEADER */}
         <div
           style={{
             display: 'flex',
@@ -247,35 +176,35 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
 
         {stats ? (
           <>
-            {/* User */}
             <div style={{ marginBottom: 16 }}>
               <UserName>{stats.full_name || 'Пользователь'}</UserName>
               <UserHandle>@{stats.username}</UserHandle>
             </div>
 
-            {/* Power */}
             <Power>
-              <PowerValue>{Math.round(stats.power_index)}</PowerValue>
-              <PowerStatus>{getStatusText(stats.power_index)}</PowerStatus>
+              <PowerValue>{totalScore}</PowerValue>
+              <PowerStatus>{getStatusText(totalScore)}</PowerStatus>
               <PowerInfo onClick={() => setShowInfo(true)}>i</PowerInfo>
-              <PowerToday>+3</PowerToday>
+              <PowerToday>+3 сегодня</PowerToday>
             </Power>
 
-            {/* Info Popup */}
             {showInfo && (
               <>
                 <PopupOverlay onClick={() => setShowInfo(false)} />
                 <Popup>
                   <PopupClose onClick={() => setShowInfo(false)}>✕</PopupClose>
-                  <PopupTitle>Индекс силы</PopupTitle>
-                  <PopupText>Рассчитывается по формуле:</PopupText>
-                  <PopupText>• Дни ×0.5<br/>• Рекорд ×1<br/>• Вызовы ×2<br/>• Активность за 30 дней</PopupText>
-                  <PopupText>Чем регулярнее вы участвуете, тем выше индекс</PopupText>
+                  <PopupTitle>Как считается индекс</PopupTitle>
+                  <PopupText>• За каждый день: +0.5</PopupText>
+                  <PopupText>• Рекордный стрик: +1 за день</PopupText>
+                  <PopupText>• За вызов: +2</PopupText>
+                  <PopupText>• За активность в месяце: до +100</PopupText>
+                  <PopupText style={{ marginTop: 12, color: '#ffd700' }}>
+                    Пример: 42 дня (21) + рекорд 15 (15) + 5 вызовов (10) + месяц (80) = 126
+                  </PopupText>
                 </Popup>
               </>
             )}
 
-            {/* Stats row */}
             <StatsRow>
               <StatBlock>
                 <StatValue>{stats.total_days}</StatValue>
@@ -283,7 +212,7 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
               </StatBlock>
               <StatBlock>
                 <StatValue>{stats.current_streak}</StatValue>
-                <StatLabel>стрик</StatLabel>
+                <StatLabel>подряд</StatLabel>
               </StatBlock>
               <StatBlock>
                 <StatValue>{stats.max_streak}</StatValue>
@@ -295,67 +224,29 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
               </StatBlock>
             </StatsRow>
 
-            {/* Calendar */}
-            <Calendar>
-              <CalendarHeader>
-                <span>{monthNames[month]} {year}</span>
-                <span>35 дней</span>
-              </CalendarHeader>
-              <WeekDays>
-                {weekDays.map(day => <span key={day}>{day}</span>)}
-              </WeekDays>
-              <CalendarGrid>
-                {Array.from({ length: startOffset }).map((_, i) => (
-                  <DayCell key={`empty-${i}`} />
-                ))}
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                  const day = i + 1;
-                  const dayClass = getDayClass(day);
-                  return (
-                    <DayCell key={day} $type={dayClass}>
-                      {day}
-                    </DayCell>
-                  );
-                })}
-              </CalendarGrid>
-              <CalendarFooter>
-                <Legend><LegendDot /> был день</Legend>
-                <Legend><LegendDot $active /> стрик</Legend>
-              </CalendarFooter>
-            </Calendar>
+            <ActivityStats>
+              <ActivityStat>
+                <ActivityLabel>Баллы за дни ({stats.total_days} ×0.5)</ActivityLabel>
+                <ActivityValue>{daysScore}</ActivityValue>
+              </ActivityStat>
+              <ActivityStat>
+                <ActivityLabel>Баллы за рекорд ({stats.max_streak} ×1)</ActivityLabel>
+                <ActivityValue>{recordScore}</ActivityValue>
+              </ActivityStat>
+              <ActivityStat>
+                <ActivityLabel>Баллы за вызовы ({stats.total_challenges} ×2)</ActivityLabel>
+                <ActivityValue>{challengesScore}</ActivityValue>
+              </ActivityStat>
+              <ActivityStat>
+                <ActivityLabel>Баллы за последние 30 дней</ActivityLabel>
+                <ActivityValue>{monthlyScore}</ActivityValue>
+              </ActivityStat>
+              <ActivityStat $total>
+                <ActivityLabel>Итого</ActivityLabel>
+                <ActivityValue>{totalScore}</ActivityValue>
+              </ActivityStat>
+            </ActivityStats>
 
-            {/* Stats details */}
-            <StatsDetails>
-              <StatsTitle>Индекс {Math.round(stats.power_index)}</StatsTitle>
-              <StatsItem>
-                <span>Дни ({stats.total_days})</span>
-                <span>{Math.round(stats.total_days * 0.5)}</span>
-              </StatsItem>
-              <StatsItem>
-                <span>Рекорд ({stats.max_streak})</span>
-                <span>{stats.max_streak}</span>
-              </StatsItem>
-              <StatsItem>
-                <span>Вызовы ({stats.total_challenges})</span>
-                <span>{stats.total_challenges * 2}</span>
-              </StatsItem>
-              <StatsItem>
-                <span>30 дней активных</span>
-                <span>{activeDaysArray.length}</span>
-              </StatsItem>
-              <StatsItem>
-                <span>Баллов за месяц</span>
-                <span>80</span>
-              </StatsItem>
-              <Progress>
-                <ProgressBar>
-                  <ProgressFill $width={calculateProgress()} />
-                </ProgressBar>
-                <ProgressText>+12% за неделю</ProgressText>
-              </Progress>
-            </StatsDetails>
-
-            {/* 🔒 ACCESS INFO */}
             {isCreator === false && (
               <AdminNote>Админ-режим только для создателя</AdminNote>
             )}
@@ -365,69 +256,26 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
         )}
       </Container>
 
-      {/* BOTTOM NAV */}
       <BottomNav>
-        <NavItem
-          $active={screen === 'home'}
-          onClick={() => onNavigate('home')}
-        >
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M3 10.5L12 3l9 7.5" />
-            <path d="M5 9.5V21h14V9.5" />
+        <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" />
           </svg>
         </NavItem>
-
-        <NavItem
-          $active={screen === 'create'}
-          onClick={() => onNavigate('create')}
-        >
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        <NavItem $active={screen === 'create'} onClick={() => onNavigate('create')}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
           </svg>
         </NavItem>
-
         <NavItem $active={false}>
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <line x1="6" y1="18" x2="6" y2="14" />
-            <line x1="12" y1="18" x2="12" y2="10" />
-            <line x1="18" y1="18" x2="18" y2="6" />
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="6" y1="18" x2="6" y2="14" /><line x1="12" y1="18" x2="12" y2="10" /><line x1="18" y1="18" x2="18" y2="6" />
           </svg>
         </NavItem>
-
-        <NavItem
-          $active={screen === 'profile'}
-          onClick={() => onNavigate('profile')}
-        >
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <circle cx="12" cy="7" r="4" />
-            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+        <NavItem $active={screen === 'profile'} onClick={() => onNavigate('profile')}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="7" r="4" /><path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
           </svg>
         </NavItem>
       </BottomNav>
