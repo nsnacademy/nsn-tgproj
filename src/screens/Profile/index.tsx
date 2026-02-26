@@ -74,6 +74,7 @@ type UserStats = {
   total_calls: number;
   monthly_active: number;
   weekly_growth: number;
+  percentile?: number;
 };
 
 type SupabaseUser = {
@@ -150,6 +151,12 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
       const targetUserId = userId || currentUser.id;
 
+      // Получаем всех пользователей с индексами для расчета позиции
+      const { data: allUsers, count } = await supabase
+        .from('users')
+        .select('power_index', { count: 'exact' })
+        .order('power_index', { ascending: false });
+
       const { data: userStats } = await supabase
         .from('users')
         .select(`
@@ -170,6 +177,15 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         .maybeSingle();
 
       if (userStats) {
+        // Рассчитываем позицию пользователя (процентиль)
+        let percentile = 50; // по умолчанию
+        if (allUsers && allUsers.length > 0 && count && count > 0) {
+          const userIndex = allUsers.findIndex(u => u.power_index <= userStats.power_index);
+          if (userIndex >= 0) {
+            percentile = Math.round(((allUsers.length - userIndex) / allUsers.length) * 100);
+          }
+        }
+
         const newStats = {
           username: userStats.username || 'user',
           bio: profileData?.bio || '',
@@ -184,9 +200,10 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           current_streak: userStats.current_streak || 0,
           max_streak: userStats.max_streak || 0,
           power_index: userStats.power_index || 0,
-          total_calls: Math.round((userStats.total_challenges || 0) * 1.5),
-          monthly_active: Math.min(30, Math.round((userStats.total_days || 0) * 0.7)),
+          total_calls: userStats.total_challenges || 0,
+          monthly_active: Math.min(30, userStats.total_days || 0),
           weekly_growth: 12,
+          percentile,
         };
         setStats(newStats);
         setEditForm({
@@ -235,7 +252,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, [screen]);
 
-      const handleSave = async () => {
+  const handleSave = async () => {
     if (!stats) return;
     
     const currentUser = await getCurrentUser();
@@ -244,7 +261,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     console.log('Saving profile for user:', currentUser.id);
     console.log('Data to save:', editForm);
 
-    // Сначала проверяем есть ли запись
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id')
@@ -254,7 +270,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     let result;
     
     if (existingProfile) {
-      // Обновляем существующую
       result = await supabase
         .from('profiles')
         .update({
@@ -269,7 +284,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         })
         .eq('user_id', currentUser.id);
     } else {
-      // Создаем новую
       result = await supabase
         .from('profiles')
         .insert({
@@ -324,9 +338,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     );
   }
 
-  const monthPercent = Math.round((stats.monthly_active / 30) * 100);
+  const monthPercent = Math.min(100, (stats.monthly_active / 30) * 100);
   const callsPercent = stats.total_days > 0 
-    ? Math.round((stats.total_calls / stats.total_days) * 100) - 100 
+    ? (stats.total_calls / stats.total_days) * 100 - 100 
     : 0;
 
   const currentHints = hints[editForm.role];
@@ -347,10 +361,10 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           {/* Только username */}
           <UserHandle style={{ fontSize: 24, marginBottom: 16 }}>@{stats.username}</UserHandle>
 
-          {/* Индекс дисциплины из БД */}
+          {/* Индекс дисциплины из БД - без округления */}
           <IndexBadge>
-            <IndexValue>⚡ {Math.round(stats.power_index)}</IndexValue>
-            <IndexPercent>· выше чем 78%</IndexPercent>
+            <IndexValue>⚡ {stats.power_index.toFixed(1)}</IndexValue>
+            <IndexPercent>· выше чем {stats.percentile}%</IndexPercent>
           </IndexBadge>
 
           {isEditing ? (
@@ -475,13 +489,13 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                 </StatItem>
               </StatsRow>
 
-              {/* Активность */}
+              {/* Активность - без округления */}
               <ActivityBar>
                 <ActivityFill $width={monthPercent} />
               </ActivityBar>
               <ActivityLabel>
                 {stats.monthly_active}/30 дней · {stats.total_calls} вызовов 
-                {callsPercent > 0 && ` (+${callsPercent}%)`}
+                {callsPercent > 0 && ` (+${callsPercent.toFixed(1)}%)`}
               </ActivityLabel>
 
               {/* Динамика */}
