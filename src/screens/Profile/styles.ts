@@ -30,18 +30,80 @@ export const Section = styled.div`
   background: rgba(255,255,255,0.05);
   border-radius: 16px;
   padding: 16px;
+  margin-bottom: 16px;
 `;
 
-export const ToggleRow = styled.div`
+/* USER CARD */
+
+export const UserCard = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 20px;
 `;
 
-export const ToggleLabel = styled.div`
-  font-size: 15px;
-  font-weight: 500;
+export const UserAvatar = styled.div`
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 `;
+
+export const UserInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+export const UserName = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+`;
+
+export const UserHandle = styled.div`
+  font-size: 13px;
+  opacity: 0.6;
+`;
+
+/* STATS */
+
+export const StatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+`;
+
+export const StatItem = styled.div`
+  background: rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 10px 8px;
+  text-align: center;
+`;
+
+export const StatValue = styled.div`
+  font-size: 15px;
+  font-weight: 600;
+`;
+
+export const StatLabel = styled.div`
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 4px;
+`;
+
+/* TOGGLE */
 
 export const Toggle = styled.div<{
   $active: boolean;
@@ -56,13 +118,11 @@ export const Toggle = styled.div<{
   position: relative;
   cursor: ${({ $disabled }) =>
     $disabled ? 'not-allowed' : 'pointer'};
-
   opacity: ${({ $disabled }) =>
     $disabled ? 0.4 : 1};
 
   transition: all 0.2s ease;
 `;
-
 
 export const ToggleKnob = styled.div<{ $active: boolean }>`
   width: 22px;
@@ -74,5 +134,3 @@ export const ToggleKnob = styled.div<{ $active: boolean }>`
   left: ${({ $active }) => ($active ? '22px' : '2px')};
   transition: all 0.2s ease;
 `;
-
-

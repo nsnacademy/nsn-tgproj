@@ -5,7 +5,7 @@ export const SafeArea = styled.div`
   min-height: 100vh;
   background: #000;
   color: #fff;
-  padding: 24px;
+  padding: 50px 24px;
   display: flex;
   flex-direction: column;
 `;
@@ -198,3 +198,4 @@ export const NextButton = styled.button<{ disabled?: boolean }>`
   opacity: ${({ disabled }) => (disabled ? 0.45 : 1)};
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
 `;
+
