@@ -14,24 +14,27 @@ export const Container = styled.div`
 `;
 
 export const Title = styled.h1`
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 600;
+  margin-bottom: 24px;
 `;
 
 export const Text = styled.p`
   font-size: 14px;
-  color: #666;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.5;
+  margin-top: 8px;
 `;
 
 export const Toggle = styled.div<{ $active: boolean; $disabled?: boolean }>`
   width: 46px;
   height: 26px;
   border-radius: 13px;
-  background: ${({ $active }) => $active ? '#fff' : '#222'};
+  background: ${({ $active }) => $active ? '#fff' : 'rgba(255,255,255,0.3)'};
   position: relative;
   cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
   opacity: ${({ $disabled }) => $disabled ? 0.4 : 1};
-  transition: 0.2s;
+  transition: all 0.2s ease;
 `;
 
 export const ToggleKnob = styled.div<{ $active: boolean }>`
@@ -42,9 +45,10 @@ export const ToggleKnob = styled.div<{ $active: boolean }>`
   position: absolute;
   top: 2px;
   left: ${({ $active }) => $active ? '22px' : '2px'};
-  transition: 0.2s;
+  transition: all 0.2s ease;
 `;
 
+// Новые стили
 export const UserName = styled.h2`
   font-size: 24px;
   font-weight: 600;
@@ -54,108 +58,74 @@ export const UserName = styled.h2`
 export const UserHandle = styled.div`
   font-size: 14px;
   color: #666;
+  margin-bottom: 12px;
 `;
 
-export const ScoreCard = styled.div`
+export const UserBio = styled.div`
+  font-size: 15px;
+  margin: 8px 0;
+`;
+
+export const UserStack = styled.div`
+  font-size: 14px;
+  color: #ffd700;
+  margin: 4px 0;
+`;
+
+export const UserStats = styled.div`
+  font-size: 13px;
+  color: #999;
+  margin: 4px 0 16px;
+`;
+
+export const SectionDivider = styled.div`
+  height: 1px;
+  background: #222;
+  margin: 24px 0;
+`;
+
+export const SectionTitle = styled.div`
+  font-size: 13px;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  letter-spacing: 0.5px;
+`;
+
+export const IndexBadge = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 20px 0;
-  padding: 16px;
-  background: #0a0a0a;
-  border-radius: 30px;
-  border: 1px solid #222;
+  margin: 16px 0;
 `;
 
-export const ScoreValue = styled.span`
+export const IndexValue = styled.span`
   font-size: 28px;
   font-weight: 700;
-`;
-
-export const ScoreBadge = styled.span`
-  font-size: 20px;
-`;
-
-export const ScoreInfo = styled.button`
-  width: 20px;
-  height: 20px;
-  border-radius: 10px;
-  background: #222;
-  color: #666;
-  border: none;
-  font-size: 12px;
-  cursor: pointer;
-`;
-
-export const ScoreToday = styled.span`
-  font-size: 13px;
-  color: #666;
-  margin-left: auto;
-`;
-
-export const PopupOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.9);
-  z-index: 1000;
-`;
-
-export const Popup = styled.div`
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #111;
-  border: 1px solid #333;
-  border-radius: 20px;
-  padding: 24px;
-  max-width: 280px;
-  width: 90%;
-  z-index: 1001;
-`;
-
-export const PopupClose = styled.div`
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  color: #666;
-  font-size: 18px;
-  cursor: pointer;
-`;
-
-export const PopupTitle = styled.h3`
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 16px;
   color: #ffd700;
 `;
 
-export const PopupText = styled.p`
+export const IndexPercent = styled.span`
   font-size: 14px;
-  color: #999;
-  line-height: 1.6;
-  margin-bottom: 6px;
+  color: #666;
 `;
 
 export const StatsRow = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin: 24px 0;
+  margin: 16px 0;
 `;
 
-export const StatBlock = styled.div`
+export const StatItem = styled.div`
   text-align: center;
-  padding: 12px 4px;
+  padding: 12px;
   background: #0a0a0a;
   border-radius: 12px;
 `;
 
 export const StatNumber = styled.div`
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   margin-bottom: 4px;
 `;
@@ -166,56 +136,123 @@ export const StatLabel = styled.div`
   text-transform: uppercase;
 `;
 
-export const SimpleList = styled.div`
+export const ActivityBar = styled.div`
+  width: 100%;
+  height: 4px;
+  background: #222;
+  border-radius: 2px;
+  margin: 16px 0 8px;
+  overflow: hidden;
+`;
+
+export const ActivityFill = styled.div<{ $width: number }>`
+  width: ${({ $width }) => $width}%;
+  height: 100%;
+  background: #ffd700;
+  border-radius: 2px;
+`;
+
+export const ActivityLabel = styled.div`
+  font-size: 12px;
+  color: #999;
+  margin: 4px 0;
+`;
+
+export const ActivityGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin: 12px 0;
+`;
+
+export const WeekDay = styled.div`
+  font-size: 8px;
+  text-align: center;
+  color: #444;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+`;
+
+export const DayCell = styled.div<{ $active: boolean }>`
+  width: 100%;
+  aspect-ratio: 1;
+  background: ${({ $active }) => $active ? '#ffd700' : '#1a1a1a'};
+  border-radius: 2px;
+`;
+
+export const ContactSection = styled.div`
   background: #0a0a0a;
   border-radius: 16px;
   padding: 16px;
-  margin: 20px 0;
+  margin: 16px 0;
 `;
 
-export const SimpleItem = styled.div`
+export const ContactItem = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 10px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #222;
+
+  &:last-child {
+    border-bottom: none;
+  }
 `;
 
-export const SimpleLabel = styled.span`
-  font-size: 14px;
-  color: #999;
+export const ContactLabel = styled.span`
+  font-size: 13px;
+  color: #666;
 `;
 
-export const SimpleValue = styled.span`
-  font-size: 16px;
-  font-weight: 500;
+export const ContactValue = styled.span`
+  font-size: 13px;
   color: #fff;
 `;
 
-export const TotalRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 12px 0 0;
-  margin-top: 4px;
-  
-  ${SimpleLabel} {
-    color: #ffd700;
-    font-weight: 600;
-  }
-  
-  ${SimpleValue} {
-    color: #ffd700;
-    font-weight: 700;
-    font-size: 18px;
+export const EditButton = styled.button`
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  background: #222;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover {
+    background: #333;
   }
 `;
 
-export const AdminNote = styled.div`
-  margin-top: 20px;
+export const StatusSelector = styled.div`
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+`;
+
+export const StatusBadge = styled.div<{ $active?: boolean }>`
+  padding: 8px 16px;
+  background: ${({ $active }) => $active ? '#ffd700' : '#222'};
+  color: ${({ $active }) => $active ? '#000' : '#666'};
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+`;
+
+export const InviteButton = styled.button`
+  width: 100%;
   padding: 16px;
-  background: #0a0a0a;
-  border-radius: 12px;
-  font-size: 13px;
-  color: #666;
-  text-align: center;
-  border: 1px solid #222;
+  background: #ffd700;
+  border: none;
+  border-radius: 30px;
+  color: #000;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 16px 0;
+
+  &:hover {
+    background: #ffed4a;
+  }
 `;
