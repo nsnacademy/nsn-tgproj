@@ -1,28 +1,33 @@
 import { useEffect, useState } from 'react';
-
 import {
   SafeArea,
   Container,
+  Header,
   Title,
-  Text,
+  AdminToggleWrapper,
   Toggle,
   ToggleKnob,
-  UserCard,
-  UserAvatar,
-  UserInfo,
-  UserName,
-  UserHandle,
-  StatsGrid,
-  StatItem,
-  StatValue,
+  ProfileHeader,
+  ProfileImage,
+  ProfileInfo,
+  ProfileName,
+  ProfileUsername,
+  StatsContainer,
+  StatCard,
+  StatNumber,
   StatLabel,
+  MenuSection,
+  MenuTitle,
+  MenuItem,
+  MenuItemIcon,
+  MenuItemLabel,
+  MenuItemBadge,
+  MenuItemArrow,
+  LogoutButton,
+  LogoutText,
 } from './styles';
-
 import { BottomNav, NavItem } from '../Home/styles';
-import {
-  getCurrentUser,
-  checkIsCreator,
-} from '../../shared/lib/supabase';
+import { getCurrentUser, checkIsCreator } from '../../shared/lib/supabase';
 
 type ProfileScreen = 'home' | 'create' | 'profile' | 'admin';
 
@@ -107,84 +112,113 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
   return (
     <SafeArea>
       <Container>
+        {/* HEADER С ТОГГЛОМ — НЕ ТРОГАЕМ */}
+        <Header>
+          <Title>Профиль</Title>
+          <AdminToggleWrapper>
+            <Toggle
+              $active={adminMode}
+              $disabled={!isCreator}
+              onClick={onToggleAdmin}
+            >
+              <ToggleKnob $active={adminMode} />
+            </Toggle>
+          </AdminToggleWrapper>
+        </Header>
 
-        {/* USER CARD */}
+        {/* ПРОФИЛЬ С АВАТАРОМ */}
         {user && (
-          <UserCard>
-            <UserAvatar>
+          <ProfileHeader>
+            <ProfileImage>
               {user.user_metadata?.avatar_url ? (
                 <img src={user.user_metadata.avatar_url} alt="avatar" />
               ) : (
                 user.user_metadata?.username?.[0]?.toUpperCase() || '?'
               )}
-            </UserAvatar>
-
-            <UserInfo>
-              <UserName>
+            </ProfileImage>
+            <ProfileInfo>
+              <ProfileName>
                 {user.user_metadata?.full_name || 'Пользователь'}
-              </UserName>
-              <UserHandle>
+              </ProfileName>
+              <ProfileUsername>
                 @{user.user_metadata?.username || 'unknown'}
-              </UserHandle>
-            </UserInfo>
-          </UserCard>
+              </ProfileUsername>
+            </ProfileInfo>
+          </ProfileHeader>
         )}
 
-        {/* STATS */}
-        <StatsGrid>
-          <StatItem>
-            <StatValue>7</StatValue>
-            <StatLabel>streak</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatValue>42</StatValue>
-            <StatLabel>дней</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatValue>5</StatValue>
+        {/* СТАТИСТИКА В НОВОМ СТИЛЕ */}
+        <StatsContainer>
+          <StatCard>
+            <StatNumber>7</StatNumber>
+            <StatLabel>дней подряд</StatLabel>
+          </StatCard>
+          <StatCard>
+            <StatNumber>42</StatNumber>
+            <StatLabel>всего дней</StatLabel>
+          </StatCard>
+          <StatCard>
+            <StatNumber>5</StatNumber>
             <StatLabel>вызовов</StatLabel>
-          </StatItem>
-          <StatItem>
-            <StatValue>Impact</StatValue>
-            <StatLabel>вклад</StatLabel>
-          </StatItem>
-        </StatsGrid>
+          </StatCard>
+        </StatsContainer>
 
-        {/* HEADER — НЕ ТРОГАЕМ */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 12,
-          }}
-        >
-          <Title>Профиль</Title>
+        {/* МЕНЮ НАСТРОЕК */}
+        <MenuSection>
+          <MenuTitle>Настройки</MenuTitle>
+          
+          <MenuItem>
+            <MenuItemIcon>🔔</MenuItemIcon>
+            <MenuItemLabel>Уведомления</MenuItemLabel>
+            <MenuItemArrow>›</MenuItemArrow>
+          </MenuItem>
+          
+          <MenuItem>
+            <MenuItemIcon>🌙</MenuItemIcon>
+            <MenuItemLabel>Темная тема</MenuItemLabel>
+            <MenuItemBadge>вкл</MenuItemBadge>
+          </MenuItem>
+          
+          <MenuItem>
+            <MenuItemIcon>🌐</MenuItemIcon>
+            <MenuItemLabel>Язык</MenuItemLabel>
+            <MenuItemLabel style={{ color: 'rgba(255,255,255,0.5)' }}>Русский</MenuItemLabel>
+            <MenuItemArrow>›</MenuItemArrow>
+          </MenuItem>
+          
+          <MenuItem>
+            <MenuItemIcon>📊</MenuItemIcon>
+            <MenuItemLabel>Статистика</MenuItemLabel>
+            <MenuItemArrow>›</MenuItemArrow>
+          </MenuItem>
+          
+          <MenuItem>
+            <MenuItemIcon>❓</MenuItemIcon>
+            <MenuItemLabel>Помощь</MenuItemLabel>
+            <MenuItemArrow>›</MenuItemArrow>
+          </MenuItem>
+        </MenuSection>
 
-          <Toggle
-            $active={adminMode}
-            $disabled={!isCreator}
-            onClick={onToggleAdmin}
-          >
-            <ToggleKnob $active={adminMode} />
-          </Toggle>
-        </div>
-
-        <Text>
-          Включите админ-режим для модерации вызовов
-        </Text>
-
+        {/* ИНФОРМАЦИЯ ОБ АДМИН-РЕЖИМЕ */}
         {isCreator === false && (
-          <Text
-            style={{
-              marginTop: 12,
+          <div style={{ padding: '0 16px', marginTop: 8 }}>
+            <div style={{
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: 12,
+              padding: 12,
               fontSize: 13,
-              opacity: 0.6,
-            }}
-          >
-            Админ-режим доступен только создателю вызова
-          </Text>
+              color: 'rgba(255,255,255,0.5)',
+              textAlign: 'center'
+            }}>
+              🔒 Админ-режим доступен только создателю вызова
+            </div>
+          </div>
         )}
+
+        {/* КНОПКА ВЫХОДА */}
+        <LogoutButton>
+          <LogoutText>Выйти из аккаунта</LogoutText>
+        </LogoutButton>
       </Container>
 
       {/* BOTTOM NAV — НЕ ТРОГАЕМ */}
