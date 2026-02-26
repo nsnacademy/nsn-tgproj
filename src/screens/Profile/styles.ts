@@ -14,27 +14,24 @@ export const Container = styled.div`
 `;
 
 export const Title = styled.h1`
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
-  margin-bottom: 24px;
 `;
 
 export const Text = styled.p`
   font-size: 14px;
-  color: rgba(255,255,255,0.7);
-  line-height: 1.5;
-  margin-top: 8px;
+  color: #666;
 `;
 
 export const Toggle = styled.div<{ $active: boolean; $disabled?: boolean }>`
   width: 46px;
   height: 26px;
   border-radius: 13px;
-  background: ${({ $active }) => $active ? '#fff' : 'rgba(255,255,255,0.3)'};
+  background: ${({ $active }) => $active ? '#fff' : '#222'};
   position: relative;
   cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
   opacity: ${({ $disabled }) => $disabled ? 0.4 : 1};
-  transition: all 0.2s ease;
+  transition: 0.2s;
 `;
 
 export const ToggleKnob = styled.div<{ $active: boolean }>`
@@ -45,10 +42,9 @@ export const ToggleKnob = styled.div<{ $active: boolean }>`
   position: absolute;
   top: 2px;
   left: ${({ $active }) => $active ? '22px' : '2px'};
-  transition: all 0.2s ease;
+  transition: 0.2s;
 `;
 
-// Новые простые стили
 export const UserName = styled.h2`
   font-size: 24px;
   font-weight: 600;
@@ -60,41 +56,38 @@ export const UserHandle = styled.div`
   color: #666;
 `;
 
-export const Power = styled.div`
+export const ScoreCard = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 20px 0;
   padding: 16px;
-  background: rgba(255,215,0,0.1);
-  border: 1px solid rgba(255,215,0,0.2);
+  background: #0a0a0a;
   border-radius: 30px;
+  border: 1px solid #222;
 `;
 
-export const PowerValue = styled.span`
+export const ScoreValue = styled.span`
   font-size: 28px;
   font-weight: 700;
 `;
 
-export const PowerStatus = styled.span`
+export const ScoreBadge = styled.span`
   font-size: 20px;
 `;
 
-export const PowerInfo = styled.button`
+export const ScoreInfo = styled.button`
   width: 20px;
   height: 20px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.1);
-  color: #999;
+  background: #222;
+  color: #666;
   border: none;
   font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   cursor: pointer;
 `;
 
-export const PowerToday = styled.span`
+export const ScoreToday = styled.span`
   font-size: 13px;
   color: #666;
   margin-left: auto;
@@ -106,7 +99,7 @@ export const PopupOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.9);
   z-index: 1000;
 `;
 
@@ -144,7 +137,7 @@ export const PopupText = styled.p`
   font-size: 14px;
   color: #999;
   line-height: 1.6;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 `;
 
 export const StatsRow = styled.div`
@@ -157,11 +150,11 @@ export const StatsRow = styled.div`
 export const StatBlock = styled.div`
   text-align: center;
   padding: 12px 4px;
-  background: rgba(255,255,255,0.03);
+  background: #0a0a0a;
   border-radius: 12px;
 `;
 
-export const StatValue = styled.div`
+export const StatNumber = styled.div`
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 4px;
@@ -173,40 +166,53 @@ export const StatLabel = styled.div`
   text-transform: uppercase;
 `;
 
-export const ActivityStats = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 20px 0;
-  padding: 16px;
-  background: rgba(255,255,255,0.02);
+export const SimpleList = styled.div`
+  background: #0a0a0a;
   border-radius: 16px;
+  padding: 16px;
+  margin: 20px 0;
 `;
 
-export const ActivityStat = styled.div<{ $total?: boolean }>`
+export const SimpleItem = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: ${({ $total }) => $total ? 'none' : '1px solid #222'};
-  font-weight: ${({ $total }) => $total ? '600' : '400'};
-  color: ${({ $total }) => $total ? '#ffd700' : '#fff'};
+  padding: 10px 0;
+  border-bottom: 1px solid #222;
 `;
 
-export const ActivityLabel = styled.span`
+export const SimpleLabel = styled.span`
   font-size: 14px;
   color: #999;
 `;
 
-export const ActivityValue = styled.span`
+export const SimpleValue = styled.span`
   font-size: 16px;
   font-weight: 500;
+  color: #fff;
+`;
+
+export const TotalRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0 0;
+  margin-top: 4px;
+  
+  ${SimpleLabel} {
+    color: #ffd700;
+    font-weight: 600;
+  }
+  
+  ${SimpleValue} {
+    color: #ffd700;
+    font-weight: 700;
+    font-size: 18px;
+  }
 `;
 
 export const AdminNote = styled.div`
   margin-top: 20px;
   padding: 16px;
-  background: rgba(255,255,255,0.02);
+  background: #0a0a0a;
   border-radius: 12px;
   font-size: 13px;
   color: #666;

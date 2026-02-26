@@ -10,11 +10,11 @@ import {
   ToggleKnob,
   UserName,
   UserHandle,
-  Power,
-  PowerValue,
-  PowerStatus,
-  PowerInfo,
-  PowerToday,
+  ScoreCard,
+  ScoreValue,
+  ScoreBadge,
+  ScoreInfo,
+  ScoreToday,
   PopupOverlay,
   Popup,
   PopupClose,
@@ -22,12 +22,13 @@ import {
   PopupText,
   StatsRow,
   StatBlock,
-  StatValue,
+  StatNumber,
   StatLabel,
-  ActivityStats,
-  ActivityStat,
-  ActivityLabel,
-  ActivityValue,
+  SimpleList,
+  SimpleItem,
+  SimpleLabel,
+  SimpleValue,
+  TotalRow,
   AdminNote,
 } from './styles';
 
@@ -47,7 +48,6 @@ type ProfileProps = {
 type UserStats = {
   username: string;
   full_name: string | null;
-  avatar_url: string | null;
   total_days: number;
   total_challenges: number;
   current_streak: number;
@@ -59,7 +59,6 @@ type SupabaseUser = {
   id: string;
   user_metadata?: {
     full_name?: string;
-    avatar_url?: string;
     username?: string;
   };
 };
@@ -90,7 +89,6 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
         setStats({
           username: userStats.username,
           full_name: currentUser.user_metadata?.full_name || null,
-          avatar_url: currentUser.user_metadata?.avatar_url || null,
           total_days: userStats.total_days || 0,
           total_challenges: userStats.total_challenges || 0,
           current_streak: userStats.current_streak || 0,
@@ -110,21 +108,17 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
         setIsCreator(false);
         return;
       }
-
       const creator = await checkIsCreator(user.id);
       setIsCreator(creator);
     }
-
     checkAccess();
   }, []);
 
   const onToggleAdmin = () => {
     if (locked || !isCreator) return;
-
     localStorage.setItem('adminMode', 'true');
     setAdminMode(true);
     setLocked(true);
-
     setTimeout(() => {
       onNavigate('admin');
       setLocked(false);
@@ -138,121 +132,105 @@ export default function Profile({ screen, onNavigate }: ProfileProps) {
     }
   }, [screen]);
 
-  const getStatusText = (index: number) => {
-    if (index >= 100) return '🔥';
-    if (index >= 50) return '📈';
-    if (index >= 20) return '🌱';
-    return '💤';
-  };
+  if (!stats) {
+    return (
+      <SafeArea>
+        <Container>
+          <Text>Загрузка...</Text>
+        </Container>
+      </SafeArea>
+    );
+  }
 
-  // Расчет для отображения
-  const daysScore = stats ? Math.round(stats.total_days * 0.5) : 0;
-  const recordScore = stats?.max_streak || 0;
-  const challengesScore = stats ? stats.total_challenges * 2 : 0;
-  const monthlyScore = 80; // Пример
-  const totalScore = stats ? Math.round(stats.power_index) : 0;
+  const daysScore = Math.round(stats.total_days * 0.5);
+  const recordScore = stats.max_streak;
+  const challengesScore = stats.total_challenges * 2;
+  const monthScore = 80;
+  const totalScore = Math.round(stats.power_index);
 
   return (
     <SafeArea>
       <Container>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 12,
-          }}
-        >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <Title>Профиль</Title>
-
-          <Toggle
-            $active={adminMode}
-            $disabled={!isCreator}
-            onClick={onToggleAdmin}
-          >
+          <Toggle $active={adminMode} $disabled={!isCreator} onClick={onToggleAdmin}>
             <ToggleKnob $active={adminMode} />
           </Toggle>
         </div>
 
-        {stats ? (
+        <div style={{ marginBottom: 20 }}>
+          <UserName>{stats.full_name || 'Пользователь'}</UserName>
+          <UserHandle>@{stats.username}</UserHandle>
+        </div>
+
+        <ScoreCard>
+          <ScoreValue>{totalScore}</ScoreValue>
+          <ScoreBadge>⚡</ScoreBadge>
+          <ScoreInfo onClick={() => setShowInfo(true)}>i</ScoreInfo>
+          <ScoreToday>+3 сегодня</ScoreToday>
+        </ScoreCard>
+
+        {showInfo && (
           <>
-            <div style={{ marginBottom: 16 }}>
-              <UserName>{stats.full_name || 'Пользователь'}</UserName>
-              <UserHandle>@{stats.username}</UserHandle>
-            </div>
-
-            <Power>
-              <PowerValue>{totalScore}</PowerValue>
-              <PowerStatus>{getStatusText(totalScore)}</PowerStatus>
-              <PowerInfo onClick={() => setShowInfo(true)}>i</PowerInfo>
-              <PowerToday>+3 сегодня</PowerToday>
-            </Power>
-
-            {showInfo && (
-              <>
-                <PopupOverlay onClick={() => setShowInfo(false)} />
-                <Popup>
-                  <PopupClose onClick={() => setShowInfo(false)}>✕</PopupClose>
-                  <PopupTitle>Как считается индекс</PopupTitle>
-                  <PopupText>• За каждый день: +0.5</PopupText>
-                  <PopupText>• Рекордный стрик: +1 за день</PopupText>
-                  <PopupText>• За вызов: +2</PopupText>
-                  <PopupText>• За активность в месяце: до +100</PopupText>
-                  <PopupText style={{ marginTop: 12, color: '#ffd700' }}>
-                    Пример: 42 дня (21) + рекорд 15 (15) + 5 вызовов (10) + месяц (80) = 126
-                  </PopupText>
-                </Popup>
-              </>
-            )}
-
-            <StatsRow>
-              <StatBlock>
-                <StatValue>{stats.total_days}</StatValue>
-                <StatLabel>дней</StatLabel>
-              </StatBlock>
-              <StatBlock>
-                <StatValue>{stats.current_streak}</StatValue>
-                <StatLabel>подряд</StatLabel>
-              </StatBlock>
-              <StatBlock>
-                <StatValue>{stats.max_streak}</StatValue>
-                <StatLabel>рекорд</StatLabel>
-              </StatBlock>
-              <StatBlock>
-                <StatValue>{stats.total_challenges}</StatValue>
-                <StatLabel>вызовов</StatLabel>
-              </StatBlock>
-            </StatsRow>
-
-            <ActivityStats>
-              <ActivityStat>
-                <ActivityLabel>Баллы за дни ({stats.total_days} ×0.5)</ActivityLabel>
-                <ActivityValue>{daysScore}</ActivityValue>
-              </ActivityStat>
-              <ActivityStat>
-                <ActivityLabel>Баллы за рекорд ({stats.max_streak} ×1)</ActivityLabel>
-                <ActivityValue>{recordScore}</ActivityValue>
-              </ActivityStat>
-              <ActivityStat>
-                <ActivityLabel>Баллы за вызовы ({stats.total_challenges} ×2)</ActivityLabel>
-                <ActivityValue>{challengesScore}</ActivityValue>
-              </ActivityStat>
-              <ActivityStat>
-                <ActivityLabel>Баллы за последние 30 дней</ActivityLabel>
-                <ActivityValue>{monthlyScore}</ActivityValue>
-              </ActivityStat>
-              <ActivityStat $total>
-                <ActivityLabel>Итого</ActivityLabel>
-                <ActivityValue>{totalScore}</ActivityValue>
-              </ActivityStat>
-            </ActivityStats>
-
-            {isCreator === false && (
-              <AdminNote>Админ-режим только для создателя</AdminNote>
-            )}
+            <PopupOverlay onClick={() => setShowInfo(false)} />
+            <Popup>
+              <PopupClose onClick={() => setShowInfo(false)}>✕</PopupClose>
+              <PopupTitle>Как считается рейтинг</PopupTitle>
+              <PopupText>• Дни: {stats.total_days} ×0.5 = {daysScore}</PopupText>
+              <PopupText>• Рекорд: {stats.max_streak} ×1 = {recordScore}</PopupText>
+              <PopupText>• Вызовы: {stats.total_challenges} ×2 = {challengesScore}</PopupText>
+              <PopupText>• Активность за месяц: +{monthScore}</PopupText>
+              <PopupText style={{ marginTop: 10, color: '#ffd700' }}>
+                Итого: {daysScore} + {recordScore} + {challengesScore} + {monthScore} = {totalScore}
+              </PopupText>
+            </Popup>
           </>
-        ) : (
-          <Text>Загрузка...</Text>
+        )}
+
+        <StatsRow>
+          <StatBlock>
+            <StatNumber>{stats.total_days}</StatNumber>
+            <StatLabel>дней</StatLabel>
+          </StatBlock>
+          <StatBlock>
+            <StatNumber>{stats.current_streak}</StatNumber>
+            <StatLabel>подряд</StatLabel>
+          </StatBlock>
+          <StatBlock>
+            <StatNumber>{stats.max_streak}</StatNumber>
+            <StatLabel>рекорд</StatLabel>
+          </StatBlock>
+          <StatBlock>
+            <StatNumber>{stats.total_challenges}</StatNumber>
+            <StatLabel>вызовов</StatLabel>
+          </StatBlock>
+        </StatsRow>
+
+        <SimpleList>
+          <SimpleItem>
+            <SimpleLabel>Баллы за дни ({stats.total_days} ×0.5)</SimpleLabel>
+            <SimpleValue>+{daysScore}</SimpleValue>
+          </SimpleItem>
+          <SimpleItem>
+            <SimpleLabel>Баллы за рекорд ({stats.max_streak} ×1)</SimpleLabel>
+            <SimpleValue>+{recordScore}</SimpleValue>
+          </SimpleItem>
+          <SimpleItem>
+            <SimpleLabel>Баллы за вызовы ({stats.total_challenges} ×2)</SimpleLabel>
+            <SimpleValue>+{challengesScore}</SimpleValue>
+          </SimpleItem>
+          <SimpleItem>
+            <SimpleLabel>Баллы за последние 30 дней</SimpleLabel>
+            <SimpleValue>+{monthScore}</SimpleValue>
+          </SimpleItem>
+          <TotalRow>
+            <SimpleLabel>Всего баллов</SimpleLabel>
+            <SimpleValue>{totalScore}</SimpleValue>
+          </TotalRow>
+        </SimpleList>
+
+        {isCreator === false && (
+          <AdminNote>Админ-режим только для создателя</AdminNote>
         )}
       </Container>
 
