@@ -27,11 +27,16 @@ import {
   ContactLabel,
   ContactValue,
   EditButton,
-  StatusBadge,
-  StatusSelector,
   InviteButton,
   SectionDivider,
   SectionTitle,
+  EditForm,
+  EditInput,
+  EditTextArea,
+  EditRow,
+  SaveButton,
+  CancelButton,
+  EditLabel,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -50,13 +55,12 @@ type ProfileProps = {
 
 type UserStats = {
   username: string;
-  bio: string | null;
-  stack: string[] | null;
-  experience: string | null;
-  portfolio: string | null;
-  telegram: string | null;
-  email: string | null;
-  status: 'searching' | 'considering' | 'busy' | null;
+  bio: string;
+  stack: string;
+  experience: string;
+  portfolio: string;
+  telegram: string;
+  email: string;
   total_days: number;
   total_challenges: number;
   current_streak: number;
@@ -85,6 +89,15 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    bio: '',
+    stack: '',
+    experience: '',
+    portfolio: '',
+    telegram: '',
+    email: ''
+  });
 
   useEffect(() => {
     async function checkOwnProfile() {
@@ -102,7 +115,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
       const targetUserId = userId || currentUser.id;
 
-      // Загружаем данные из БД
       const { data: userStats } = await supabase
         .from('users')
         .select(`
@@ -116,17 +128,22 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         .eq('id', targetUserId)
         .single();
 
-      // Здесь потом будет загрузка из profile_data
+      // Загружаем профиль из отдельной таблицы
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('bio, stack, experience, portfolio, telegram, email')
+        .eq('user_id', targetUserId)
+        .single();
+
       if (userStats) {
-        setStats({
+        const newStats = {
           username: userStats.username || 'user',
-          bio: 'Frontend-разработчик',
-          stack: ['React', 'TypeScript', 'Node'],
-          experience: '3 года',
-          portfolio: 'github.com/alex',
-          telegram: '@alex_dev',
-          email: 'alex@mail.com',
-          status: 'searching',
+          bio: profileData?.bio || '',
+          stack: profileData?.stack || '',
+          experience: profileData?.experience || '',
+          portfolio: profileData?.portfolio || '',
+          telegram: profileData?.telegram || '',
+          email: profileData?.email || '',
           total_days: userStats.total_days || 0,
           total_challenges: userStats.total_challenges || 0,
           current_streak: userStats.current_streak || 0,
@@ -135,6 +152,15 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           total_calls: Math.round((userStats.total_challenges || 0) * 1.5),
           monthly_active: Math.min(30, Math.round((userStats.total_days || 0) * 0.7)),
           weekly_growth: 12,
+        };
+        setStats(newStats);
+        setEditForm({
+          bio: newStats.bio,
+          stack: newStats.stack,
+          experience: newStats.experience,
+          portfolio: newStats.portfolio,
+          telegram: newStats.telegram,
+          email: newStats.email
         });
       }
     }
@@ -173,6 +199,40 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, [screen]);
 
+  const handleSave = async () => {
+    if (!stats) return;
+    
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return;
+
+    // Сохраняем в таблицу profiles
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        user_id: currentUser.id,
+        bio: editForm.bio,
+        stack: editForm.stack,
+        experience: editForm.experience,
+        portfolio: editForm.portfolio,
+        telegram: editForm.telegram,
+        email: editForm.email,
+        updated_at: new Date()
+      });
+
+    if (!error) {
+      setStats({
+        ...stats,
+        bio: editForm.bio,
+        stack: editForm.stack,
+        experience: editForm.experience,
+        portfolio: editForm.portfolio,
+        telegram: editForm.telegram,
+        email: editForm.email
+      });
+      setIsEditing(false);
+    }
+  };
+
   if (!stats) {
     return (
       <SafeArea>
@@ -191,7 +251,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   return (
     <SafeArea>
       <Container>
-        {/* HEADER - НЕ ТРОГАЕМ */}
+        {/* HEADER */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <Title>Профиль</Title>
           <Toggle $active={adminMode} $disabled={!isCreator} onClick={onToggleAdmin}>
@@ -210,97 +270,151 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             <IndexPercent>· выше чем 78%</IndexPercent>
           </IndexBadge>
 
-          {/* О себе */}
-          <UserBio>{stats.bio}</UserBio>
-          <UserStack>{stats.stack?.join(' · ')}</UserStack>
-          <UserStats>Опыт: {stats.experience} · Портфолио: {stats.portfolio}</UserStats>
-
-          <SectionDivider />
-
-          {/* СТАТИСТИКА */}
-          <SectionTitle>Показатели</SectionTitle>
-          <StatsRow>
-            <StatItem>
-              <StatNumber>{stats.total_days}</StatNumber>
-              <StatLabel>дней</StatLabel>
-            </StatItem>
-            <StatItem>
-              <StatNumber>{stats.current_streak}</StatNumber>
-              <StatLabel>подряд</StatLabel>
-            </StatItem>
-            <StatItem>
-              <StatNumber>{stats.max_streak}</StatNumber>
-              <StatLabel>рекорд</StatLabel>
-            </StatItem>
-          </StatsRow>
-
-          {/* Активность */}
-          <ActivityBar>
-            <ActivityFill $width={monthPercent} />
-          </ActivityBar>
-          <ActivityLabel>
-            {stats.monthly_active}/30 дней · {stats.total_calls} вызовов 
-            {callsPercent > 0 && ` (+${callsPercent}%)`}
-          </ActivityLabel>
-
-          {/* Динамика */}
-          {stats.weekly_growth > 0 && (
-            <ActivityLabel style={{ marginTop: 8, color: '#4caf50' }}>
-              ▲ +{stats.weekly_growth}% за неделю
-            </ActivityLabel>
-          )}
-
-          <SectionDivider />
-
-          {/* КОНТАКТЫ */}
-          {isOwnProfile ? (
-            /* СВОЙ ПРОФИЛЬ */
-            <>
-              <SectionTitle>Контакты</SectionTitle>
-              <ContactSection>
-                <ContactItem>
-                  <ContactLabel>Telegram</ContactLabel>
-                  <ContactValue>{stats.telegram}</ContactValue>
-                </ContactItem>
-                <ContactItem>
-                  <ContactLabel>Email</ContactLabel>
-                  <ContactValue>{stats.email}</ContactValue>
-                </ContactItem>
-                <EditButton>✎ Редактировать</EditButton>
-              </ContactSection>
-
-              <SectionTitle>Статус</SectionTitle>
-              <StatusSelector>
-                <StatusBadge $active={stats.status === 'searching'}>🔍 Ищу</StatusBadge>
-                <StatusBadge $active={stats.status === 'considering'}>🤔 Смотрю</StatusBadge>
-                <StatusBadge $active={stats.status === 'busy'}>⏳ Занят</StatusBadge>
-              </StatusSelector>
-            </>
+          {isEditing ? (
+            /* РЕДАКТИРОВАНИЕ */
+            <EditForm>
+              <EditRow>
+                <EditLabel>О себе</EditLabel>
+                <EditTextArea 
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+                  placeholder="Напишите о себе"
+                />
+              </EditRow>
+              <EditRow>
+                <EditLabel>Навыки</EditLabel>
+                <EditInput 
+                  value={editForm.stack}
+                  onChange={(e) => setEditForm({...editForm, stack: e.target.value})}
+                  placeholder="React, TypeScript, Node"
+                />
+              </EditRow>
+              <EditRow>
+                <EditLabel>Опыт</EditLabel>
+                <EditInput 
+                  value={editForm.experience}
+                  onChange={(e) => setEditForm({...editForm, experience: e.target.value})}
+                  placeholder="3 года"
+                />
+              </EditRow>
+              <EditRow>
+                <EditLabel>Портфолио</EditLabel>
+                <EditInput 
+                  value={editForm.portfolio}
+                  onChange={(e) => setEditForm({...editForm, portfolio: e.target.value})}
+                  placeholder="github.com/username"
+                />
+              </EditRow>
+              <EditRow>
+                <EditLabel>Telegram</EditLabel>
+                <EditInput 
+                  value={editForm.telegram}
+                  onChange={(e) => setEditForm({...editForm, telegram: e.target.value})}
+                  placeholder="@username"
+                />
+              </EditRow>
+              <EditRow>
+                <EditLabel>Email</EditLabel>
+                <EditInput 
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                  placeholder="email@mail.com"
+                />
+              </EditRow>
+              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <SaveButton onClick={handleSave}>Сохранить</SaveButton>
+                <CancelButton onClick={() => setIsEditing(false)}>Отмена</CancelButton>
+              </div>
+            </EditForm>
           ) : (
-            /* ЧУЖОЙ ПРОФИЛЬ */
             <>
-              <SectionTitle>Контакты</SectionTitle>
-              <ContactSection>
-                <ContactItem>
-                  <ContactLabel>Telegram</ContactLabel>
-                  <ContactValue>{stats.telegram}</ContactValue>
-                </ContactItem>
-                {stats.email && (
-                  <ContactItem>
-                    <ContactLabel>Email</ContactLabel>
-                    <ContactValue>{stats.email}</ContactValue>
-                  </ContactItem>
-                )}
-              </ContactSection>
+              {/* О себе */}
+              {stats.bio && <UserBio>{stats.bio}</UserBio>}
+              {stats.stack && <UserStack>{stats.stack}</UserStack>}
+              {stats.experience && <UserStats>Опыт: {stats.experience}</UserStats>}
+              {stats.portfolio && <UserStats>Портфолио: {stats.portfolio}</UserStats>}
 
-              <InviteButton>
-                ПРИГЛАСИТЬ
-              </InviteButton>
+              <SectionDivider />
 
-              {stats.status === 'searching' && (
-                <StatusBadge $active style={{ marginTop: 12, display: 'inline-block' }}>
-                  🔍 ИЩЕТ
-                </StatusBadge>
+              {/* СТАТИСТИКА */}
+              <SectionTitle>Показатели</SectionTitle>
+              <StatsRow>
+                <StatItem>
+                  <StatNumber>{stats.total_days}</StatNumber>
+                  <StatLabel>дней</StatLabel>
+                </StatItem>
+                <StatItem>
+                  <StatNumber>{stats.current_streak}</StatNumber>
+                  <StatLabel>подряд</StatLabel>
+                </StatItem>
+                <StatItem>
+                  <StatNumber>{stats.max_streak}</StatNumber>
+                  <StatLabel>рекорд</StatLabel>
+                </StatItem>
+              </StatsRow>
+
+              {/* Активность */}
+              <ActivityBar>
+                <ActivityFill $width={monthPercent} />
+              </ActivityBar>
+              <ActivityLabel>
+                {stats.monthly_active}/30 дней · {stats.total_calls} вызовов 
+                {callsPercent > 0 && ` (+${callsPercent}%)`}
+              </ActivityLabel>
+
+              {/* Динамика */}
+              {stats.weekly_growth > 0 && (
+                <ActivityLabel style={{ marginTop: 8, color: '#4caf50' }}>
+                  ▲ +{stats.weekly_growth}% за неделю
+                </ActivityLabel>
+              )}
+
+              <SectionDivider />
+
+              {/* КОНТАКТЫ */}
+              {isOwnProfile ? (
+                /* СВОЙ ПРОФИЛЬ */
+                <>
+                  <SectionTitle>Контакты</SectionTitle>
+                  <ContactSection>
+                    {stats.telegram && (
+                      <ContactItem>
+                        <ContactLabel>Telegram</ContactLabel>
+                        <ContactValue>{stats.telegram}</ContactValue>
+                      </ContactItem>
+                    )}
+                    {stats.email && (
+                      <ContactItem>
+                        <ContactLabel>Email</ContactLabel>
+                        <ContactValue>{stats.email}</ContactValue>
+                      </ContactItem>
+                    )}
+                    <EditButton onClick={() => setIsEditing(true)}>✎ Редактировать</EditButton>
+                  </ContactSection>
+                </>
+              ) : (
+                /* ЧУЖОЙ ПРОФИЛЬ */
+                <>
+                  <SectionTitle>Контакты</SectionTitle>
+                  <ContactSection>
+                    {stats.telegram && (
+                      <ContactItem>
+                        <ContactLabel>Telegram</ContactLabel>
+                        <ContactValue>{stats.telegram}</ContactValue>
+                      </ContactItem>
+                    )}
+                    {stats.email && (
+                      <ContactItem>
+                        <ContactLabel>Email</ContactLabel>
+                        <ContactValue>{stats.email}</ContactValue>
+                      </ContactItem>
+                    )}
+                  </ContactSection>
+
+                  <InviteButton>
+                    ПРИГЛАСИТЬ
+                  </InviteButton>
+                </>
               )}
             </>
           )}

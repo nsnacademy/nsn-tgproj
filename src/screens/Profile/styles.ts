@@ -256,3 +256,72 @@ export const InviteButton = styled.button`
     background: #ffed4a;
   }
 `;
+
+export const EditForm = styled.div`
+  margin: 20px 0;
+`;
+
+export const EditRow = styled.div`
+  margin-bottom: 16px;
+`;
+
+export const EditLabel = styled.div`
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+`;
+
+export const EditInput = styled.input`
+  width: 100%;
+  padding: 12px;
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+
+  &:focus {
+    outline: none;
+    border-color: #ffd700;
+  }
+`;
+
+export const EditTextArea = styled.textarea`
+  width: 100%;
+  padding: 12px;
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  min-height: 80px;
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: #ffd700;
+  }
+`;
+
+export const SaveButton = styled.button`
+  flex: 1;
+  padding: 12px;
+  background: #ffd700;
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+`;
+
+export const CancelButton = styled.button`
+  flex: 1;
+  padding: 12px;
+  background: #222;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+`;
