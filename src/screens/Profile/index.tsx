@@ -45,6 +45,8 @@ import {
   CategoryTabs,
   CategoryTab,
   PortfolioLink,
+  ReturnToAppBanner,
+  ReturnButton,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -143,6 +145,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showReturnBanner, setShowReturnBanner] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [editForm, setEditForm] = useState({
     bio: '',
@@ -153,6 +156,53 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     email: '',
     role: 'developer' as 'developer' | 'designer' | 'manager' | 'other',
   });
+
+  // Проверяем, возвращаемся ли мы из браузера
+  useEffect(() => {
+    // Слушаем событие visibilitychange (когда пользователь возвращается в приложение)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Показываем баннер с предложением обновить данные
+        setShowReturnBanner(true);
+        
+        // Автоматически скрываем через 5 секунд
+        setTimeout(() => {
+          setShowReturnBanner(false);
+        }, 5000);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Слушаем событие focus (для некоторых браузеров)
+    const handleFocus = () => {
+      setShowReturnBanner(true);
+      setTimeout(() => {
+        setShowReturnBanner(false);
+      }, 5000);
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  // Функция для обновления данных при возвращении
+  const handleRefreshData = useCallback(async () => {
+    setShowReturnBanner(false);
+    
+    // Очищаем кэш для этого профиля
+    if (stats?.username) {
+      const cacheKey = `profile_${userId || (await getCurrentUser())?.id}`;
+      profileCache.delete(cacheKey);
+    }
+    
+    // Перезагружаем данные
+    window.location.reload();
+  }, [stats, userId]);
 
   // Мемоизация вычисляемых значений
   const monthPercent = useMemo(
@@ -481,7 +531,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, []);
 
-  // Объединенная функция для открытия во внешнем браузере
+  // Функция для открытия во внешнем браузере с поддержкой возврата
   const openInExternalBrowser = useCallback((url: string) => {
     // Добавляем https:// если нет протокола
     let fullUrl = url;
@@ -489,6 +539,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       fullUrl = 'https://' + url;
     }
 
+    // Сохраняем состояние перед уходом
+    localStorage.setItem('lastVisitedProfile', window.location.href);
+    
     // Определяем тип устройства
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
@@ -497,24 +550,14 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       if (isIOS) {
         // Для iOS используем специальную схему
         window.location.href = fullUrl;
-        
-        // Пробуем открыть в Safari, если приложение не перехватило
-        setTimeout(() => {
-          window.location.href = fullUrl;
-        }, 100);
       } 
       else if (isAndroid) {
         // Для Android создаем интент
         const intentUrl = `intent://${fullUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end;`;
         window.location.href = intentUrl;
-        
-        // Fallback
-        setTimeout(() => {
-          window.location.href = fullUrl;
-        }, 100);
       }
       else {
-        // Для десктопа и других устройств - используем создание ссылки
+        // Для десктопа и других устройств
         const anchor = document.createElement('a');
         anchor.href = fullUrl;
         anchor.target = '_blank';
@@ -523,7 +566,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       }
     } catch (error) {
       console.error('Error opening external browser:', error);
-      // Последний шанс - показываем ссылку
       alert(`Скопируйте ссылку для открытия в браузере:\n${fullUrl}`);
     }
   }, []);
@@ -570,6 +612,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
   return (
     <SafeArea>
+      {/* Фиксированная шапка */}
       <FixedHeader>
         <HeaderContent>
           <Title>Профиль</Title>
@@ -584,6 +627,17 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         </IndexBadge>
       </FixedHeader>
 
+      {/* Баннер для возврата из браузера */}
+      {showReturnBanner && (
+        <ReturnToAppBanner>
+          <Text>Вы вернулись из браузера</Text>
+          <ReturnButton onClick={handleRefreshData}>
+            Обновить данные
+          </ReturnButton>
+        </ReturnToAppBanner>
+      )}
+
+      {/* Скроллящийся контент */}
       <ScrollContent ref={scrollRef}>
         <Container>
           {isEditing ? (
@@ -692,7 +746,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                   onClick={() => openInExternalBrowser(stats.portfolio)}
                   role="button"
                   tabIndex={0}
-                  onKeyPress={(e) => {
+                  onKeyPress={(e: { key: string; }) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       openInExternalBrowser(stats.portfolio);
                     }

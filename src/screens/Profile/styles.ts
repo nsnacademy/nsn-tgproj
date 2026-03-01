@@ -407,69 +407,85 @@ export const ScrollContent = styled.div`
 `;
 
 // Замените существующий PortfolioLink на этот
-// Замените существующий PortfolioLink на этот
 export const PortfolioLink = styled.div`
   color: #ffd700;
   cursor: pointer;
   font-size: 15px;
   margin: 8px 0;
-  padding: 12px 16px;
+  padding: 8px 12px;
   background: #0a0a0a;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid #333;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: inline-block;
   transition: all 0.2s ease;
   word-break: break-all;
-  -webkit-tap-highlight-color: rgba(255, 215, 0, 0.2);
-  user-select: none;
-  touch-action: manipulation;
-
-  .domain {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .external-icon {
-    margin-left: 8px;
-    font-size: 18px;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-  }
 
   &:hover {
     background: #1a1a1a;
     border-color: #ffd700;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(255, 215, 0, 0.1);
-
-    .external-icon {
-      opacity: 1;
-    }
   }
 
   &:active {
-    background: #222;
     transform: translateY(0);
-    border-color: #ffd700;
-
-    .external-icon {
-      opacity: 1;
-    }
   }
 
   &::before {
     content: '🔗 ';
-    margin-right: 8px;
-    opacity: 0.9;
-    font-size: 16px;
+    margin-right: 4px;
+    opacity: 0.7;
+  }
+`;
+
+// Добавьте в конец файла
+export const ReturnToAppBanner = styled.div`
+  position: fixed;
+  top: 220px; /* Выше фиксированной шапки */
+  left: 20px;
+  right: 20px;
+  background: #1a1a1a;
+  border: 1px solid #ffd700;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 20;
+  animation: slideDown 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+
+  @keyframes slideDown {
+    from {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+`;
+
+export const ReturnButton = styled.button`
+  background: #ffd700;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #ffed4a;
+    transform: scale(1.05);
   }
 
-  &:focus-visible {
-    outline: 2px solid #ffd700;
-    outline-offset: 2px;
+  &:active {
+    transform: scale(0.95);
   }
 `;
