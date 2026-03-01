@@ -10,7 +10,7 @@ export const SafeArea = styled.div`
 
 export const Container = styled.div`
   flex: 1;
-  padding: 90px 20px 140px;
+  padding: 90px 20px 10px;
 `;
 
 export const Title = styled.h1`
