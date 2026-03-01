@@ -9,8 +9,8 @@ import {
   Option,
   Radio,
   Label,
-  SlidingInfo,
-  FloatingInfo,
+  InfoWrapper,
+  InfoContent,
   Explanation,
   Consent,
   Footer,
@@ -26,27 +26,72 @@ type Props = {
       | 'create-flow'
       | 'create-flow-free'
       | 'create-flow-paid'
+      | 'create-flow-condition'
+      | 'create-flow-invite'
   ) => void;
 };
 
-// Константы для текстов (вынесены для оптимизации)
+// Константы для текстов
 const FREE_INFO_TEXT = "Участие в вызове бесплатное. Все участники обязаны выполнять условия, заданные создателем.";
 
-const PAID_INFO_TEXTS = {
-  main: "Участники оплачивают участие напрямую создателю вызова. Платформа не участвует в переводе средств.",
-  terms: "Комиссия платформы — 10% от дохода. Расчёт производится автоматически."
+const CLOSED_INFO_TEXTS = {
+  title: "🔒 Закрытый вызов",
+  description: "Вы сами управляете доступом:",
+  options: [
+    "• Платный вход — участник платит взнос",
+    "• По условию — нужно выполнить требование",
+    "• По приглашению — только по ссылке/коду"
+  ],
+  commission: "💰 Комиссия платформы:",
+  commissionDetails: [
+    "• 15% от дохода с платных участников",
+    "• Оплачивает создатель вызова",
+    "• Расчёт автоматический по факту участия"
+  ],
+  warning: "⚠️ Важно:",
+  warningDetails: [
+    "• При нарушении правил вызов может быть удалён",
+    "• Спорные ситуации решаются в пользу платформы",
+    "• За мошенничество — блокировка без возврата средств"
+  ]
 };
 
-// Мемоизированный компонент для платной информации
-const PaidInfo = memo(({ accepted, onAccept }: { accepted: boolean; onAccept: () => void }) => (
+// Мемоизированный компонент для информации о закрытом вызове
+const ClosedInfo = memo(({ accepted, onAccept }: { accepted: boolean; onAccept: () => void }) => (
   <>
-    <Explanation>
-      {PAID_INFO_TEXTS.main}
+    <Explanation style={{ fontSize: 16, fontWeight: 600, opacity: 0.9, marginBottom: 8 }}>
+      {CLOSED_INFO_TEXTS.title}
     </Explanation>
 
-    <Explanation style={{ marginTop: 8, opacity: 0.7 }}>
-      {PAID_INFO_TEXTS.terms}
+    <Explanation style={{ marginBottom: 4 }}>
+      {CLOSED_INFO_TEXTS.description}
     </Explanation>
+    
+    {CLOSED_INFO_TEXTS.options.map((text, idx) => (
+      <Explanation key={`opt-${idx}`} style={{ marginLeft: 8, opacity: 0.8 }}>
+        {text}
+      </Explanation>
+    ))}
+
+    <Explanation style={{ marginTop: 12, marginBottom: 4, fontWeight: 500 }}>
+      {CLOSED_INFO_TEXTS.commission}
+    </Explanation>
+    
+    {CLOSED_INFO_TEXTS.commissionDetails.map((text, idx) => (
+      <Explanation key={`comm-${idx}`} style={{ marginLeft: 8, opacity: 0.8 }}>
+        {text}
+      </Explanation>
+    ))}
+
+    <Explanation style={{ marginTop: 12, marginBottom: 4, fontWeight: 500, color: '#FFA500' }}>
+      {CLOSED_INFO_TEXTS.warning}
+    </Explanation>
+    
+    {CLOSED_INFO_TEXTS.warningDetails.map((text, idx) => (
+      <Explanation key={`warn-${idx}`} style={{ marginLeft: 8, opacity: 0.8, color: '#FFA500' }}>
+        {text}
+      </Explanation>
+    ))}
 
     <Consent onClick={onAccept} $checked={accepted}>
       <input 
@@ -56,13 +101,13 @@ const PaidInfo = memo(({ accepted, onAccept }: { accepted: boolean; onAccept: ()
         aria-label="Согласие с условиями"
       />
       <span>
-        Я согласен с условиями платформы
+        Я ознакомлен и принимаю условия
       </span>
     </Consent>
   </>
 ));
 
-PaidInfo.displayName = 'PaidInfo';
+ClosedInfo.displayName = 'ClosedInfo';
 
 // Мемоизированный компонент для бесплатной информации
 const FreeInfo = memo(() => (
@@ -74,24 +119,23 @@ const FreeInfo = memo(() => (
 FreeInfo.displayName = 'FreeInfo';
 
 export function CreateFlow({ onNavigate }: Props) {
-  const [entryType, setEntryType] = useState<'free' | 'paid' | null>(null);
+  const [accessType, setAccessType] = useState<'open' | 'closed' | null>(null);
   const [accepted, setAccepted] = useState(false);
 
   // Мемоизация условия возможности продолжения
   const canContinue = useMemo(
-    () => entryType === 'free' || (entryType === 'paid' && accepted),
-    [entryType, accepted]
+    () => accessType === 'open' || (accessType === 'closed' && accepted),
+    [accessType, accepted]
   );
 
   // Мемоизированные обработчики
-  const handleFreeClick = useCallback(() => {
-    setEntryType('free');
+  const handleOpenClick = useCallback(() => {
+    setAccessType('open');
     setAccepted(false);
   }, []);
 
-  const handlePaidClick = useCallback(() => {
-    setEntryType('paid');
-    // Не сбрасываем accepted при переключении на paid
+  const handleClosedClick = useCallback(() => {
+    setAccessType('closed');
   }, []);
 
   const handleAcceptToggle = useCallback(() => {
@@ -101,12 +145,13 @@ export function CreateFlow({ onNavigate }: Props) {
   const handleNext = useCallback(() => {
     if (!canContinue) return;
 
-    if (entryType === 'free') {
+    if (accessType === 'open') {
       onNavigate('create-flow-free');
-    } else if (entryType === 'paid') {
-      onNavigate('create-flow-paid');
+    } else if (accessType === 'closed') {
+      // TODO: Создать экран выбора типа закрытого вызова
+      onNavigate('create-flow-paid'); // временно, потом заменить на экран выбора
     }
-  }, [canContinue, entryType, onNavigate]);
+  }, [canContinue, accessType, onNavigate]);
 
   const handleBack = useCallback(() => {
     onNavigate('create');
@@ -118,43 +163,47 @@ export function CreateFlow({ onNavigate }: Props) {
         <Title>Тип доступа к вызову</Title>
 
         <Options>
-          {/* ===== FREE ===== */}
+          {/* ===== OPEN ===== */}
           <OptionWrap>
             <Option
-              $active={entryType === 'free'}
-              onClick={handleFreeClick}
+              $active={accessType === 'open'}
+              onClick={handleOpenClick}
             >
-              <Radio $checked={entryType === 'free'} />
+              <Radio $checked={accessType === 'open'} />
               <Label>
                 Открытый вызов
-                <span>Бесплатное участие, вход без подтверждения</span>
+                <span>Свободный вход, без подтверждения</span>
               </Label>
             </Option>
 
-            <SlidingInfo $open={entryType === 'free'}>
-              <FreeInfo />
-            </SlidingInfo>
+            <InfoWrapper $isVisible={accessType === 'open'}>
+              <InfoContent>
+                <FreeInfo />
+              </InfoContent>
+            </InfoWrapper>
           </OptionWrap>
 
-          {/* ===== PAID ===== */}
+          {/* ===== CLOSED ===== */}
           <OptionWrap>
             <Option
-              $active={entryType === 'paid'}
-              onClick={handlePaidClick}
+              $active={accessType === 'closed'}
+              onClick={handleClosedClick}
             >
-              <Radio $checked={entryType === 'paid'} />
+              <Radio $checked={accessType === 'closed'} />
               <Label>
                 Закрытый вызов
-                <span>Платный вход или доступ по условию</span>
+                <span>Управляйте доступом: платный, по условию, по приглашению</span>
               </Label>
             </Option>
 
-            <FloatingInfo $open={entryType === 'paid'}>
-              <PaidInfo 
-                accepted={accepted} 
-                onAccept={handleAcceptToggle}
-              />
-            </FloatingInfo>
+            <InfoWrapper $isVisible={accessType === 'closed'}>
+              <InfoContent>
+                <ClosedInfo 
+                  accepted={accepted} 
+                  onAccept={handleAcceptToggle}
+                />
+              </InfoContent>
+            </InfoWrapper>
           </OptionWrap>
         </Options>
       </Center>
