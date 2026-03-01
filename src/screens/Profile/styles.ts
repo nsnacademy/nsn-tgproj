@@ -406,15 +406,34 @@ export const ScrollContent = styled.div`
   }
 `;
 
-// Добавьте в конец файла со стилями
-export const PortfolioLink = styled.span`
+// Замените существующий PortfolioLink на этот
+export const PortfolioLink = styled.div`
   color: #ffd700;
   cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: rgba(255, 215, 0, 0.3);
+  font-size: 15px;
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: #0a0a0a;
+  border-radius: 8px;
+  border: 1px solid #333;
+  display: inline-block;
   transition: all 0.2s ease;
+  word-break: break-all;
 
   &:hover {
-    text-decoration-color: #ffd700;
+    background: #1a1a1a;
+    border-color: #ffd700;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &::before {
+    content: '🔗 ';
+    margin-right: 4px;
+    opacity: 0.7;
   }
 `;

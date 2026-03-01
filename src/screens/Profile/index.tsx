@@ -482,7 +482,28 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   }, []);
 
   const handlePortfolioClick = useCallback((url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    // Добавляем https:// если нет протокола
+    let fullUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      fullUrl = 'https://' + url;
+    }
+    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+  }, []);
+
+  // Функция для отображения домена из ссылки
+  const getDomainFromUrl = useCallback((url: string) => {
+    try {
+      // Добавляем протокол для парсинга, если его нет
+      let urlToParse = url;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        urlToParse = 'https://' + url;
+      }
+      const domain = new URL(urlToParse).hostname.replace('www.', '');
+      return domain;
+    } catch {
+      // Если не удалось распарсить, возвращаем сокращенную ссылку
+      return url.length > 30 ? url.substring(0, 30) + '...' : url;
+    }
   }, []);
 
   useEffect(() => {
@@ -628,6 +649,13 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               {stats.bio && <UserBio>{stats.bio}</UserBio>}
               {stats.stack && <UserStack>{stats.stack}</UserStack>}
               {stats.experience && <UserStats>Опыт: {stats.experience}</UserStats>}
+              
+              {/* Кликабельное портфолио */}
+              {stats.portfolio && (
+                <PortfolioLink onClick={() => handlePortfolioClick(stats.portfolio)}>
+                  {getDomainFromUrl(stats.portfolio)}
+                </PortfolioLink>
+              )}
 
               <SectionDivider />
 
@@ -671,29 +699,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
               {isOwnProfile ? (
                 <>
-                  <SectionTitle>Контакты и ссылки</SectionTitle>
+                  <SectionTitle>Контакты</SectionTitle>
                   <ContactSection>
-                    {stats.portfolio && (
-                      <ContactItem>
-                        <ContactLabel>Портфолио</ContactLabel>
-                        <ContactValue>
-                          <PortfolioLink 
-                            onClick={() => handlePortfolioClick(stats.portfolio)}
-                            title="Открыть в новой вкладке"
-                          >
-                            {stats.portfolio.length > 30 
-                              ? stats.portfolio.substring(0, 30) + '...' 
-                              : stats.portfolio}
-                          </PortfolioLink>
-                          <CopyIcon
-                            onClick={() => handleCopy(stats.portfolio, 'portfolio')}
-                            title={copied === 'portfolio' ? 'Скопировано!' : 'Копировать ссылку'}
-                          >
-                            📋
-                          </CopyIcon>
-                        </ContactValue>
-                      </ContactItem>
-                    )}
                     {stats.telegram && (
                       <ContactItem>
                         <ContactLabel>Telegram</ContactLabel>
@@ -729,29 +736,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                 </>
               ) : (
                 <>
-                  <SectionTitle>Контакты и ссылки</SectionTitle>
+                  <SectionTitle>Контакты</SectionTitle>
                   <ContactSection>
-                    {stats.portfolio && (
-                      <ContactItem>
-                        <ContactLabel>Портфолио</ContactLabel>
-                        <ContactValue>
-                          <PortfolioLink 
-                            onClick={() => handlePortfolioClick(stats.portfolio)}
-                            title="Открыть в новой вкладке"
-                          >
-                            {stats.portfolio.length > 30 
-                              ? stats.portfolio.substring(0, 30) + '...' 
-                              : stats.portfolio}
-                          </PortfolioLink>
-                          <CopyIcon
-                            onClick={() => handleCopy(stats.portfolio, 'portfolio')}
-                            title={copied === 'portfolio' ? 'Скопировано!' : 'Копировать ссылку'}
-                          >
-                            📋
-                          </CopyIcon>
-                        </ContactValue>
-                      </ContactItem>
-                    )}
                     {stats.telegram && (
                       <ContactItem>
                         <ContactLabel>Telegram</ContactLabel>
