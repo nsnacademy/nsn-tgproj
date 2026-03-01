@@ -143,20 +143,33 @@ export const Explanation = styled.div`
 `;
 
 /* === CONSENT === */
-export const Consent = styled.div`
-  margin-top: 12px;
+// Обновите Consent
+export const Consent = styled.div<{ $checked?: boolean }>`
+  margin-top: 16px;
   display: flex;
   gap: 10px;
-  align-items: flex-start;
-
-  font-size: 13px;
-  line-height: 1.4;
-  opacity: 0.9;
-
+  align-items: center;
+  font-size: 14px;
   cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: ${({ $checked }) => $checked ? 'rgba(255, 215, 0, 0.1)' : 'transparent'};
+  transition: background 0.2s ease;
 
   input {
-    margin-top: 3px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #FFD700;
+  }
+
+  span {
+    color: ${({ $checked }) => $checked ? '#FFD700' : '#fff'};
+    font-weight: ${({ $checked }) => $checked ? 500 : 400};
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
   }
 `;
 
