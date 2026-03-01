@@ -29,6 +29,7 @@ export const Text = styled.p`
 export const Toggle = styled.div<{ $active: boolean; $disabled?: boolean }>`
   width: 46px;
   height: 26px;
+  margin-top: -10px;
   border-radius: 13px;
   background: ${({ $active }) => $active ? '#fff' : 'rgba(255,255,255,0.3)'};
   position: relative;
@@ -50,9 +51,9 @@ export const ToggleKnob = styled.div<{ $active: boolean }>`
 
 // Новые стили
 export const UserName = styled.h2`
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 10px;
 `;
 
 export const UserHandle = styled.div`
@@ -96,7 +97,7 @@ export const IndexBadge = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 16px 0;
+  margin: 0 0;
 `;
 
 export const IndexValue = styled.span`
