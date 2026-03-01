@@ -37,7 +37,9 @@ export const Options = styled.div`
 
 /* === OPTION WRAP === */
 export const OptionWrap = styled.div`
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 `;
 
 /* === OPTION === */
@@ -57,25 +59,27 @@ export const Option = styled.div<{ $active?: boolean }>`
   }
 `;
 
-/* === RADIO === */
+/* === FIXED RADIO === */
 export const Radio = styled.div<{ $checked?: boolean }>`
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   border: 2px solid ${({ $checked }) => ($checked ? '#fff' : '#555')};
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+`;
 
-  &::after {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #fff;
-    opacity: ${({ $checked }) => ($checked ? 1 : 0)};
-    transition: opacity 0.2s ease;
-  }
+export const RadioInner = styled.div<{ $checked?: boolean }>`
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: ${({ $checked }) => ($checked ? 1 : 0)};
+  transition: opacity 0.2s ease;
 `;
 
 /* === LABEL === */
@@ -83,6 +87,7 @@ export const Label = styled.div`
   display: flex;
   flex-direction: column;
   font-size: 16px;
+  flex: 1;
 
   span {
     font-size: 14px;
@@ -91,25 +96,14 @@ export const Label = styled.div`
   }
 `;
 
-/* === OPTIMIZED INFO WRAPPER === */
-export const InfoWrapper = styled.div<{ $isVisible?: boolean }>`
-  display: grid;
-  grid-template-rows: ${({ $isVisible }) => ($isVisible ? '1fr' : '0fr')};
-  opacity: ${({ $isVisible }) => ($isVisible ? 1 : 0)};
-  transition: 
-    grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.2s ease;
-  margin-top: ${({ $isVisible }) => ($isVisible ? '12px' : '0')};
-`;
-
-export const InfoContent = styled.div`
-  min-height: 0;
-  overflow: hidden;
+/* === INFO BLOCK (NO ANIMATION) === */
+export const InfoBlock = styled.div`
   padding: 16px 18px;
   background: #111;
   border: 1px solid #333;
   border-radius: 16px;
   line-height: 1.5;
+  margin-top: 4px;
 `;
 
 /* === EXPLANATION === */
@@ -129,7 +123,7 @@ export const Consent = styled.div<{ $checked?: boolean }>`
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 12px;
-  background: ${({ $checked }) => $checked ? 'rgba(255, 215, 0, 0.1)' : 'transparent'};
+  background: ${({ $checked }) => ($checked ? 'rgba(255, 215, 0, 0.1)' : 'transparent')};
   transition: background 0.2s ease;
 
   input {
@@ -137,11 +131,12 @@ export const Consent = styled.div<{ $checked?: boolean }>`
     height: 18px;
     cursor: pointer;
     accent-color: #FFD700;
+    margin: 0;
   }
 
   span {
-    color: ${({ $checked }) => $checked ? '#FFD700' : '#fff'};
-    font-weight: ${({ $checked }) => $checked ? 500 : 400};
+    color: ${({ $checked }) => ($checked ? '#FFD700' : '#fff')};
+    font-weight: ${({ $checked }) => ($checked ? 500 : 400)};
   }
 
   &:hover {
@@ -155,7 +150,7 @@ export const Footer = styled.div`
   gap: 12px;
   max-width: 420px;
   width: 100%;
-  margin: 0 auto;
+  margin: 20px auto 0;
 `;
 
 /* === BUTTONS === */
@@ -190,6 +185,6 @@ export const NextButton = styled.button<{ disabled?: boolean }>`
   transition: opacity 0.2s ease;
 
   &:hover {
-    background: ${({ disabled }) => disabled ? '#fff' : '#f0f0f0'};
+    background: ${({ disabled }) => (disabled ? '#fff' : '#f0f0f0')};
   }
 `;

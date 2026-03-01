@@ -8,9 +8,9 @@ import {
   OptionWrap,
   Option,
   Radio,
+  RadioInner,
   Label,
-  InfoWrapper,
-  InfoContent,
+  InfoBlock,
   Explanation,
   Consent,
   Footer,
@@ -149,7 +149,7 @@ export function CreateFlow({ onNavigate }: Props) {
       onNavigate('create-flow-free');
     } else if (accessType === 'closed') {
       // TODO: Создать экран выбора типа закрытого вызова
-      onNavigate('create-flow-paid'); // временно, потом заменить на экран выбора
+      onNavigate('create-flow-paid');
     }
   }, [canContinue, accessType, onNavigate]);
 
@@ -169,18 +169,20 @@ export function CreateFlow({ onNavigate }: Props) {
               $active={accessType === 'open'}
               onClick={handleOpenClick}
             >
-              <Radio $checked={accessType === 'open'} />
+              <Radio $checked={accessType === 'open'}>
+                <RadioInner $checked={accessType === 'open'} />
+              </Radio>
               <Label>
                 Открытый вызов
                 <span>Свободный вход, без подтверждения</span>
               </Label>
             </Option>
 
-            <InfoWrapper $isVisible={accessType === 'open'}>
-              <InfoContent>
+            {accessType === 'open' && (
+              <InfoBlock>
                 <FreeInfo />
-              </InfoContent>
-            </InfoWrapper>
+              </InfoBlock>
+            )}
           </OptionWrap>
 
           {/* ===== CLOSED ===== */}
@@ -189,21 +191,23 @@ export function CreateFlow({ onNavigate }: Props) {
               $active={accessType === 'closed'}
               onClick={handleClosedClick}
             >
-              <Radio $checked={accessType === 'closed'} />
+              <Radio $checked={accessType === 'closed'}>
+                <RadioInner $checked={accessType === 'closed'} />
+              </Radio>
               <Label>
                 Закрытый вызов
                 <span>Управляйте доступом: платный, по условию, по приглашению</span>
               </Label>
             </Option>
 
-            <InfoWrapper $isVisible={accessType === 'closed'}>
-              <InfoContent>
+            {accessType === 'closed' && (
+              <InfoBlock>
                 <ClosedInfo 
                   accepted={accepted} 
                   onAccept={handleAcceptToggle}
                 />
-              </InfoContent>
-            </InfoWrapper>
+              </InfoBlock>
+            )}
           </OptionWrap>
         </Options>
       </Center>
@@ -216,7 +220,6 @@ export function CreateFlow({ onNavigate }: Props) {
         <NextButton 
           disabled={!canContinue} 
           onClick={handleNext}
-          aria-disabled={!canContinue}
         >
           Далее
         </NextButton>
