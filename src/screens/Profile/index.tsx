@@ -301,172 +301,153 @@ const calculateWeeklyGrowth = useCallback(async (targetUserId: string) => {
 }, []);
 
   // Загрузка данных с реальным расчетом роста
-  useEffect(() => {
-    let mounted = true;
+  // Загрузка данных с реальным расчетом роста и ранга
+useEffect(() => {
+  let mounted = true;
 
-    async function loadData() {
-      console.log('🔄 [PROFILE] Загрузка данных профиля...');
-      
-      const currentUser = (await getCurrentUser()) as SupabaseUser | null;
-      if (!currentUser || !mounted) {
-        console.log('❌ [PROFILE] Нет текущего пользователя');
-        setIsLoading(false);
-        return;
-      }
-
-      const targetUserId = userId || currentUser.id;
-      const cacheKey = `profile_${targetUserId}`;
-
-      console.log('🎯 [PROFILE] Целевой пользователь:', { 
-        targetUserId, 
-        currentUserId: currentUser.id,
-        isOwn: targetUserId === currentUser.id 
-      });
-
-      // Проверка кэша - если есть, показываем сразу без загрузки
-      const cached = profileCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        console.log('💾 [PROFILE] Данные из кэша:', cached.data);
-        if (mounted) {
-          setStats(cached.data);
-          setEditForm({
-            bio: cached.data.bio,
-            stack: cached.data.stack,
-            experience: cached.data.experience,
-            portfolio: cached.data.portfolio,
-            telegram: cached.data.telegram,
-            email: cached.data.email,
-            role: cached.data.role,
-          });
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      // Если нет кэша, показываем скелетон
-      setIsLoading(true);
-
-      try {
-        console.log('🔍 [PROFILE] Запрос к БД...');
-        
-        const [allUsersResult, userStatsResult, profileResult, weeklyGrowth] = await Promise.all([
-          supabase
-            .from('users')
-            .select('power_index', { count: 'exact', head: true })
-            .order('power_index', { ascending: false }),
-
-          supabase
-            .from('users')
-            .select(
-              `
-              username, 
-              total_days, 
-              total_challenges, 
-              current_streak, 
-              max_streak, 
-              power_index
-            `
-            )
-            .eq('id', targetUserId)
-            .single(),
-
-          supabase
-            .from('profiles')
-            .select('bio, stack, experience, portfolio, telegram, email, role')
-            .eq('user_id', targetUserId)
-            .maybeSingle(),
-
-          calculateWeeklyGrowth(targetUserId),
-        ]);
-
-        if (!mounted) return;
-
-        console.log('📥 [PROFILE] Результаты запросов:', {
-          allUsersCount: allUsersResult.count,
-          userStats: userStatsResult.data,
-          profileData: profileResult.data,
-          weeklyGrowth
-        });
-
-        if (userStatsResult.error) {
-          console.error('❌ [PROFILE] Ошибка получения статистики:', userStatsResult.error);
-        }
-
-        if (userStatsResult.data) {
-          let percentile = 50;
-          let rank = 0;
-          const totalUsers = allUsersResult.count || 1;
-
-          if (totalUsers > 0 && userStatsResult.data.power_index !== undefined) {
-            // Приблизительный расчет ранга на основе индекса
-            rank = Math.floor((100 - userStatsResult.data.power_index) * totalUsers) / 100 + 1;
-            rank = Math.max(1, Math.min(totalUsers, Math.round(rank)));
-            percentile = Math.round(((totalUsers - rank) / totalUsers) * 100);
-            
-            console.log('📊 [PROFILE] Расчет ранга:', {
-              power_index: userStatsResult.data.power_index,
-              totalUsers,
-              rank,
-              percentile
-            });
-          }
-
-          const newStats = {
-            username: userStatsResult.data.username || 'user',
-            bio: profileResult.data?.bio || '',
-            stack: profileResult.data?.stack || '',
-            experience: profileResult.data?.experience || '',
-            portfolio: profileResult.data?.portfolio || '',
-            telegram: profileResult.data?.telegram || '',
-            email: profileResult.data?.email || '',
-            role: profileResult.data?.role || 'developer',
-            total_days: userStatsResult.data.total_days || 0,
-            total_challenges: userStatsResult.data.total_challenges || 0,
-            current_streak: userStatsResult.data.current_streak || 0,
-            max_streak: userStatsResult.data.max_streak || 0,
-            power_index: userStatsResult.data.power_index || 0,
-            total_calls: userStatsResult.data.total_challenges || 0,
-            monthly_active: Math.min(30, userStatsResult.data.total_days || 0),
-            weekly_growth: weeklyGrowth,
-            percentile,
-            rank: Math.round(rank),
-            total_users: totalUsers,
-            hashtag: getHashtag(userStatsResult.data.power_index || 0),
-          };
-
-          console.log('✅ [PROFILE] Итоговые данные профиля:', newStats);
-
-          profileCache.set(cacheKey, { data: newStats, timestamp: Date.now() });
-
-          setStats(newStats);
-          setEditForm({
-            bio: newStats.bio,
-            stack: newStats.stack,
-            experience: newStats.experience,
-            portfolio: newStats.portfolio,
-            telegram: newStats.telegram,
-            email: newStats.email,
-            role: newStats.role,
-          });
-        } else {
-          console.warn('⚠️ [PROFILE] Нет данных пользователя');
-        }
-      } catch (error) {
-        console.error('💥 [PROFILE] Критическая ошибка:', error);
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-          console.log('🏁 [PROFILE] Загрузка завершена');
-        }
-      }
+  async function loadData() {
+    console.log('🔄 [PROFILE] Загрузка данных профиля...');
+    
+    const currentUser = (await getCurrentUser()) as SupabaseUser | null;
+    if (!currentUser || !mounted) {
+      console.log('❌ [PROFILE] Нет текущего пользователя');
+      setIsLoading(false);
+      return;
     }
 
-    loadData();
+    const targetUserId = userId || currentUser.id;
+    const cacheKey = `profile_${targetUserId}`;
 
-    return () => {
-      mounted = false;
-    };
-  }, [userId, calculateWeeklyGrowth]);
+    console.log('🎯 [PROFILE] Целевой пользователь:', { 
+      targetUserId, 
+      currentUserId: currentUser.id,
+      isOwn: targetUserId === currentUser.id 
+    });
+
+    // Проверка кэша - если есть, показываем сразу без загрузки
+    const cached = profileCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log('💾 [PROFILE] Данные из кэша:', cached.data);
+      if (mounted) {
+        setStats(cached.data);
+        setEditForm({
+          bio: cached.data.bio,
+          stack: cached.data.stack,
+          experience: cached.data.experience,
+          portfolio: cached.data.portfolio,
+          telegram: cached.data.telegram,
+          email: cached.data.email,
+          role: cached.data.role,
+        });
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // Если нет кэша, показываем скелетон
+    setIsLoading(true);
+
+    try {
+      console.log('🔍 [PROFILE] Запрос к БД...');
+      
+      // Получаем данные пользователя и профиль
+      const [userStatsResult, profileResult, weeklyGrowth] = await Promise.all([
+        supabase
+          .from('users')
+          .select(
+            `
+            username, 
+            total_days, 
+            total_challenges, 
+            current_streak, 
+            max_streak, 
+            power_index
+          `
+          )
+          .eq('id', targetUserId)
+          .single(),
+
+        supabase
+          .from('profiles')
+          .select('bio, stack, experience, portfolio, telegram, email, role')
+          .eq('user_id', targetUserId)
+          .maybeSingle(),
+
+        calculateWeeklyGrowth(targetUserId),
+      ]);
+
+      if (!mounted) return;
+
+      console.log('📥 [PROFILE] Результаты запросов:', {
+        userStats: userStatsResult.data,
+        profileData: profileResult.data,
+        weeklyGrowth
+      });
+
+      if (userStatsResult.error) {
+        console.error('❌ [PROFILE] Ошибка получения статистики:', userStatsResult.error);
+      }
+
+      if (userStatsResult.data) {
+        // Получаем точный ранг пользователя
+        const { rank, totalUsers, percentile } = await getUserRank(targetUserId);
+
+        const newStats = {
+          username: userStatsResult.data.username || 'user',
+          bio: profileResult.data?.bio || '',
+          stack: profileResult.data?.stack || '',
+          experience: profileResult.data?.experience || '',
+          portfolio: profileResult.data?.portfolio || '',
+          telegram: profileResult.data?.telegram || '',
+          email: profileResult.data?.email || '',
+          role: profileResult.data?.role || 'developer',
+          total_days: userStatsResult.data.total_days || 0,
+          total_challenges: userStatsResult.data.total_challenges || 0,
+          current_streak: userStatsResult.data.current_streak || 0,
+          max_streak: userStatsResult.data.max_streak || 0,
+          power_index: userStatsResult.data.power_index || 0,
+          total_calls: userStatsResult.data.total_challenges || 0,
+          monthly_active: Math.min(30, userStatsResult.data.total_days || 0),
+          weekly_growth: weeklyGrowth,
+          percentile,
+          rank,
+          total_users: totalUsers,
+          hashtag: getHashtag(userStatsResult.data.power_index || 0),
+        };
+
+        console.log('✅ [PROFILE] Итоговые данные профиля:', newStats);
+
+        profileCache.set(cacheKey, { data: newStats, timestamp: Date.now() });
+
+        setStats(newStats);
+        setEditForm({
+          bio: newStats.bio,
+          stack: newStats.stack,
+          experience: newStats.experience,
+          portfolio: newStats.portfolio,
+          telegram: newStats.telegram,
+          email: newStats.email,
+          role: newStats.role,
+        });
+      } else {
+        console.warn('⚠️ [PROFILE] Нет данных пользователя');
+      }
+    } catch (error) {
+      console.error('💥 [PROFILE] Критическая ошибка:', error);
+    } finally {
+      if (mounted) {
+        setIsLoading(false);
+        console.log('🏁 [PROFILE] Загрузка завершена');
+      }
+    }
+  }
+
+  loadData();
+
+  return () => {
+    mounted = false;
+  };
+}, [userId, calculateWeeklyGrowth]);
 
   useEffect(() => {
     let mounted = true;
@@ -974,4 +955,8 @@ const calculateWeeklyGrowth = useCallback(async (targetUserId: string) => {
       </BottomNav>
     </SafeArea>
   );
+}
+
+function getUserRank(_targetUserId: string): { rank: any; totalUsers: any; percentile: any; } | PromiseLike<{ rank: any; totalUsers: any; percentile: any; }> {
+  throw new Error('Function not implemented.');
 }
