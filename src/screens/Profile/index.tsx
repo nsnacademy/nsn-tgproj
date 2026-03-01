@@ -220,55 +220,80 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   }, [userId]);
 
   // Функция для расчета недельного роста
-  // Функция для расчета недельного роста через participants
+  // Функция для расчета недельного роста
 const calculateWeeklyGrowth = useCallback(async (targetUserId: string) => {
   try {
     console.log('📈 [PROFILE] Расчет недельного роста для пользователя:', targetUserId);
     
+    const now = new Date();
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-    // Используем таблицу participants
-    const { data: activities, error } = await supabase
+    console.log('📅 [PROFILE] Диапазон дат:', {
+      fourteenDaysAgo: fourteenDaysAgo.toISOString(),
+      sevenDaysAgo: sevenDaysAgo.toISOString(),
+      now: now.toISOString()
+    });
+
+    // Получаем все участия пользователя в челленджах
+    const { data: participations, error } = await supabase
       .from('participants')
-      .select('created_at')
+      .select('joined_at, challenge_id, completed')
       .eq('user_id', targetUserId)
-      .gte('created_at', fourteenDaysAgo.toISOString())
-      .order('created_at', { ascending: true });
+      .gte('joined_at', fourteenDaysAgo.toISOString())
+      .order('joined_at', { ascending: true });
 
     if (error) {
-      console.error('❌ [PROFILE] Ошибка получения активностей:', error);
+      console.error('❌ [PROFILE] Ошибка получения участий:', error);
       return 0;
     }
 
-    if (!activities || activities.length < 2) {
-      console.log('⚠️ [PROFILE] Недостаточно данных для расчета роста');
+    console.log('📊 [PROFILE] Участий за 14 дней:', participations?.length || 0);
+    
+    if (participations && participations.length > 0) {
+      console.log('📅 [PROFILE] Даты участий:', participations.map(p => new Date(p.joined_at).toLocaleDateString()));
+    }
+
+    if (!participations || participations.length < 2) {
+      console.log('⚠️ [PROFILE] Недостаточно данных для расчета роста (<2 участий)');
       return 0;
     }
 
-    const now = new Date();
-    const oneWeekAgo = new Date(now.setDate(now.getDate() - 7));
-
-    const lastWeek = activities.filter(
-      (a) => new Date(a.created_at) >= oneWeekAgo
+    // Разбиваем на две недели
+    const lastWeek = participations.filter(
+      (p) => new Date(p.joined_at) >= sevenDaysAgo
     ).length;
 
-    const previousWeek = activities.filter(
-      (a) => new Date(a.created_at) < oneWeekAgo
+    const previousWeek = participations.filter(
+      (p) => new Date(p.joined_at) < sevenDaysAgo
     ).length;
 
-    console.log('📅 [PROFILE] Недели:', { lastWeek, previousWeek });
+    console.log('📅 [PROFILE] Недели:', { 
+      lastWeek, 
+      previousWeek,
+      lastWeekDates: participations.filter(p => new Date(p.joined_at) >= sevenDaysAgo).map(p => new Date(p.joined_at).toLocaleDateString()),
+      previousWeekDates: participations.filter(p => new Date(p.joined_at) < sevenDaysAgo).map(p => new Date(p.joined_at).toLocaleDateString())
+    });
 
     if (previousWeek === 0) {
-      return lastWeek > 0 ? 100 : 0;
+      const result = lastWeek > 0 ? 100 : 0;
+      console.log('📈 [PROFILE] Рост (пред. неделя пуста):', result);
+      return result;
     }
 
     const growth = Math.round(((lastWeek - previousWeek) / previousWeek) * 100);
-    return Math.max(-100, Math.min(1000, growth));
+    const clamped = Math.max(-100, Math.min(1000, growth));
     
+    console.log('📈 [PROFILE] Рост рассчитан:', { 
+      raw: growth, 
+      clamped,
+      formula: `${lastWeek} - ${previousWeek} / ${previousWeek} * 100 = ${growth}%`
+    });
+    
+    return clamped;
   } catch (error) {
     console.error('❌ [PROFILE] Ошибка расчета роста:', error);
     return 0;
