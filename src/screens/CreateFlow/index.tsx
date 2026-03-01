@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 
 import {
   SafeArea,
@@ -43,6 +43,55 @@ const PAID_INFO_TEXTS = {
     "• при несоблюдении условий данные вызова могут быть аннулированы"
   ]
 };
+
+// Мемоизированный компонент для платной информации
+const PaidInfo = memo(({ accepted, onAccept }: { accepted: boolean; onAccept: () => void }) => (
+  <>
+    <Explanation>
+      {PAID_INFO_TEXTS.main}
+    </Explanation>
+
+    <Explanation style={{ marginTop: 6 }}>
+      {PAID_INFO_TEXTS.platform}
+    </Explanation>
+
+    <Explanation style={{ marginTop: 6 }}>
+      {PAID_INFO_TEXTS.creator}
+    </Explanation>
+
+    <Explanation style={{ marginTop: 6, opacity: 0.55 }}>
+      {PAID_INFO_TEXTS.terms.map((text, index) => (
+        <span key={index}>
+          {text}
+          {index < PAID_INFO_TEXTS.terms.length - 1 && <br />}
+        </span>
+      ))}
+    </Explanation>
+
+    <Consent onClick={onAccept}>
+      <input 
+        type="checkbox" 
+        checked={accepted} 
+        readOnly 
+        aria-label="Принять условия"
+      />
+      <span>
+        Я принимаю условия и рассчет вознаграждения платформе
+      </span>
+    </Consent>
+  </>
+));
+
+PaidInfo.displayName = 'PaidInfo';
+
+// Мемоизированный компонент для бесплатной информации
+const FreeInfo = memo(() => (
+  <Explanation>
+    {FREE_INFO_TEXT}
+  </Explanation>
+));
+
+FreeInfo.displayName = 'FreeInfo';
 
 export function CreateFlow({ onNavigate }: Props) {
   const [entryType, setEntryType] = useState<'free' | 'paid' | null>(null);
@@ -102,9 +151,7 @@ export function CreateFlow({ onNavigate }: Props) {
             </Option>
 
             <SlidingInfo $open={entryType === 'free'}>
-              <Explanation>
-                {FREE_INFO_TEXT}
-              </Explanation>
+              <FreeInfo />
             </SlidingInfo>
           </OptionWrap>
 
@@ -122,38 +169,10 @@ export function CreateFlow({ onNavigate }: Props) {
             </Option>
 
             <FloatingInfo $open={entryType === 'paid'}>
-              <Explanation>
-                {PAID_INFO_TEXTS.main}
-              </Explanation>
-
-              <Explanation style={{ marginTop: 6 }}>
-                {PAID_INFO_TEXTS.platform}
-              </Explanation>
-
-              <Explanation style={{ marginTop: 6 }}>
-                {PAID_INFO_TEXTS.creator}
-              </Explanation>
-
-              <Explanation style={{ marginTop: 6, opacity: 0.55 }}>
-                {PAID_INFO_TEXTS.terms.map((text, index) => (
-                  <span key={index}>
-                    {text}
-                    {index < PAID_INFO_TEXTS.terms.length - 1 && <br />}
-                  </span>
-                ))}
-              </Explanation>
-
-              <Consent onClick={handleAcceptToggle}>
-                <input 
-                  type="checkbox" 
-                  checked={accepted} 
-                  readOnly 
-                  aria-label="Принять условия"
-                />
-                <span>
-                  Я принимаю условия и рассчет вознаграждения платформе
-                </span>
-              </Consent>
+              <PaidInfo 
+                accepted={accepted} 
+                onAccept={handleAcceptToggle}
+              />
             </FloatingInfo>
           </OptionWrap>
         </Options>
