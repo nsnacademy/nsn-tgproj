@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef, type JSX } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 import { BottomNav, NavItem } from '../Home/styles';
 
@@ -31,6 +31,10 @@ import {
   EmptyIcon,
   EmptyText,
   EmptySubtext,
+  SkeletonCard,
+  SkeletonLine,
+  SkeletonBadge,
+  SkeletonIcon,
 } from './styles';
 
 /* =========================
@@ -60,7 +64,6 @@ type ChallengeFromDB = {
   start_date: string | null;
   creator_username: string | null;
   is_finished: boolean;
-
   entry_type: 'free' | 'paid' | 'condition';
   entry_price: number | null;
   entry_currency: string | null;
@@ -88,6 +91,70 @@ type Challenge = {
   paymentDescription?: string;
 };
 
+// Кэш для данных
+const createCache = new Map<string, { data: Challenge[]; timestamp: number }>();
+const CACHE_TTL = 2 * 60 * 1000; // 2 минуты
+
+// Иконки (мемоизированы)
+const reportIcons = {
+  simple: (
+    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="7" cy="7" r="6" />
+      <path d="M4 7l2 2 3-3" />
+    </svg>
+  ),
+  result: (
+    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="2" y="2" width="10" height="10" rx="2" />
+      <line x1="7" y1="4" x2="7" y2="10" />
+      <line x1="4" y1="7" x2="10" y2="7" />
+    </svg>
+  ),
+};
+
+const statusIcons = {
+  soon: (
+    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="6" cy="6" r="5" />
+      <path d="M6 3v3l2 2" />
+    </svg>
+  ),
+  active: (
+    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="6" cy="6" r="5" />
+      <path d="M6 3v3l2 2" />
+    </svg>
+  ),
+};
+
+// Скелетон компонент
+const CreateSkeleton = () => (
+  <>
+    {[1, 2, 3].map((i) => (
+      <SkeletonCard key={i}>
+        <CardHeader>
+          <div style={{ flex: 1 }}>
+            <SkeletonLine width="70%" height={20} style={{ marginBottom: 8 }} />
+            <SkeletonLine width="40%" height={14} />
+          </div>
+          <SkeletonBadge width={60} height={24} />
+        </CardHeader>
+
+        <CardContent>
+          <CardRow style={{ marginBottom: 12 }}>
+            <SkeletonLine width="80px" height={24} style={{ borderRadius: 12 }} />
+            <SkeletonLine width="100px" height={24} style={{ borderRadius: 12 }} />
+            <SkeletonLine width="60px" height={24} style={{ borderRadius: 12 }} />
+          </CardRow>
+          <SkeletonLine width="120px" height={20} />
+        </CardContent>
+
+        <SkeletonLine width="100%" height={40} style={{ marginTop: 16, borderRadius: 20 }} />
+      </SkeletonCard>
+    ))}
+  </>
+);
+
 /* =========================
    COMPONENT
 ========================= */
@@ -97,113 +164,138 @@ export function Create({ screen, onNavigate }: CreateProps) {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
+  const loadingRef = useRef(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   /* =========================
      LOAD DATA
   ========================= */
 
+  const loadData = useCallback(async (force = false) => {
+    if (loadingRef.current) return;
+
+    // Проверка кэша (если не force)
+    if (!force) {
+      const cached = createCache.get('challenges');
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        setChallenges(cached.data);
+        setLoading(false);
+        return;
+      }
+    }
+
+    loadingRef.current = true;
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('challenges_with_creator')
+        .select(`
+          id,
+          title,
+          report_mode,
+          duration_days,
+          start_mode,
+          start_date,
+          creator_username,
+          is_finished,
+          entry_type,
+          entry_price,
+          entry_currency,
+          entry_condition,
+          contact_info,
+          payment_method,
+          payment_description
+        `)
+        .eq('is_finished', false);
+
+      if (error) {
+        console.error('[CREATE] load error', error);
+        return;
+      }
+
+      if (!data) return;
+
+      const mapped: Challenge[] = data.map((c: ChallengeFromDB) => {
+        const isFuture =
+          c.start_mode === 'date' &&
+          c.start_date &&
+          new Date(c.start_date) > new Date();
+
+        return {
+          id: c.id,
+          title: c.title,
+          username: c.creator_username ?? 'unknown',
+          reportType: c.report_mode === 'simple' ? 'Ежедневный' : 'Целевой',
+          reportIcon: reportIcons[c.report_mode],
+          duration: c.duration_days,
+          status: isFuture ? 'Скоро' : 'Идёт',
+          statusIcon: isFuture ? statusIcons.soon : statusIcons.active,
+          entryType: c.entry_type,
+          entryPrice: c.entry_price ?? undefined,
+          entryCurrency: c.entry_currency ?? undefined,
+          entryCondition: c.entry_condition ?? undefined,
+          contactInfo: c.contact_info ?? undefined,
+          paymentMethod: c.payment_method ?? undefined,
+          paymentDescription: c.payment_description ?? undefined,
+        };
+      });
+
+      // Сохраняем в кэш
+      createCache.set('challenges', {
+        data: mapped,
+        timestamp: Date.now(),
+      });
+
+      if (mountedRef.current) {
+        setChallenges(mapped);
+      }
+    } catch (error) {
+      console.error('[CREATE] error', error);
+    } finally {
+      if (mountedRef.current) {
+        setLoading(false);
+      }
+      loadingRef.current = false;
+    }
+  }, []);
+
   useEffect(() => {
+    mountedRef.current = true;
+    
     if (screen === 'create') {
-      load();
+      loadData();
+    }
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [screen, loadData]);
+
+  // Очистка поиска при переключении экрана
+  useEffect(() => {
+    if (screen !== 'create') {
+      setQuery('');
     }
   }, [screen]);
 
-  async function load() {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('challenges_with_creator')
-      .select(`
-        id,
-        title,
-        report_mode,
-        duration_days,
-        start_mode,
-        start_date,
-        creator_username,
-        is_finished,
-        entry_type,
-        entry_price,
-        entry_currency,
-        entry_condition,
-        contact_info,
-        payment_method,
-        payment_description
-      `)
-      .eq('is_finished', false);
-
-    if (!data || error) {
-      console.error('[CREATE] load error', error);
-      setLoading(false);
-      return;
-    }
-
-    const mapped: Challenge[] = data.map((c: ChallengeFromDB) => {
-      const isFuture =
-        c.start_mode === 'date' &&
-        c.start_date &&
-        new Date(c.start_date) > new Date();
-
-      return {
-        id: c.id,
-        title: c.title,
-        username: c.creator_username ?? 'unknown',
-
-        reportType: c.report_mode === 'simple' ? 'Ежедневный' : 'Целевой',
-        reportIcon:
-          c.report_mode === 'simple' ? (
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="7" cy="7" r="6" />
-              <path d="M4 7l2 2 3-3" />
-            </svg>
-          ) : (
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="2" y="2" width="10" height="10" rx="2" />
-              <line x1="7" y1="4" x2="7" y2="10" />
-              <line x1="4" y1="7" x2="10" y2="7" />
-            </svg>
-          ),
-
-        duration: c.duration_days,
-        status: isFuture ? 'Скоро' : 'Идёт',
-        statusIcon: isFuture ? (
-          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="6" cy="6" r="5" />
-            <path d="M6 3v3l2 2" />
-          </svg>
-        ) : (
-          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="6" cy="6" r="5" />
-            <path d="M6 3v3l2 2" />
-          </svg>
-        ),
-
-        entryType: c.entry_type,
-        entryPrice: c.entry_price ?? undefined,
-        entryCurrency: c.entry_currency ?? undefined,
-        entryCondition: c.entry_condition ?? undefined,
-        contactInfo: c.contact_info ?? undefined,
-        paymentMethod: c.payment_method ?? undefined,
-        paymentDescription: c.payment_description ?? undefined,
-      };
-    });
-
-    setChallenges(mapped);
-    setLoading(false);
-  }
-
   /* =========================
-     FILTER
+     FILTER (мемоизирован)
   ========================= */
 
-  const filtered = challenges.filter(c =>
-    c.title.toLowerCase().includes(query.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    if (!query) return challenges;
+    return challenges.filter(c =>
+      c.title.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [challenges, query]);
 
   /* =========================
-     HANDLERS
+     HANDLERS (мемоизированы)
   ========================= */
 
-  const handleCardClick = (challenge: Challenge) => {
+  const handleCardClick = useCallback((challenge: Challenge) => {
     if (challenge.entryType === 'free') {
       onNavigate('challenge-details', challenge.id);
     } else if (challenge.entryType === 'paid') {
@@ -211,9 +303,25 @@ export function Create({ screen, onNavigate }: CreateProps) {
     } else if (challenge.entryType === 'condition') {
       onNavigate('challenge-condition', challenge.id);
     }
-  };
+  }, [onNavigate]);
 
-  const getEntryBadge = (type: 'free' | 'paid' | 'condition') => {
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setQuery('');
+    searchInputRef.current?.focus();
+  }, []);
+
+  const handleFocus = useCallback(() => setKeyboardOpen(true), []);
+  const handleBlur = useCallback(() => setKeyboardOpen(false), []);
+
+  const handleCreateFlow = useCallback(() => {
+    onNavigate('create-flow');
+  }, [onNavigate]);
+
+  const getEntryBadge = useCallback((type: 'free' | 'paid' | 'condition') => {
     switch (type) {
       case 'paid':
         return { text: '💰 Платный', color: '#FFD700' };
@@ -222,7 +330,7 @@ export function Create({ screen, onNavigate }: CreateProps) {
       default:
         return null;
     }
-  };
+  }, []);
 
   /* =========================
      RENDER
@@ -242,16 +350,17 @@ export function Create({ screen, onNavigate }: CreateProps) {
             </SearchIcon>
 
             <SearchInput
+              ref={searchInputRef}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={handleSearchChange}
               placeholder="Поиск вызовов"
-              onFocus={() => setKeyboardOpen(true)}
-              onBlur={() => setKeyboardOpen(false)}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
               $hasValue={query.length > 0}
             />
 
             {query && (
-              <ClearButton onClick={() => setQuery('')}>
+              <ClearButton onClick={handleClearSearch}>
                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="8" cy="8" r="6" />
                   <line x1="5" y1="5" x2="11" y2="11" />
@@ -261,7 +370,7 @@ export function Create({ screen, onNavigate }: CreateProps) {
             )}
           </SearchField>
 
-          <ActionButton onClick={() => onNavigate('create-flow')}>
+          <ActionButton onClick={handleCreateFlow}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="6" x2="12" y2="18" />
               <line x1="6" y1="12" x2="18" y2="12" />
@@ -275,15 +384,7 @@ export function Create({ screen, onNavigate }: CreateProps) {
       <ScrollContainer>
         <List>
           {loading ? (
-            <EmptyState>
-              <EmptyIcon>
-                <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <circle cx="24" cy="24" r="22" strokeOpacity="0.3" />
-                  <path d="M24 10v14l8 8" strokeOpacity="0.5" />
-                </svg>
-              </EmptyIcon>
-              <EmptyText>Загрузка вызовов...</EmptyText>
-            </EmptyState>
+            <CreateSkeleton />
           ) : filtered.length === 0 ? (
             <EmptyState>
               <EmptyIcon>

@@ -393,3 +393,86 @@ export const ConditionButton = styled.button<{ $entryType: 'paid' | 'condition' 
         : 'rgba(155, 89, 182, 0.3)'};
   }
 `;
+
+// Добавьте в конец файла со стилями
+
+/* ======================
+   SKELETONS
+====================== */
+
+export const SkeletonCard = styled.div`
+  background: #0a0a0a;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid #222;
+`;
+
+export const SkeletonIcon = styled.div<{ size?: number }>`
+  width: ${({ size }) => size || 24}px;
+  height: ${({ size }) => size || 24}px;
+  background: #222;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    animation: shimmer 1.5s infinite;
+    transform: translateX(-100%);
+  }
+`;
+
+export const SkeletonBadge = styled.div<{ width?: number; height?: number }>`
+  width: ${({ width }) => width || 60}px;
+  height: ${({ height }) => height || 24}px;
+  background: #222;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    animation: shimmer 1.5s infinite;
+    transform: translateX(-100%);
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+`;
+
+export const SkeletonLine = styled.div<{ width?: string; height?: number }>`
+  width: ${({ width }) => width || '100%'};
+  height: ${({ height }) => height || 16}px;
+  background: #222;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    animation: shimmer 1.5s infinite;
+    transform: translateX(-100%);
+  }
+`;
