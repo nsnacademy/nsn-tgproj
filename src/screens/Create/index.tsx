@@ -34,7 +34,6 @@ import {
   SkeletonCard,
   SkeletonLine,
   SkeletonBadge,
-  SkeletonIcon,
 } from './styles';
 
 /* =========================
