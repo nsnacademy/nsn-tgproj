@@ -528,3 +528,56 @@ export const PortfolioText = styled.span`
   font-family: monospace;
   font-size: 13px;
 `;
+
+// Добавьте скелетон-стили
+export const SkeletonLine = styled.div<{ width?: string; height?: number }>`
+  width: ${({ width }) => width || '100%'};
+  height: ${({ height }) => height || 16}px;
+  background: linear-gradient(90deg, #222 25%, #333 50%, #222 75%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: shimmer 1.5s infinite;
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+`;
+
+export const SkeletonBlock = styled.div<{ height?: number }>`
+  width: 100%;
+  height: ${({ height }) => height || 100}px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+    animation: shimmer 1.5s infinite;
+    transform: translateX(-100%);
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+`;
+
+export const SkeletonStats = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 16px 0;
+`;

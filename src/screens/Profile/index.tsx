@@ -46,6 +46,9 @@ import {
   CategoryTab,
   PortfolioContainer,
   PortfolioText,
+  SkeletonLine,
+  SkeletonBlock,
+  SkeletonStats,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -130,6 +133,28 @@ const hints = {
     portfolio: 'Ссылки на работы',
   },
 };
+
+// Skeleton компонент для загрузки
+const ProfileSkeleton = () => (
+  <>
+    <SkeletonLine width="60%" height={24} style={{ marginBottom: 8 }} />
+    <SkeletonLine width="40%" height={20} style={{ marginBottom: 16 }} />
+    <SkeletonLine width="100%" height={48} style={{ marginBottom: 24 }} />
+    
+    <SkeletonBlock height={80} style={{ marginBottom: 24 }} />
+    
+    <SkeletonStats>
+      <SkeletonLine width="100%" height={60} />
+      <SkeletonLine width="100%" height={60} />
+      <SkeletonLine width="100%" height={60} />
+    </SkeletonStats>
+    
+    <SkeletonLine width="100%" height={4} style={{ margin: '16px 0' }} />
+    <SkeletonLine width="70%" height={20} style={{ marginBottom: 16 }} />
+    
+    <SkeletonBlock height={120} style={{ marginBottom: 24 }} />
+  </>
+);
 
 export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   const [adminMode, setAdminMode] = useState(() => {
@@ -235,8 +260,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     let mounted = true;
 
     async function loadData() {
-      setIsLoading(true);
-
+      // Не показываем лоадер если есть кэш
       const currentUser = (await getCurrentUser()) as SupabaseUser | null;
       if (!currentUser || !mounted) {
         setIsLoading(false);
@@ -246,6 +270,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       const targetUserId = userId || currentUser.id;
       const cacheKey = `profile_${targetUserId}`;
 
+      // Проверка кэша - если есть, показываем сразу без загрузки
       const cached = profileCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
         if (mounted) {
@@ -263,6 +288,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         }
         return;
       }
+
+      // Если нет кэша, показываем скелетон
+      setIsLoading(true);
 
       try {
         const [allUsersResult, userStatsResult, profileResult, weeklyGrowth] = await Promise.all([
@@ -506,26 +534,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, [userId]);
 
-  if (isLoading && !stats) {
-    return (
-      <SafeArea>
-        <Container>
-          <Text>Загрузка...</Text>
-        </Container>
-      </SafeArea>
-    );
-  }
-
-  if (!stats) {
-    return (
-      <SafeArea>
-        <Container>
-          <Text>Профиль не найден</Text>
-        </Container>
-      </SafeArea>
-    );
-  }
-
   return (
     <SafeArea>
       {/* Фиксированная шапка */}
@@ -536,17 +544,28 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             <ToggleKnob $active={adminMode} />
           </Toggle>
         </HeaderContent>
-        <UserHandle style={{ fontSize: 24, marginBottom: 8 }}>@{stats.username}</UserHandle>
-        <IndexBadge style={{ marginTop: 0 }}>
-          <IndexValue>⚡ {stats.power_index.toFixed(1)}</IndexValue>
-          <IndexPercent>· {rankText}</IndexPercent>
-        </IndexBadge>
+        {!isLoading && stats ? (
+          <>
+            <UserHandle style={{ fontSize: 24, marginBottom: 8 }}>@{stats.username}</UserHandle>
+            <IndexBadge style={{ marginTop: 0 }}>
+              <IndexValue>⚡ {stats.power_index.toFixed(1)}</IndexValue>
+              <IndexPercent>· {rankText}</IndexPercent>
+            </IndexBadge>
+          </>
+        ) : (
+          <>
+            <SkeletonLine width="60%" height={24} style={{ marginBottom: 8 }} />
+            <SkeletonLine width="40%" height={20} />
+          </>
+        )}
       </FixedHeader>
 
       {/* Скроллящийся контент */}
       <ScrollContent ref={scrollRef}>
         <Container>
-          {isEditing ? (
+          {isLoading ? (
+            <ProfileSkeleton />
+          ) : isEditing ? (
             <EditForm>
               <CategoryTabs>
                 <CategoryTab
@@ -641,196 +660,198 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               </div>
             </EditForm>
           ) : (
-            <>
-              {stats.bio && <UserBio>{stats.bio}</UserBio>}
-              {stats.stack && <UserStack>{stats.stack}</UserStack>}
-              {stats.experience && <UserStats>Опыт: {stats.experience}</UserStats>}
-              
-              {/* Портфолио с минималистичной иконкой копирования */}
-              {stats.portfolio && (
-                <PortfolioContainer>
-                  <PortfolioText>
-                    {getDisplayUrl(stats.portfolio)}
-                  </PortfolioText>
-                  <CopyIcon
-                    onClick={() => handleCopy(stats.portfolio, 'portfolio')}
-                    title={copied === 'portfolio' ? 'Скопировано' : 'Копировать'}
-                  >
-                    {copied === 'portfolio' ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
-                    )}
-                  </CopyIcon>
-                </PortfolioContainer>
-              )}
+            stats && (
+              <>
+                {stats.bio && <UserBio>{stats.bio}</UserBio>}
+                {stats.stack && <UserStack>{stats.stack}</UserStack>}
+                {stats.experience && <UserStats>Опыт: {stats.experience}</UserStats>}
+                
+                {/* Портфолио с минималистичной иконкой копирования */}
+                {stats.portfolio && (
+                  <PortfolioContainer>
+                    <PortfolioText>
+                      {getDisplayUrl(stats.portfolio)}
+                    </PortfolioText>
+                    <CopyIcon
+                      onClick={() => handleCopy(stats.portfolio, 'portfolio')}
+                      title={copied === 'portfolio' ? 'Скопировано' : 'Копировать'}
+                    >
+                      {copied === 'portfolio' ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                      )}
+                    </CopyIcon>
+                  </PortfolioContainer>
+                )}
 
-              <SectionDivider />
+                <SectionDivider />
 
-              <SectionTitle>Показатели</SectionTitle>
-              <StatsRow>
-                <StatItem>
-                  <StatNumber>{stats.total_days}</StatNumber>
-                  <StatLabel>дней</StatLabel>
-                </StatItem>
-                <StatItem>
-                  <StatNumber>{stats.current_streak}</StatNumber>
-                  <StatLabel>подряд</StatLabel>
-                </StatItem>
-                <StatItem>
-                  <StatNumber>{stats.max_streak}</StatNumber>
-                  <StatLabel>рекорд</StatLabel>
-                </StatItem>
-              </StatsRow>
+                <SectionTitle>Показатели</SectionTitle>
+                <StatsRow>
+                  <StatItem>
+                    <StatNumber>{stats.total_days}</StatNumber>
+                    <StatLabel>дней</StatLabel>
+                  </StatItem>
+                  <StatItem>
+                    <StatNumber>{stats.current_streak}</StatNumber>
+                    <StatLabel>подряд</StatLabel>
+                  </StatItem>
+                  <StatItem>
+                    <StatNumber>{stats.max_streak}</StatNumber>
+                    <StatLabel>рекорд</StatLabel>
+                  </StatItem>
+                </StatsRow>
 
-              <ActivityBar>
-                <ActivityFill $width={monthPercent} />
-              </ActivityBar>
-              <ActivityLabel>
-                {stats.monthly_active}/30 дней · {stats.total_calls} вызовов
-                {callsPercent > 0 && ` (+${callsPercent.toFixed(1)}%)`}
-              </ActivityLabel>
-
-              {stats.weekly_growth !== 0 && (
-                <ActivityLabel
-                  style={{
-                    marginTop: 8,
-                    color: stats.weekly_growth > 0 ? '#4caf50' : '#f44336',
-                  }}
-                >
-                  {stats.weekly_growth > 0 ? '▲' : '▼'} {Math.abs(stats.weekly_growth)}% за
-                  неделю
+                <ActivityBar>
+                  <ActivityFill $width={monthPercent} />
+                </ActivityBar>
+                <ActivityLabel>
+                  {stats.monthly_active}/30 дней · {stats.total_calls} вызовов
+                  {callsPercent > 0 && ` (+${callsPercent.toFixed(1)}%)`}
                 </ActivityLabel>
-              )}
 
-              <SectionDivider />
+                {stats.weekly_growth !== 0 && (
+                  <ActivityLabel
+                    style={{
+                      marginTop: 8,
+                      color: stats.weekly_growth > 0 ? '#4caf50' : '#f44336',
+                    }}
+                  >
+                    {stats.weekly_growth > 0 ? '▲' : '▼'} {Math.abs(stats.weekly_growth)}% за
+                    неделю
+                  </ActivityLabel>
+                )}
 
-              {isOwnProfile ? (
-                <>
-                  <SectionTitle>Контакты</SectionTitle>
-                  <ContactSection>
-                    {stats.telegram && (
-                      <ContactItem>
-                        <ContactLabel>Telegram</ContactLabel>
-                        <ContactValue>
-                          {stats.telegram}
-                          <CopyIcon
-                            onClick={() => handleCopy(stats.telegram, 'telegram')}
-                            title={copied === 'telegram' ? 'Скопировано' : 'Копировать'}
-                          >
-                            {copied === 'telegram' ? (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            ) : (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                              </svg>
-                            )}
-                          </CopyIcon>
-                        </ContactValue>
-                      </ContactItem>
-                    )}
-                    {stats.email && (
-                      <ContactItem>
-                        <ContactLabel>Email</ContactLabel>
-                        <ContactValue>
-                          {stats.email}
-                          <CopyIcon
-                            onClick={() => handleCopy(stats.email, 'email')}
-                            title={copied === 'email' ? 'Скопировано' : 'Копировать'}
-                          >
-                            {copied === 'email' ? (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            ) : (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                              </svg>
-                            )}
-                          </CopyIcon>
-                        </ContactValue>
-                      </ContactItem>
-                    )}
-                    <EditButton onClick={() => setIsEditing(true)}>
-                      ✎ Редактировать профиль
-                    </EditButton>
-                  </ContactSection>
-                </>
-              ) : (
-                <>
-                  <SectionTitle>Контакты</SectionTitle>
-                  <ContactSection>
-                    {stats.telegram && (
-                      <ContactItem>
-                        <ContactLabel>Telegram</ContactLabel>
-                        <ContactValue>
-                          {stats.telegram}
-                          <CopyIcon
-                            onClick={() => handleCopy(stats.telegram, 'telegram')}
-                            title={copied === 'telegram' ? 'Скопировано' : 'Копировать'}
-                          >
-                            {copied === 'telegram' ? (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            ) : (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                              </svg>
-                            )}
-                          </CopyIcon>
-                        </ContactValue>
-                      </ContactItem>
-                    )}
-                    {stats.email && (
-                      <ContactItem>
-                        <ContactLabel>Email</ContactLabel>
-                        <ContactValue>
-                          {stats.email}
-                          <CopyIcon
-                            onClick={() => handleCopy(stats.email, 'email')}
-                            title={copied === 'email' ? 'Скопировано' : 'Копировать'}
-                          >
-                            {copied === 'email' ? (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            ) : (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                              </svg>
-                            )}
-                          </CopyIcon>
-                        </ContactValue>
-                      </ContactItem>
-                    )}
-                  </ContactSection>
+                <SectionDivider />
 
-                  <InviteButton>ПРИГЛАСИТЬ В ПРОЕКТ</InviteButton>
-                </>
-              )}
+                {isOwnProfile ? (
+                  <>
+                    <SectionTitle>Контакты</SectionTitle>
+                    <ContactSection>
+                      {stats.telegram && (
+                        <ContactItem>
+                          <ContactLabel>Telegram</ContactLabel>
+                          <ContactValue>
+                            {stats.telegram}
+                            <CopyIcon
+                              onClick={() => handleCopy(stats.telegram, 'telegram')}
+                              title={copied === 'telegram' ? 'Скопировано' : 'Копировать'}
+                            >
+                              {copied === 'telegram' ? (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              ) : (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                              )}
+                            </CopyIcon>
+                          </ContactValue>
+                        </ContactItem>
+                      )}
+                      {stats.email && (
+                        <ContactItem>
+                          <ContactLabel>Email</ContactLabel>
+                          <ContactValue>
+                            {stats.email}
+                            <CopyIcon
+                              onClick={() => handleCopy(stats.email, 'email')}
+                              title={copied === 'email' ? 'Скопировано' : 'Копировать'}
+                            >
+                              {copied === 'email' ? (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              ) : (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                              )}
+                            </CopyIcon>
+                          </ContactValue>
+                        </ContactItem>
+                      )}
+                      <EditButton onClick={() => setIsEditing(true)}>
+                        ✎ Редактировать профиль
+                      </EditButton>
+                    </ContactSection>
+                  </>
+                ) : (
+                  <>
+                    <SectionTitle>Контакты</SectionTitle>
+                    <ContactSection>
+                      {stats.telegram && (
+                        <ContactItem>
+                          <ContactLabel>Telegram</ContactLabel>
+                          <ContactValue>
+                            {stats.telegram}
+                            <CopyIcon
+                              onClick={() => handleCopy(stats.telegram, 'telegram')}
+                              title={copied === 'telegram' ? 'Скопировано' : 'Копировать'}
+                            >
+                              {copied === 'telegram' ? (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              ) : (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                              )}
+                            </CopyIcon>
+                          </ContactValue>
+                        </ContactItem>
+                      )}
+                      {stats.email && (
+                        <ContactItem>
+                          <ContactLabel>Email</ContactLabel>
+                          <ContactValue>
+                            {stats.email}
+                            <CopyIcon
+                              onClick={() => handleCopy(stats.email, 'email')}
+                              title={copied === 'email' ? 'Скопировано' : 'Копировать'}
+                            >
+                              {copied === 'email' ? (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              ) : (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                              )}
+                            </CopyIcon>
+                          </ContactValue>
+                        </ContactItem>
+                      )}
+                    </ContactSection>
 
-              <SectionDivider />
+                    <InviteButton>ПРИГЛАСИТЬ В ПРОЕКТ</InviteButton>
+                  </>
+                )}
 
-              {isCreator === false && (
-                <Text
-                  style={{ marginTop: 8, fontSize: 12, color: '#666', textAlign: 'center' }}
-                >
-                  Админ-режим только для создателя
-                </Text>
-              )}
-            </>
+                <SectionDivider />
+
+                {isCreator === false && (
+                  <Text
+                    style={{ marginTop: 8, fontSize: 12, color: '#666', textAlign: 'center' }}
+                  >
+                    Админ-режим только для создателя
+                  </Text>
+                )}
+              </>
+            )
           )}
         </Container>
       </ScrollContent>
