@@ -481,42 +481,56 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, []);
 
-  // Исправленная функция открытия ссылки для мобильных устройств
-  const handlePortfolioClick = useCallback((url: string) => {
+  // Объединенная функция для открытия во внешнем браузере
+  const openInExternalBrowser = useCallback((url: string) => {
     // Добавляем https:// если нет протокола
     let fullUrl = url;
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       fullUrl = 'https://' + url;
     }
-    
-    // Пробуем разные способы открытия ссылки
+
+    // Определяем тип устройства
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+
     try {
-      // Способ 1: Создаем и кликаем на якорь (работает в большинстве случаев)
-      const anchor = document.createElement('a');
-      anchor.href = fullUrl;
-      anchor.target = '_blank';
-      anchor.rel = 'noopener noreferrer';
-      anchor.click();
-      
-      // Способ 2: Если не сработало, пробуем window.open с таймаутом
-      setTimeout(() => {
-        const win = window.open(fullUrl, '_blank');
-        if (!win) {
-          // Способ 3: Если window.open заблокирован, пробуем прямой переход
+      if (isIOS) {
+        // Для iOS используем специальную схему
+        window.location.href = fullUrl;
+        
+        // Пробуем открыть в Safari, если приложение не перехватило
+        setTimeout(() => {
           window.location.href = fullUrl;
-        }
-      }, 100);
+        }, 100);
+      } 
+      else if (isAndroid) {
+        // Для Android создаем интент
+        const intentUrl = `intent://${fullUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end;`;
+        window.location.href = intentUrl;
+        
+        // Fallback
+        setTimeout(() => {
+          window.location.href = fullUrl;
+        }, 100);
+      }
+      else {
+        // Для десктопа и других устройств - используем создание ссылки
+        const anchor = document.createElement('a');
+        anchor.href = fullUrl;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        anchor.click();
+      }
     } catch (error) {
-      console.error('Error opening link:', error);
-      // Способ 4: Последний шанс - показать ссылку пользователю
-      alert(`Скопируйте ссылку: ${fullUrl}`);
+      console.error('Error opening external browser:', error);
+      // Последний шанс - показываем ссылку
+      alert(`Скопируйте ссылку для открытия в браузере:\n${fullUrl}`);
     }
   }, []);
 
   // Функция для отображения домена из ссылки
   const getDomainFromUrl = useCallback((url: string) => {
     try {
-      // Добавляем протокол для парсинга, если его нет
       let urlToParse = url;
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         urlToParse = 'https://' + url;
@@ -524,7 +538,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       const domain = new URL(urlToParse).hostname.replace('www.', '');
       return domain;
     } catch {
-      // Если не удалось распарсить, возвращаем сокращенную ссылку
       return url.length > 30 ? url.substring(0, 30) + '...' : url;
     }
   }, []);
@@ -673,19 +686,21 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               {stats.stack && <UserStack>{stats.stack}</UserStack>}
               {stats.experience && <UserStats>Опыт: {stats.experience}</UserStats>}
               
-              {/* Кликабельное портфолио с улучшенной мобильной поддержкой */}
+              {/* Кликабельное портфолио с открытием во внешнем браузере */}
               {stats.portfolio && (
                 <PortfolioLink 
-                  onClick={() => handlePortfolioClick(stats.portfolio)}
+                  onClick={() => openInExternalBrowser(stats.portfolio)}
                   role="button"
                   tabIndex={0}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
-                      handlePortfolioClick(stats.portfolio);
+                      openInExternalBrowser(stats.portfolio);
                     }
                   }}
+                  title="Открыть во внешнем браузере"
                 >
-                  {getDomainFromUrl(stats.portfolio)}
+                  <span className="domain">{getDomainFromUrl(stats.portfolio)}</span>
+                  <span className="external-icon">↗</span>
                 </PortfolioLink>
               )}
 

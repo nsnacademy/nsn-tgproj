@@ -413,38 +413,61 @@ export const PortfolioLink = styled.div`
   cursor: pointer;
   font-size: 15px;
   margin: 8px 0;
-  padding: 12px 16px; /* Увеличенный padding для мобильных */
+  padding: 12px 16px;
   background: #0a0a0a;
-  border-radius: 12px; /* Чуть больше скругление */
+  border-radius: 12px;
   border: 1px solid #333;
-  display: block; /* На всю ширину */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   transition: all 0.2s ease;
   word-break: break-all;
-  -webkit-tap-highlight-color: rgba(255, 215, 0, 0.2); /* Подсветка при тапе */
-  user-select: none; /* Запрет выделения */
-  touch-action: manipulation; /* Оптимизация для тач-устройств */
+  -webkit-tap-highlight-color: rgba(255, 215, 0, 0.2);
+  user-select: none;
+  touch-action: manipulation;
+
+  .domain {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .external-icon {
+    margin-left: 8px;
+    font-size: 18px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
 
   &:hover {
     background: #1a1a1a;
     border-color: #ffd700;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(255, 215, 0, 0.1);
+
+    .external-icon {
+      opacity: 1;
+    }
   }
 
   &:active {
     background: #222;
     transform: translateY(0);
     border-color: #ffd700;
+
+    .external-icon {
+      opacity: 1;
+    }
   }
 
   &::before {
     content: '🔗 ';
-    margin-right: 6px;
+    margin-right: 8px;
     opacity: 0.9;
     font-size: 16px;
   }
 
-  /* Стили для фокуса с клавиатуры */
   &:focus-visible {
     outline: 2px solid #ffd700;
     outline-offset: 2px;
