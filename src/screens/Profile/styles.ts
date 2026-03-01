@@ -10,12 +10,9 @@ export const SafeArea = styled.div`
 
 export const Container = styled.div`
   flex: 1;
-  padding: 0 20px 140px;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow-y: auto;
+  padding: 90px 20px 140px;
 `;
+
 export const Title = styled.h1`
   font-size: 22px;
   font-weight: 600;
@@ -368,40 +365,42 @@ export const CopyIcon = styled.span`
   }
 `;
 
-// Добавьте в файл со стилями:
+// Добавьте в начало файла со стилями
 
-export const HeaderRow = styled.div`
+export const FixedHeader = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #000;
+  padding: 60px 20px 20px;
+  z-index: 10;
+  border-bottom: 1px solid #222;
+`;
+
+export const HeaderContent = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
-  position: sticky;
-  top: 0;
-  background: #000;
-  z-index: 10;
-  padding: 12px 0;
 `;
 
-export const HeaderTitle = styled(Title)`
-  margin-bottom: 0;
-`;
-
-export const UserInfoSection = styled.div`
-  position: sticky;
-  top: 60px;
-  background: #000;
-  z-index: 9;
-  padding: 8px 0 16px 0;
-  margin-bottom: 8px;
-  border-bottom: 1px solid #222;
-`;
-
-export const BadgeSection = styled.div`
-  margin-top: 8px;
-`;
-
-export const ContentSection = styled.div`
+export const ScrollContent = styled.div`
+  flex: 1;
   overflow-y: auto;
-  padding-bottom: 20px;
+  margin-top: 160px; /* Высота фиксированной шапки */
+  padding-bottom: 80px;
+  
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #111;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 2px;
+  }
 `;
-

@@ -1,10 +1,14 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
 import {
   SafeArea,
   Container,
   
+  HeaderContent,
+  FixedHeader,
+  ScrollContent,
+  Title,
   Text,
   Toggle,
   ToggleKnob,
@@ -41,18 +45,10 @@ import {
   HintText,
   CategoryTabs,
   CategoryTab,
-  HeaderRow,
-  HeaderTitle,
-  UserInfoSection,
-  BadgeSection,
-  ContentSection
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
-import {
-  getCurrentUser,
-  checkIsCreator,
-} from '../../shared/lib/supabase';
+import { getCurrentUser, checkIsCreator } from '../../shared/lib/supabase';
 
 type ProfileScreen = 'home' | 'create' | 'profile' | 'admin';
 
@@ -139,7 +135,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     const saved = localStorage.getItem('adminMode');
     return saved === 'true';
   });
-  
+
   const [locked, setLocked] = useState(false);
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -147,6 +143,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [editForm, setEditForm] = useState({
     bio: '',
     stack: '',
@@ -154,53 +151,94 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     portfolio: '',
     telegram: '',
     email: '',
-    role: 'developer' as 'developer' | 'designer' | 'manager' | 'other'
+    role: 'developer' as 'developer' | 'designer' | 'manager' | 'other',
   });
 
   // Мемоизация вычисляемых значений
-  const monthPercent = useMemo(() => 
-    stats ? Math.min(100, (stats.monthly_active / 30) * 100) : 0, 
+  const monthPercent = useMemo(
+    () => (stats ? Math.min(100, (stats.monthly_active / 30) * 100) : 0),
     [stats?.monthly_active]
   );
-  
-  const callsPercent = useMemo(() => 
-    stats?.total_days ? (stats.total_calls / stats.total_days) * 100 - 100 : 0, 
+
+  const callsPercent = useMemo(
+    () => (stats?.total_days ? (stats.total_calls / stats.total_days) * 100 - 100 : 0),
     [stats?.total_calls, stats?.total_days]
   );
 
-  const currentHints = useMemo(() => 
-    hints[editForm.role], 
-    [editForm.role]
-  );
+  const currentHints = useMemo(() => hints[editForm.role], [editForm.role]);
 
-  const rankText = useMemo(() => 
-    stats?.rank && stats?.total_users ? `${stats.rank} / ${stats.total_users}` : '',
+  const rankText = useMemo(
+    () => (stats?.rank && stats?.total_users ? `${stats.rank} / ${stats.total_users}` : ''),
     [stats?.rank, stats?.total_users]
   );
 
   useEffect(() => {
     let mounted = true;
-    
+
     async function checkOwnProfile() {
       const currentUser = await getCurrentUser();
       if (!currentUser || !mounted) return;
       setIsOwnProfile(!userId || userId === currentUser.id);
     }
-    
+
     checkOwnProfile();
-    
+
     return () => {
       mounted = false;
     };
   }, [userId]);
 
+  // Функция для расчета недельного роста
+  const calculateWeeklyGrowth = useCallback(async (targetUserId: string) => {
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+      // Получаем активность за последние 14 дней
+      const { data: activities } = await supabase
+        .from('challenges') // предположим, что такая таблица есть
+        .select('created_at')
+        .eq('user_id', targetUserId)
+        .gte('created_at', fourteenDaysAgo.toISOString())
+        .order('created_at', { ascending: true });
+
+      if (!activities || activities.length < 7) {
+        return 0; // Недостаточно данных для расчета
+      }
+
+      // Разбиваем на две недели
+      const now = new Date();
+      const oneWeekAgo = new Date(now.setDate(now.getDate() - 7));
+
+      const lastWeek = activities.filter(
+        (a) => new Date(a.created_at) >= oneWeekAgo
+      ).length;
+
+      const previousWeek = activities.filter(
+        (a) => new Date(a.created_at) < oneWeekAgo
+      ).length;
+
+      if (previousWeek === 0) return lastWeek > 0 ? 100 : 0;
+
+      const growth = Math.round(((lastWeek - previousWeek) / previousWeek) * 100);
+      return Math.max(-100, Math.min(1000, growth)); // Ограничиваем разумные пределы
+    } catch (error) {
+      console.error('Error calculating weekly growth:', error);
+      return 0;
+    }
+  }, []);
+
+  // Загрузка данных с реальным расчетом роста
   useEffect(() => {
     let mounted = true;
-    
+
     async function loadData() {
       setIsLoading(true);
-      
-      const currentUser = await getCurrentUser() as SupabaseUser | null;
+
+      const currentUser = (await getCurrentUser()) as SupabaseUser | null;
       if (!currentUser || !mounted) {
         setIsLoading(false);
         return;
@@ -208,7 +246,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
       const targetUserId = userId || currentUser.id;
       const cacheKey = `profile_${targetUserId}`;
-      
+
       // Проверка кэша
       const cached = profileCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -230,76 +268,48 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
       try {
         // Параллельные запросы
-        const [allUsersResult, userStatsResult, profileResult, weeklyActivityResult] = await Promise.all([
+        const [allUsersResult, userStatsResult, profileResult, weeklyGrowth] = await Promise.all([
           supabase
             .from('users')
             .select('power_index', { count: 'exact', head: true })
             .order('power_index', { ascending: false }),
-          
+
           supabase
             .from('users')
-            .select(`
+            .select(
+              `
               username, 
               total_days, 
               total_challenges, 
               current_streak, 
               max_streak, 
               power_index
-            `)
+            `
+            )
             .eq('id', targetUserId)
             .single(),
-          
+
           supabase
             .from('profiles')
             .select('bio, stack, experience, portfolio, telegram, email, role')
             .eq('user_id', targetUserId)
             .maybeSingle(),
-          
-          // Получаем активность за последние 7 дней для расчета роста
-          supabase
-            .from('challenges')
-            .select('created_at')
-            .eq('user_id', targetUserId)
-            .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-            .order('created_at', { ascending: true })
+
+          calculateWeeklyGrowth(targetUserId),
         ]);
 
         if (!mounted) return;
 
         if (userStatsResult.data) {
-          // Расчет позиции
           let percentile = 50;
           let rank = 0;
           const totalUsers = allUsersResult.count || 1;
-          
+
           if (totalUsers > 0) {
-            rank = Math.floor((100 - userStatsResult.data.power_index) * totalUsers / 100) + 1;
+            rank =
+              Math.floor((100 - userStatsResult.data.power_index) * totalUsers) / 100 + 1;
             rank = Math.max(1, Math.min(totalUsers, rank));
             percentile = Math.round(((totalUsers - rank) / totalUsers) * 100);
-          }
-
-          // Реальный расчет недельного роста
-          let weeklyGrowth = 0;
-          if (weeklyActivityResult.data && weeklyActivityResult.data.length >= 2) {
-            // Группируем по дням
-            const activityByDay: { [key: string]: number } = {};
-            weeklyActivityResult.data.forEach(activity => {
-              const day = new Date(activity.created_at).toISOString().split('T')[0];
-              activityByDay[day] = (activityByDay[day] || 0) + 1;
-            });
-
-            const days = Object.keys(activityByDay).sort();
-            if (days.length >= 2) {
-              // Сравниваем первые 3 дня с последними 3 днями
-              const firstHalf = days.slice(0, Math.min(3, days.length))
-                .reduce((sum, day) => sum + (activityByDay[day] || 0), 0);
-              const secondHalf = days.slice(-Math.min(3, days.length))
-                .reduce((sum, day) => sum + (activityByDay[day] || 0), 0);
-              
-              if (firstHalf > 0) {
-                weeklyGrowth = Math.round(((secondHalf - firstHalf) / firstHalf) * 100);
-              }
-            }
           }
 
           const newStats = {
@@ -318,16 +328,15 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             power_index: userStatsResult.data.power_index || 0,
             total_calls: userStatsResult.data.total_challenges || 0,
             monthly_active: Math.min(30, userStatsResult.data.total_days || 0),
-            weekly_growth: weeklyGrowth, // Теперь реальное значение
+            weekly_growth: weeklyGrowth, // Реальное значение роста
             percentile,
-            rank,
+            rank: Math.round(rank),
             total_users: totalUsers,
             hashtag: getHashtag(userStatsResult.data.power_index || 0),
           };
-          
-          // Сохраняем в кэш
+
           profileCache.set(cacheKey, { data: newStats, timestamp: Date.now() });
-          
+
           setStats(newStats);
           setEditForm({
             bio: newStats.bio,
@@ -349,15 +358,15 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
 
     loadData();
-    
+
     return () => {
       mounted = false;
     };
-  }, [userId]);
+  }, [userId, calculateWeeklyGrowth]);
 
   useEffect(() => {
     let mounted = true;
-    
+
     async function checkAccess() {
       const user = await getCurrentUser();
       if (!user || !mounted) {
@@ -369,9 +378,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         setIsCreator(creator);
       }
     }
-    
+
     checkAccess();
-    
+
     return () => {
       mounted = false;
     };
@@ -397,7 +406,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
   const handleSave = useCallback(async () => {
     if (!stats) return;
-    
+
     const currentUser = await getCurrentUser();
     if (!currentUser) return;
 
@@ -409,7 +418,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         .maybeSingle();
 
       let result;
-      
+
       if (existingProfile) {
         result = await supabase
           .from('profiles')
@@ -421,7 +430,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             telegram: editForm.telegram,
             email: editForm.email,
             role: editForm.role,
-            updated_at: new Date()
+            updated_at: new Date(),
           })
           .eq('user_id', currentUser.id);
       } else {
@@ -436,7 +445,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             telegram: editForm.telegram,
             email: editForm.email,
             role: editForm.role,
-            updated_at: new Date()
+            updated_at: new Date(),
           });
       }
 
@@ -444,7 +453,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         console.error('Save error:', result.error);
         alert('Ошибка при сохранении: ' + result.error.message);
       } else {
-        // Обновляем кэш
         const cacheKey = `profile_${currentUser.id}`;
         const updatedStats = {
           ...stats,
@@ -457,7 +465,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           role: editForm.role,
         };
         profileCache.set(cacheKey, { data: updatedStats, timestamp: Date.now() });
-        
+
         setStats(updatedStats);
         setIsEditing(false);
       }
@@ -476,6 +484,13 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       console.error('Failed to copy:', err);
     }
   }, []);
+
+  // Прокрутка к началу при загрузке
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [userId]);
 
   if (isLoading && !stats) {
     return (
@@ -499,53 +514,48 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
   return (
     <SafeArea>
-      <Container>
-        {/* Header с плашкой переключения */}
-        <HeaderRow>
-          <HeaderTitle>Профиль</HeaderTitle>
+      {/* Фиксированная шапка */}
+      <FixedHeader>
+        <HeaderContent>
+          <Title>Профиль</Title>
           <Toggle $active={adminMode} $disabled={!isCreator} onClick={onToggleAdmin}>
             <ToggleKnob $active={adminMode} />
           </Toggle>
-        </HeaderRow>
+        </HeaderContent>
+        <UserHandle style={{ fontSize: 24, marginBottom: 8 }}>@{stats.username}</UserHandle>
+        <IndexBadge style={{ marginTop: 0 }}>
+          <IndexValue>⚡ {stats.power_index.toFixed(1)}</IndexValue>
+          <IndexPercent>· {rankText}</IndexPercent>
+        </IndexBadge>
+      </FixedHeader>
 
-        {/* User Info Section - свернутая */}
-        <UserInfoSection>
-          <UserHandle style={{ fontSize: 24, marginBottom: 4 }}>@{stats.username}</UserHandle>
-          
-          <BadgeSection>
-            <IndexBadge>
-              <IndexValue>⚡ {stats.power_index.toFixed(1)}</IndexValue>
-              <IndexPercent>· {rankText}</IndexPercent>
-            </IndexBadge>
-          </BadgeSection>
-        </UserInfoSection>
-
-        {/* Content Section - скроллится */}
-        <ContentSection>
+      {/* Скроллящийся контент */}
+      <ScrollContent ref={scrollRef}>
+        <Container>
           {isEditing ? (
             <EditForm>
               <CategoryTabs>
-                <CategoryTab 
-                  $active={editForm.role === 'developer'} 
-                  onClick={() => setEditForm({...editForm, role: 'developer'})}
+                <CategoryTab
+                  $active={editForm.role === 'developer'}
+                  onClick={() => setEditForm({ ...editForm, role: 'developer' })}
                 >
                   Разработчик
                 </CategoryTab>
-                <CategoryTab 
-                  $active={editForm.role === 'designer'} 
-                  onClick={() => setEditForm({...editForm, role: 'designer'})}
+                <CategoryTab
+                  $active={editForm.role === 'designer'}
+                  onClick={() => setEditForm({ ...editForm, role: 'designer' })}
                 >
                   Дизайнер
                 </CategoryTab>
-                <CategoryTab 
-                  $active={editForm.role === 'manager'} 
-                  onClick={() => setEditForm({...editForm, role: 'manager'})}
+                <CategoryTab
+                  $active={editForm.role === 'manager'}
+                  onClick={() => setEditForm({ ...editForm, role: 'manager' })}
                 >
                   Менеджер
                 </CategoryTab>
-                <CategoryTab 
-                  $active={editForm.role === 'other'} 
-                  onClick={() => setEditForm({...editForm, role: 'other'})}
+                <CategoryTab
+                  $active={editForm.role === 'other'}
+                  onClick={() => setEditForm({ ...editForm, role: 'other' })}
                 >
                   Другое
                 </CategoryTab>
@@ -554,9 +564,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               <EditRow>
                 <EditLabel>О себе</EditLabel>
                 <HintText>{currentHints.bio}</HintText>
-                <EditTextArea 
+                <EditTextArea
                   value={editForm.bio}
-                  onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
                   placeholder="Начните писать..."
                 />
               </EditRow>
@@ -564,9 +574,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               <EditRow>
                 <EditLabel>Навыки и инструменты</EditLabel>
                 <HintText>{currentHints.stack}</HintText>
-                <EditInput 
+                <EditInput
                   value={editForm.stack}
-                  onChange={(e) => setEditForm({...editForm, stack: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, stack: e.target.value })}
                   placeholder="Например: React, TypeScript, Figma..."
                 />
               </EditRow>
@@ -574,9 +584,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               <EditRow>
                 <EditLabel>Опыт</EditLabel>
                 <HintText>{currentHints.experience}</HintText>
-                <EditInput 
+                <EditInput
                   value={editForm.experience}
-                  onChange={(e) => setEditForm({...editForm, experience: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, experience: e.target.value })}
                   placeholder="Ваш опыт"
                 />
               </EditRow>
@@ -584,9 +594,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               <EditRow>
                 <EditLabel>Портфолио</EditLabel>
                 <HintText>{currentHints.portfolio}</HintText>
-                <EditInput 
+                <EditInput
                   value={editForm.portfolio}
-                  onChange={(e) => setEditForm({...editForm, portfolio: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, portfolio: e.target.value })}
                   placeholder="Ссылка на портфолио"
                 />
               </EditRow>
@@ -594,9 +604,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               <EditRow>
                 <EditLabel>Telegram</EditLabel>
                 <HintText>Для связи с вами</HintText>
-                <EditInput 
+                <EditInput
                   value={editForm.telegram}
-                  onChange={(e) => setEditForm({...editForm, telegram: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, telegram: e.target.value })}
                   placeholder="@username"
                 />
               </EditRow>
@@ -604,9 +614,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               <EditRow>
                 <EditLabel>Email</EditLabel>
                 <HintText>Для рабочих контактов</HintText>
-                <EditInput 
+                <EditInput
                   value={editForm.email}
-                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                   placeholder="email@mail.com"
                 />
               </EditRow>
@@ -645,14 +655,20 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                 <ActivityFill $width={monthPercent} />
               </ActivityBar>
               <ActivityLabel>
-                {stats.monthly_active}/30 дней · {stats.total_calls} вызовов 
+                {stats.monthly_active}/30 дней · {stats.total_calls} вызовов
                 {callsPercent > 0 && ` (+${callsPercent.toFixed(1)}%)`}
               </ActivityLabel>
 
               {/* Реальная динамика за неделю */}
               {stats.weekly_growth !== 0 && (
-                <ActivityLabel style={{ marginTop: 8, color: stats.weekly_growth > 0 ? '#4caf50' : '#ff4444' }}>
-                  {stats.weekly_growth > 0 ? '▲' : '▼'} +{Math.abs(stats.weekly_growth)}% за неделю
+                <ActivityLabel
+                  style={{
+                    marginTop: 8,
+                    color: stats.weekly_growth > 0 ? '#4caf50' : '#f44336',
+                  }}
+                >
+                  {stats.weekly_growth > 0 ? '▲' : '▼'} +{Math.abs(stats.weekly_growth)}% за
+                  неделю
                 </ActivityLabel>
               )}
 
@@ -667,7 +683,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                         <ContactLabel>Telegram</ContactLabel>
                         <ContactValue>
                           {stats.telegram}
-                          <CopyIcon 
+                          <CopyIcon
                             onClick={() => handleCopy(stats.telegram, 'telegram')}
                             title={copied === 'telegram' ? 'Скопировано!' : 'Копировать'}
                           >
@@ -681,7 +697,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                         <ContactLabel>Email</ContactLabel>
                         <ContactValue>
                           {stats.email}
-                          <CopyIcon 
+                          <CopyIcon
                             onClick={() => handleCopy(stats.email, 'email')}
                             title={copied === 'email' ? 'Скопировано!' : 'Копировать'}
                           >
@@ -690,7 +706,9 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                         </ContactValue>
                       </ContactItem>
                     )}
-                    <EditButton onClick={() => setIsEditing(true)}>✎ Редактировать профиль</EditButton>
+                    <EditButton onClick={() => setIsEditing(true)}>
+                      ✎ Редактировать профиль
+                    </EditButton>
                   </ContactSection>
                 </>
               ) : (
@@ -702,7 +720,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                         <ContactLabel>Telegram</ContactLabel>
                         <ContactValue>
                           {stats.telegram}
-                          <CopyIcon 
+                          <CopyIcon
                             onClick={() => handleCopy(stats.telegram, 'telegram')}
                             title={copied === 'telegram' ? 'Скопировано!' : 'Копировать'}
                           >
@@ -716,7 +734,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                         <ContactLabel>Email</ContactLabel>
                         <ContactValue>
                           {stats.email}
-                          <CopyIcon 
+                          <CopyIcon
                             onClick={() => handleCopy(stats.email, 'email')}
                             title={copied === 'email' ? 'Скопировано!' : 'Копировать'}
                           >
@@ -727,42 +745,50 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                     )}
                   </ContactSection>
 
-                  <InviteButton>
-                    ПРИГЛАСИТЬ В ПРОЕКТ
-                  </InviteButton>
+                  <InviteButton>ПРИГЛАСИТЬ В ПРОЕКТ</InviteButton>
                 </>
+              )}
+
+              <SectionDivider />
+
+              {isCreator === false && (
+                <Text
+                  style={{ marginTop: 8, fontSize: 12, color: '#666', textAlign: 'center' }}
+                >
+                  Админ-режим только для создателя
+                </Text>
               )}
             </>
           )}
-
-          {isCreator === false && (
-            <Text style={{ marginTop: 8, fontSize: 12, color: '#666', textAlign: 'center' }}>
-              Админ-режим только для создателя
-            </Text>
-          )}
-        </ContentSection>
-      </Container>
+        </Container>
+      </ScrollContent>
 
       <BottomNav>
         <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 10.5L12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" />
+            <path d="M3 10.5L12 3l9 7.5" />
+            <path d="M5 9.5V21h14V9.5" />
           </svg>
         </NavItem>
         <NavItem $active={screen === 'create'} onClick={() => onNavigate('create')}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
           </svg>
         </NavItem>
         <NavItem $active={false}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="6" y1="18" x2="6" y2="14" /><line x1="12" y1="18" x2="12" y2="10" /><line x1="18" y1="18" x2="18" y2="6" />
+            <line x1="6" y1="18" x2="6" y2="14" />
+            <line x1="12" y1="18" x2="12" y2="10" />
+            <line x1="18" y1="18" x2="18" y2="6" />
           </svg>
         </NavItem>
         <NavItem $active={screen === 'profile'} onClick={() => onNavigate('profile')}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="7" r="4" /><path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+            <circle cx="12" cy="7" r="4" />
+            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
           </svg>
         </NavItem>
       </BottomNav>
