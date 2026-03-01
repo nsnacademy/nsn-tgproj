@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 import {
   SafeArea,
@@ -29,24 +29,58 @@ type Props = {
   ) => void;
 };
 
+// Константы для текстов (вынесены для оптимизации)
+const FREE_INFO_TEXT = "Участие в вызове бесплатное. Все участники обязаны выполнять условия, заданные создателем.";
+
+const PAID_INFO_TEXTS = {
+  main: "Участники оплачивают участие напрямую создателю вызова. Платформа не участвует в переводе средств.",
+  platform: "Платформа организует вызов и фиксирует участие участников. Расчёт вознаграждения производится на основе данных платформы.",
+  creator: "Создатель вызова самостоятельно производит расчёт с платформой в соответствии с правилами сервиса.",
+  terms: [
+    "• вознаграждение платформы — 10% от общего дохода",
+    "• учитываются подтверждённые участники",
+    "• расчёт производится в течение 7 дней",
+    "• при несоблюдении условий данные вызова могут быть аннулированы"
+  ]
+};
+
 export function CreateFlow({ onNavigate }: Props) {
   const [entryType, setEntryType] = useState<'free' | 'paid' | null>(null);
   const [accepted, setAccepted] = useState(false);
 
-  const canContinue =
-    entryType === 'free' || (entryType === 'paid' && accepted);
+  // Мемоизация условия возможности продолжения
+  const canContinue = useMemo(
+    () => entryType === 'free' || (entryType === 'paid' && accepted),
+    [entryType, accepted]
+  );
 
-  const handleNext = () => {
+  // Мемоизированные обработчики
+  const handleFreeClick = useCallback(() => {
+    setEntryType('free');
+    setAccepted(false);
+  }, []);
+
+  const handlePaidClick = useCallback(() => {
+    setEntryType('paid');
+  }, []);
+
+  const handleAcceptToggle = useCallback(() => {
+    setAccepted(prev => !prev);
+  }, []);
+
+  const handleNext = useCallback(() => {
     if (!canContinue) return;
 
     if (entryType === 'free') {
       onNavigate('create-flow-free');
-    }
-
-    if (entryType === 'paid') {
+    } else if (entryType === 'paid') {
       onNavigate('create-flow-paid');
     }
-  };
+  }, [canContinue, entryType, onNavigate]);
+
+  const handleBack = useCallback(() => {
+    onNavigate('create');
+  }, [onNavigate]);
 
   return (
     <SafeArea>
@@ -58,10 +92,7 @@ export function CreateFlow({ onNavigate }: Props) {
           <OptionWrap>
             <Option
               $active={entryType === 'free'}
-              onClick={() => {
-                setEntryType('free');
-                setAccepted(false);
-              }}
+              onClick={handleFreeClick}
             >
               <Radio $checked={entryType === 'free'} />
               <Label>
@@ -72,66 +103,72 @@ export function CreateFlow({ onNavigate }: Props) {
 
             <SlidingInfo $open={entryType === 'free'}>
               <Explanation>
-                Участие в вызове бесплатное. Все участники обязаны выполнять
-                условия, заданные создателем.
+                {FREE_INFO_TEXT}
               </Explanation>
             </SlidingInfo>
           </OptionWrap>
 
           {/* ===== PAID ===== */}
-         <OptionWrap>
-  <Option
-    $active={entryType === 'paid'}
-    onClick={() => setEntryType('paid')}
-  >
-    <Radio $checked={entryType === 'paid'} />
-    <Label>
-      Платное вступление
-      <span>Оплата напрямую создателю</span>
-    </Label>
-  </Option>
+          <OptionWrap>
+            <Option
+              $active={entryType === 'paid'}
+              onClick={handlePaidClick}
+            >
+              <Radio $checked={entryType === 'paid'} />
+              <Label>
+                Платное вступление
+                <span>Оплата напрямую создателю</span>
+              </Label>
+            </Option>
 
-  <FloatingInfo $open={entryType === 'paid'}>
-    <Explanation>
-      Участники оплачивают участие напрямую создателю вызова.
-      Платформа не участвует в переводе средств.
-    </Explanation>
+            <FloatingInfo $open={entryType === 'paid'}>
+              <Explanation>
+                {PAID_INFO_TEXTS.main}
+              </Explanation>
 
-    <Explanation style={{ marginTop: 6 }}>
-      Платформа организует вызов и фиксирует участие участников.
-      Расчёт вознаграждения производится на основе данных платформы.
-    </Explanation>
+              <Explanation style={{ marginTop: 6 }}>
+                {PAID_INFO_TEXTS.platform}
+              </Explanation>
 
-    <Explanation style={{ marginTop: 6 }}>
-      Создатель вызова самостоятельно производит расчёт
-      с платформой в соответствии с правилами сервиса.
-    </Explanation>
+              <Explanation style={{ marginTop: 6 }}>
+                {PAID_INFO_TEXTS.creator}
+              </Explanation>
 
-   <Explanation style={{ marginTop: 6, opacity: 0.55 }}>
-  • вознаграждение платформы — <b>10%</b> от общего дохода<br />
-  • учитываются подтверждённые участники<br />
-  • расчёт производится в течение <b>7 дней</b><br />
-  • при несоблюдении условий данные вызова могут быть аннулированы
-</Explanation>
+              <Explanation style={{ marginTop: 6, opacity: 0.55 }}>
+                {PAID_INFO_TEXTS.terms.map((text, index) => (
+                  <span key={index}>
+                    {text}
+                    {index < PAID_INFO_TEXTS.terms.length - 1 && <br />}
+                  </span>
+                ))}
+              </Explanation>
 
-    <Consent onClick={() => setAccepted(!accepted)}>
-      <input type="checkbox" checked={accepted} readOnly />
-      <span>
-        Я принимаю условия и рассчет вознаграждения платформе
-      </span>
-    </Consent>
-  </FloatingInfo>
-</OptionWrap>
-
+              <Consent onClick={handleAcceptToggle}>
+                <input 
+                  type="checkbox" 
+                  checked={accepted} 
+                  readOnly 
+                  aria-label="Принять условия"
+                />
+                <span>
+                  Я принимаю условия и рассчет вознаграждения платформе
+                </span>
+              </Consent>
+            </FloatingInfo>
+          </OptionWrap>
         </Options>
       </Center>
 
       <Footer>
-        <BackButton onClick={() => onNavigate('create')}>
+        <BackButton onClick={handleBack}>
           Назад
         </BackButton>
 
-        <NextButton disabled={!canContinue} onClick={handleNext}>
+        <NextButton 
+          disabled={!canContinue} 
+          onClick={handleNext}
+          aria-disabled={!canContinue}
+        >
           Далее
         </NextButton>
       </Footer>

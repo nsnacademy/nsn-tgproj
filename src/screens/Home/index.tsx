@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
 import {
@@ -34,262 +34,132 @@ import {
   NavItem,
   StatusBadge,
   ChallengeTypeBadge,
-  SkeletonCard,
-  SkeletonLine,
-  SkeletonBadge,
-  SkeletonStats,
-  SkeletonProgress,
 } from './styles';
 
-type Screen = 'home' | 'create' | 'challenge-progress' | 'profile';
+type Screen =
+  | 'home'
+  | 'create'
+  | 'challenge-progress'
+  | 'profile';
 
 type HomeProps = {
   screen: Screen;
-  onNavigate: (screen: Screen, challengeId?: string, participantId?: string) => void;
+  onNavigate: (
+    screen: Screen,
+    challengeId?: string,
+    participantId?: string
+  ) => void;
   refreshKey: number;
 };
+
 
 type ChallengeItem = {
   participant_id: string;
   challenge_id: string;
+
   title: string;
   start_at: string;
   end_at: string | null;
   duration_days: number;
+
   has_goal: boolean;
   goal_value: number | null;
   user_progress: number | null;
+
   participants_count: number;
   user_completed: boolean;
   challenge_finished: boolean;
+
   rating_place?: number | null;
 };
 
-// Кэш для данных home
-const homeCache = new Map<
-  string,
-  { data: ChallengeItem[]; timestamp: number; tab: 'active' | 'completed' }
->();
-const CACHE_TTL = 2 * 60 * 1000; // 2 минуты
-
-// Скелетон компонент
-const HomeSkeleton = () => (
-  <>
-    {[1, 2, 3].map((i) => (
-      <SkeletonCard key={i}>
-        <CardHeader>
-          <CardTitleRow>
-            <SkeletonLine width="60%" height={20} />
-            <SkeletonBadge width={40} height={24} />
-          </CardTitleRow>
-          <SkeletonLine width="40%" height={16} style={{ marginTop: 8 }} />
-        </CardHeader>
-
-        <SkeletonStats>
-          <StatItem>
-            <SkeletonLine width="30px" height={24} />
-            <SkeletonLine width="50px" height={12} style={{ marginTop: 4 }} />
-          </StatItem>
-          <StatItem>
-            <SkeletonLine width="30px" height={24} />
-            <SkeletonLine width="50px" height={12} style={{ marginTop: 4 }} />
-          </StatItem>
-          <StatItem>
-            <SkeletonLine width="60px" height={24} />
-            <SkeletonLine width="40px" height={12} style={{ marginTop: 4 }} />
-          </StatItem>
-        </SkeletonStats>
-
-        <SkeletonProgress>
-          <ProgressInfo>
-            <SkeletonLine width="70%" height={14} />
-            <SkeletonLine width="40px" height={14} />
-          </ProgressInfo>
-          <SkeletonLine width="100%" height={6} style={{ margin: '12px 0' }} />
-          <SkeletonLine width="40%" height={12} />
-        </SkeletonProgress>
-
-        <SkeletonLine width="100%" height={48} style={{ marginTop: 16, borderRadius: 30 }} />
-      </SkeletonCard>
-    ))}
-  </>
-);
-
 export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
+
   const [tab, setTab] = useState<'active' | 'completed'>('active');
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
-  const [tgUser, setTgUser] = useState<any>(null);
-  const mountedRef = useRef(true);
-  const loadingRef = useRef(false);
 
-  // Получаем Telegram user один раз
-  useEffect(() => {
-    const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    setTgUser(user);
-  }, []);
+  async function load() {
+    console.log('[HOME] load called');
 
-  // Мемоизация отфильтрованных списков
-  const active = useMemo(() => items.filter((i) => !i.challenge_finished), [items]);
-  const completed = useMemo(() => items.filter((i) => i.challenge_finished), [items]);
-  const list = useMemo(() => (tab === 'active' ? active : completed), [tab, active, completed]);
-
-  // Функция расчета дней (мемоизирована)
-  const calculateDayInfo = useCallback((item: ChallengeItem) => {
-    const start = new Date(item.start_at);
-    const today = new Date();
-
-    const startUTC = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
-    const todayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-
-    const diffDays = Math.floor((todayUTC - startUTC) / (1000 * 60 * 60 * 24));
-
-    let currentDay;
-    if (diffDays < 0) {
-      currentDay = 1;
-    } else {
-      currentDay = Math.min(item.duration_days, diffDays + 1);
-    }
-
-    const progressValue = Number(item.user_progress ?? 0);
-    const goalValue = Number(item.goal_value ?? 0);
-
-    const progressPercent = item.has_goal && goalValue > 0
-      ? Math.min(100, Math.round((progressValue / goalValue) * 100))
-      : Math.min(100, Math.round((progressValue / item.duration_days) * 100));
-
-    return { diffDays, currentDay, progressPercent };
-  }, []);
-
-  // Функция загрузки данных
-  const loadData = useCallback(async (force = false) => {
-    if (!tgUser || loadingRef.current) return;
-
-    const cacheKey = `home_${tgUser.id}`;
-    
-    // Проверка кэша (если не force)
-    if (!force) {
-      const cached = homeCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        setItems(cached.data);
-        setLoading(false);
-        return;
-      }
-    }
-
-    loadingRef.current = true;
     setLoading(true);
 
-    try {
-      // Получаем пользователя из БД
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('telegram_id', tgUser.id)
-        .single();
-
-      if (userError || !user) {
-        setItems([]);
-        return;
-      }
-
-      // Автозавершение просроченных вызовов
-      await supabase.rpc('finish_expired_challenges');
-
-      // Получаем данные
-      const { data, error } = await supabase.rpc('get_home_challenges', {
-        p_user_id: user.id,
-      });
-
-      if (error) {
-        console.error('[HOME] rpc error', error);
-        setItems([]);
-        return;
-      }
-
-      // Сохраняем в кэш
-      homeCache.set(cacheKey, {
-        data: data ?? [],
-        timestamp: Date.now(),
-        tab,
-      });
-
-      if (mountedRef.current) {
-        setItems(data ?? []);
-      }
-    } catch (error) {
-      console.error('[HOME] error', error);
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-      }
-      loadingRef.current = false;
+    const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (!tgUser) {
+      console.log('[HOME] no tg user');
+      setItems([]);
+      setLoading(false);
+      return;
     }
-  }, [tgUser, tab]);
 
-  // Загрузка при монтировании и изменении refreshKey
-  useEffect(() => {
-    mountedRef.current = true;
+    console.log('[HOME] tg user:', tgUser);
+
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('telegram_id', tgUser.id)
+      .single();
+
+    if (userError) {
+      console.log('[HOME] user error:', userError);
+    }
+
+    if (!user) {
+      console.log('[HOME] no user found');
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    console.log('[HOME] found user:', user);
+
+    /* 🔥 ВАЖНО: автозавершение просроченных вызовов */
+    console.log('[HOME] calling finish_expired_challenges');
+    await supabase.rpc('finish_expired_challenges');
+
+    /* 🔥 теперь грузим Home */
+    console.log('[HOME] calling get_home_challenges for user:', user.id);
+    const { data, error } = await supabase.rpc('get_home_challenges', {
+      p_user_id: user.id,
+    });
+
+    if (error) {
+      console.error('[HOME] rpc error', error);
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    console.log('[HOME] items from rpc:', data);
+    console.log('[HOME] number of items:', data?.length || 0);
     
-    if (screen === 'home' && tgUser) {
-      loadData();
+    // Логируем каждый элемент для отладки
+    if (data && data.length > 0) {
+      data.forEach((item: ChallengeItem, index: number) => {
+        console.log(`[HOME] Item ${index + 1}:`, {
+          title: item.title,
+          start_at: item.start_at,
+          duration_days: item.duration_days,
+          challenge_finished: item.challenge_finished,
+          user_progress: item.user_progress
+        });
+      });
     }
+    
+    setItems(data ?? []);
+    setLoading(false);
+  }
 
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [screen, refreshKey, tgUser, loadData]);
-
-  // Предзагрузка данных для неактивной вкладки
   useEffect(() => {
-    if (screen === 'home' && items.length === 0 && tgUser) {
-      // Тихо грузим в фоне
-      loadData();
+    if (screen === 'home') {
+      load();
     }
-  }, [screen, items.length, tgUser, loadData]);
+  }, [screen, refreshKey]);
 
-  // Pull-to-refresh (опционально)
-  useEffect(() => {
-    let touchStart = 0;
-    let touchEnd = 0;
 
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStart = e.targetTouches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      touchEnd = e.targetTouches[0].clientY;
-    };
-
-    const handleTouchEnd = () => {
-      if (touchStart - touchEnd > 150 && window.scrollY === 0) {
-        // Свайп вниз для обновления
-        loadData(true);
-      }
-    };
-
-    document.addEventListener('touchstart', handleTouchStart);
-    document.addEventListener('touchmove', handleTouchMove);
-    document.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [loadData]);
-
-  const handleTabChange = useCallback((newTab: 'active' | 'completed') => {
-    setTab(newTab);
-  }, []);
-
-  // Исправленная функция handleCardClick - убрали неиспользуемый параметр finished
-  const handleCardClick = useCallback(
-    (challengeId: string, participantId: string) => {
-      onNavigate('challenge-progress', challengeId, participantId);
-    },
-    [onNavigate]
-  );
+  const active = items.filter(i => !i.challenge_finished);
+  const completed = items.filter(i => i.challenge_finished);
+  const list = tab === 'active' ? active : completed;
 
   return (
     <SafeArea>
@@ -298,9 +168,7 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
         <Header>
           <StatusLabel>Состояние</StatusLabel>
           <StatusTitle>
-            {loading
-              ? 'Загрузка...'
-              : tab === 'active'
+            {tab === 'active'
               ? active.length === 0
                 ? 'Нет активных вызовов'
                 : `Активные вызовы (${active.length})`
@@ -311,11 +179,11 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
         </Header>
 
         <Tabs>
-          <Tab $active={tab === 'active'} onClick={() => handleTabChange('active')}>
-            Активные {!loading && active.length > 0 && `(${active.length})`}
+          <Tab $active={tab === 'active'} onClick={() => setTab('active')}>
+            Активные {active.length > 0 && `(${active.length})`}
           </Tab>
-          <Tab $active={tab === 'completed'} onClick={() => handleTabChange('completed')}>
-            Завершённые {!loading && completed.length > 0 && `(${completed.length})`}
+          <Tab $active={tab === 'completed'} onClick={() => setTab('completed')}>
+            Завершённые {completed.length > 0 && `(${completed.length})`}
           </Tab>
         </Tabs>
       </FixedHeaderWrapper>
@@ -325,7 +193,7 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
       <HomeContainer>
         <CenterWrapper>
           {loading ? (
-            <HomeSkeleton />
+            <EmptyText>Загрузка…</EmptyText>
           ) : list.length === 0 ? (
             <EmptyText>
               {tab === 'active'
@@ -333,9 +201,56 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                 : 'Завершённых вызовов пока нет'}
             </EmptyText>
           ) : (
-            list.map((item) => {
-              const { diffDays, currentDay, progressPercent } = calculateDayInfo(item);
+            list.map(item => {
+              const progressValue = Number(item.user_progress ?? 0);
+              const goalValue = Number(item.goal_value ?? 0);
 
+              // ИСПРАВЛЕНО: правильный подсчет дней с учетом будущих дат
+              const start = new Date(item.start_at);
+              const today = new Date();
+              
+              console.log(`[HOME] Calculating days for: ${item.title}`);
+              console.log(`[HOME] Raw start_at: ${item.start_at}`);
+              console.log(`[HOME] Start date object:`, start);
+              console.log(`[HOME] Today:`, today);
+              
+              // Создаем даты в UTC, обнуляя время
+              const startUTC = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+              const todayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+              
+              console.log(`[HOME] Start UTC: ${new Date(startUTC).toISOString()}`);
+              console.log(`[HOME] Today UTC: ${new Date(todayUTC).toISOString()}`);
+              
+              // Вычисляем разницу в днях (может быть отрицательной, если челлендж еще не начался)
+              const diffDays = Math.floor((todayUTC - startUTC) / (1000 * 60 * 60 * 24));
+              console.log(`[HOME] diffDays: ${diffDays}`);
+              
+              // ИСПРАВЛЕНО: если челлендж еще не начался (diffDays < 0), показываем день 1
+              // Если начался, но прошло больше дней чем длительность, показываем последний день
+              let currentDay;
+              if (diffDays < 0) {
+                // Челлендж еще не начался
+                currentDay = 1;
+                console.log(`[HOME] Challenge hasn't started yet, showing day 1`);
+              } else {
+                // Челлендж начался, считаем день с учетом максимальной длительности
+                currentDay = Math.min(item.duration_days, diffDays + 1);
+                console.log(`[HOME] Challenge started, calculated day: ${currentDay}`);
+              }
+              
+              console.log(`[HOME] final currentDay: ${currentDay} из ${item.duration_days}`);
+
+              // 🔥 ЕДИНЫЙ ПРОЦЕНТ
+              const progressPercent = item.has_goal && goalValue > 0
+                ? Math.min(100, Math.round((progressValue / goalValue) * 100))
+                : Math.min(
+                    100,
+                    Math.round((progressValue / item.duration_days) * 100)
+                  );
+
+              console.log(`[HOME] progressPercent: ${progressPercent}%`);
+
+              // Определяем статус вызова
               const getStatusText = () => {
                 if (item.challenge_finished) {
                   return item.user_completed ? 'Успешно завершён' : 'Завершён';
@@ -345,57 +260,62 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                 return 'В процессе';
               };
 
-              const isDisabled = diffDays < 0;
-
               return (
                 <Card key={item.participant_id}>
+                  {/* HEADER: TITLE + BADGES */}
                   <CardHeader>
                     <CardTitleRow>
                       <CardTitle>{item.title}</CardTitle>
                       {typeof item.rating_place === 'number' && item.rating_place <= 3 && (
-                        <StatusBadge $place={item.rating_place}>#{item.rating_place}</StatusBadge>
+                        <StatusBadge $place={item.rating_place}>
+                          #{item.rating_place}
+                        </StatusBadge>
                       )}
                     </CardTitleRow>
-
+                    
                     <ChallengeTypeBadge>
                       {item.has_goal ? 'Специальная цель' : 'Ежедневный вызов'}
                     </ChallengeTypeBadge>
                   </CardHeader>
 
+                  {/* STATS */}
                   <CardStats>
                     <StatItem>
                       <StatValue>{item.participants_count}</StatValue>
                       <StatLabel>участников</StatLabel>
                     </StatItem>
-
+                    
                     <StatItem>
                       <StatValue>{item.duration_days}</StatValue>
                       <StatLabel>дней</StatLabel>
                     </StatItem>
-
+                    
                     <StatItem>
-                      <StatValue>{item.challenge_finished ? 'Завершён' : getStatusText()}</StatValue>
+                      <StatValue>
+                        {item.challenge_finished ? 'Завершён' : getStatusText()}
+                      </StatValue>
                       <StatLabel>статус</StatLabel>
                     </StatItem>
                   </CardStats>
 
+                  {/* PROGRESS SECTION */}
                   <ProgressWrapper>
                     <ProgressHeader>
                       <ProgressInfo>
                         <ProgressText>
                           {item.has_goal
-                            ? `Прогресс: ${item.user_progress ?? 0} из ${item.goal_value ?? 0}`
-                            : `Выполнено: ${item.user_progress ?? 0} из ${item.duration_days} дней`}
+                            ? `Прогресс: ${progressValue} из ${goalValue}`
+                            : `Выполнено: ${progressValue} из ${item.duration_days} дней`}
                         </ProgressText>
                         <ProgressText $highlight>{progressPercent}%</ProgressText>
                       </ProgressInfo>
-
+                      
                       <ProgressBar>
-                        <ProgressFill
-                          style={{
+                        <ProgressFill 
+                          style={{ 
                             width: `${progressPercent}%`,
-                            opacity: item.challenge_finished ? 0.7 : 1,
-                          }}
+                            opacity: item.challenge_finished ? 0.7 : 1
+                          }} 
                         />
                       </ProgressBar>
 
@@ -403,9 +323,7 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                         {diffDays < 0 ? (
                           <>Старт {new Date(item.start_at).toLocaleDateString('ru-RU')}</>
                         ) : (
-                          <>
-                            День {currentDay} из {item.duration_days}
-                          </>
+                          <>День {currentDay} из {item.duration_days}</>
                         )}
                         {item.challenge_finished && (
                           <span style={{ marginLeft: '8px', opacity: 0.7 }}>
@@ -416,21 +334,31 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                     </ProgressHeader>
                   </ProgressWrapper>
 
+                  {/* ACTION BUTTON */}
                   {!item.challenge_finished ? (
                     <PrimaryButton
-                      onClick={() => handleCardClick(item.challenge_id, item.participant_id)}
-                      disabled={isDisabled}
-                      style={isDisabled ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                      onClick={() =>
+                        onNavigate(
+                          'challenge-progress',
+                          item.challenge_id,
+                          item.participant_id
+                        )
+                      }
+                      disabled={diffDays < 0}
+                      style={diffDays < 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
-                      {isDisabled
-                        ? 'Доступно с ' + new Date(item.start_at).toLocaleDateString('ru-RU')
-                        : progressPercent >= 100
-                        ? 'Посмотреть результат'
-                        : 'Продолжить вызов'}
+                      {diffDays < 0 ? 'Доступно с ' + new Date(item.start_at).toLocaleDateString('ru-RU') : 
+                       progressPercent >= 100 ? 'Посмотреть результат' : 'Продолжить вызов'}
                     </PrimaryButton>
                   ) : (
                     <PrimaryButton
-                      onClick={() => handleCardClick(item.challenge_id, item.participant_id)}
+                      onClick={() =>
+                        onNavigate(
+                          'challenge-progress',
+                          item.challenge_id,
+                          item.participant_id
+                        )
+                      }
                       $variant="outline"
                     >
                       Посмотреть результат
@@ -443,38 +371,55 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
-      <BottomNav>
-        <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 10.5L12 3l9 7.5" />
-            <path d="M5 9.5V21h14V9.5" />
-          </svg>
-        </NavItem>
+     <BottomNav>
+  {/* HOME */}
+  <NavItem
+    $active={screen === 'home'}
+    onClick={() => onNavigate('home')}
+  >
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 10.5L12 3l9 7.5" />
+      <path d="M5 9.5V21h14V9.5" />
+    </svg>
+  </NavItem>
 
-        <NavItem $active={screen === 'create'} onClick={() => onNavigate('create')}>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-          </svg>
-        </NavItem>
+  {/* CREATE */}
+  <NavItem
+    $active={screen === 'create'}
+    onClick={() => onNavigate('create')}
+  >
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </svg>
+  </NavItem>
 
-        <NavItem $active={false} onClick={() => {}}>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="6" y1="18" x2="6" y2="14" />
-            <line x1="12" y1="18" x2="12" y2="10" />
-            <line x1="18" y1="18" x2="18" y2="6" />
-          </svg>
-        </NavItem>
+  {/* STATS (ПОКА НЕТ ЭКРАНА) */}
+  <NavItem
+    $active={false}
+    onClick={() => {}}
+  >
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+      <line x1="6" y1="18" x2="6" y2="14" />
+      <line x1="12" y1="18" x2="12" y2="10" />
+      <line x1="18" y1="18" x2="18" y2="6" />
+    </svg>
+  </NavItem>
 
-        <NavItem $active={screen === 'profile'} onClick={() => onNavigate('profile')}>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="7" r="4" />
-            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-          </svg>
-        </NavItem>
-      </BottomNav>
+  {/* PROFILE */}
+  <NavItem
+    $active={screen === 'profile'}
+    onClick={() => onNavigate('profile')}
+  >
+    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="7" r="4" />
+      <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+    </svg>
+  </NavItem>
+</BottomNav>
+
     </SafeArea>
   );
 }
