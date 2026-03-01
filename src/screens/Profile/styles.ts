@@ -386,25 +386,7 @@ export const HeaderContent = styled.div`
   margin-bottom: -12px;
 `;
 
-export const ScrollContent = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  margin-top: 160px; /* Высота фиксированной шапки */
-  padding-bottom: 80px;
-  
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: #111;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: #333;
-    border-radius: 2px;
-  }
-`;
+
 
 // Замените существующий PortfolioLink на этот
 export const PortfolioLink = styled.div`
@@ -438,23 +420,20 @@ export const PortfolioLink = styled.div`
   }
 `;
 
-// Добавьте в конец файла
-export const ReturnToAppBanner = styled.div`
+// Добавьте в конец файла со стилями
+export const ReturnToAppBar = styled.div`
   position: fixed;
-  top: 220px; /* Выше фиксированной шапки */
-  left: 20px;
-  right: 20px;
+  top: 210px; /* Высота FixedHeader + небольшой отступ */
+  left: 0;
+  right: 0;
   background: #1a1a1a;
-  border: 1px solid #ffd700;
-  border-radius: 12px;
-  padding: 16px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  z-index: 20;
+  border-bottom: 1px solid #333;
+  z-index: 9;
   animation: slideDown 0.3s ease;
-  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
 
   @keyframes slideDown {
     from {
@@ -472,7 +451,7 @@ export const ReturnButton = styled.button`
   background: #ffd700;
   color: #000;
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 600;
@@ -487,5 +466,27 @@ export const ReturnButton = styled.button`
 
   &:active {
     transform: scale(0.95);
+  }
+`;
+
+// Обновите ScrollContent
+export const ScrollContent = styled.div<{ $hasReturnBar?: boolean }>`
+  flex: 1;
+  overflow-y: auto;
+  margin-top: ${({ $hasReturnBar }) => $hasReturnBar ? '260px' : '160px'}; /* Увеличиваем отступ если есть панель возврата */
+  padding-bottom: 80px;
+  transition: margin-top 0.3s ease;
+  
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #111;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 2px;
   }
 `;
