@@ -4,7 +4,7 @@ import { supabase } from '../../shared/lib/supabase';
 import {
   SafeArea,
   Container,
-  Title,
+  
   Text,
   Toggle,
   ToggleKnob,
@@ -41,7 +41,11 @@ import {
   HintText,
   CategoryTabs,
   CategoryTab,
-  
+  HeaderRow,
+  HeaderTitle,
+  UserInfoSection,
+  BadgeSection,
+  ContentSection
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -93,7 +97,7 @@ type SupabaseUser = {
 const profileCache = new Map<string, { data: UserStats; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 минут
 
-// Функция для генерации хештега на основе индекса (мемоизирована)
+// Функция для генерации хештега на основе индекса
 const getHashtag = (index: number): string => {
   if (index >= 100) return '#хардкор';
   if (index >= 50) return '#дисциплина';
@@ -102,7 +106,7 @@ const getHashtag = (index: number): string => {
   return '#старт';
 };
 
-// Мемоизированные подсказки
+// Подсказки для разных ролей
 const hints = {
   developer: {
     bio: 'Напишите о себе: стек, опыт, какие проекты интересны',
@@ -169,7 +173,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     [editForm.role]
   );
 
-  // Мемоизированная функция для текста ранга
   const rankText = useMemo(() => 
     stats?.rank && stats?.total_users ? `${stats.rank} / ${stats.total_users}` : '',
     [stats?.rank, stats?.total_users]
@@ -191,7 +194,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     };
   }, [userId]);
 
-  // Оптимизированная загрузка данных с кэшированием и параллельными запросами
   useEffect(() => {
     let mounted = true;
     
@@ -227,8 +229,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       }
 
       try {
-        // Параллельные запросы для ускорения
-        const [allUsersResult, userStatsResult, profileResult] = await Promise.all([
+        // Параллельные запросы
+        const [allUsersResult, userStatsResult, profileResult, weeklyActivityResult] = await Promise.all([
           supabase
             .from('users')
             .select('power_index', { count: 'exact', head: true })
@@ -251,25 +253,53 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             .from('profiles')
             .select('bio, stack, experience, portfolio, telegram, email, role')
             .eq('user_id', targetUserId)
-            .maybeSingle()
+            .maybeSingle(),
+          
+          // Получаем активность за последние 7 дней для расчета роста
+          supabase
+            .from('challenges')
+            .select('created_at')
+            .eq('user_id', targetUserId)
+            .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+            .order('created_at', { ascending: true })
         ]);
 
         if (!mounted) return;
 
         if (userStatsResult.data) {
-          // Оптимизированный расчет позиции
+          // Расчет позиции
           let percentile = 50;
           let rank = 0;
           const totalUsers = allUsersResult.count || 1;
           
-          // Используем head: true для получения только count без данных
-          // Расчет ранга делаем приблизительным на основе процентиля
           if (totalUsers > 0) {
-            // Приблизительный расчет ранга на основе индекса
-            // В реальности нужно получать распределение индексов
             rank = Math.floor((100 - userStatsResult.data.power_index) * totalUsers / 100) + 1;
             rank = Math.max(1, Math.min(totalUsers, rank));
             percentile = Math.round(((totalUsers - rank) / totalUsers) * 100);
+          }
+
+          // Реальный расчет недельного роста
+          let weeklyGrowth = 0;
+          if (weeklyActivityResult.data && weeklyActivityResult.data.length >= 2) {
+            // Группируем по дням
+            const activityByDay: { [key: string]: number } = {};
+            weeklyActivityResult.data.forEach(activity => {
+              const day = new Date(activity.created_at).toISOString().split('T')[0];
+              activityByDay[day] = (activityByDay[day] || 0) + 1;
+            });
+
+            const days = Object.keys(activityByDay).sort();
+            if (days.length >= 2) {
+              // Сравниваем первые 3 дня с последними 3 днями
+              const firstHalf = days.slice(0, Math.min(3, days.length))
+                .reduce((sum, day) => sum + (activityByDay[day] || 0), 0);
+              const secondHalf = days.slice(-Math.min(3, days.length))
+                .reduce((sum, day) => sum + (activityByDay[day] || 0), 0);
+              
+              if (firstHalf > 0) {
+                weeklyGrowth = Math.round(((secondHalf - firstHalf) / firstHalf) * 100);
+              }
+            }
           }
 
           const newStats = {
@@ -288,7 +318,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             power_index: userStatsResult.data.power_index || 0,
             total_calls: userStatsResult.data.total_challenges || 0,
             monthly_active: Math.min(30, userStatsResult.data.total_days || 0),
-            weekly_growth: 12,
+            weekly_growth: weeklyGrowth, // Теперь реальное значение
             percentile,
             rank,
             total_users: totalUsers,
@@ -414,7 +444,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         console.error('Save error:', result.error);
         alert('Ошибка при сохранении: ' + result.error.message);
       } else {
-        // Обновляем кэш после сохранения
+        // Обновляем кэш
         const cacheKey = `profile_${currentUser.id}`;
         const updatedStats = {
           ...stats,
@@ -447,7 +477,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, []);
 
-  // Показываем загрузку только при первой загрузке
   if (isLoading && !stats) {
     return (
       <SafeArea>
@@ -458,7 +487,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     );
   }
 
-  // Если данные уже были, показываем их сразу
   if (!stats) {
     return (
       <SafeArea>
@@ -472,27 +500,29 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   return (
     <SafeArea>
       <Container>
-        {/* HEADER */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <Title>Профиль</Title>
+        {/* Header с плашкой переключения */}
+        <HeaderRow>
+          <HeaderTitle>Профиль</HeaderTitle>
           <Toggle $active={adminMode} $disabled={!isCreator} onClick={onToggleAdmin}>
             <ToggleKnob $active={adminMode} />
           </Toggle>
-        </div>
+        </HeaderRow>
 
-        {/* ОСНОВНОЙ КОНТЕНТ */}
-        <div style={{ marginTop: 20 }}>
-          {/* Только username */}
-          <UserHandle style={{ fontSize: 24, marginBottom: 8 }}>@{stats.username}</UserHandle>
+        {/* User Info Section - свернутая */}
+        <UserInfoSection>
+          <UserHandle style={{ fontSize: 24, marginBottom: 4 }}>@{stats.username}</UserHandle>
           
-          {/* Индекс дисциплины из БД - без округления */}
-          <IndexBadge>
-            <IndexValue>⚡ {stats.power_index.toFixed(1)}</IndexValue>
-            <IndexPercent>· {rankText}</IndexPercent>
-          </IndexBadge>
+          <BadgeSection>
+            <IndexBadge>
+              <IndexValue>⚡ {stats.power_index.toFixed(1)}</IndexValue>
+              <IndexPercent>· {rankText}</IndexPercent>
+            </IndexBadge>
+          </BadgeSection>
+        </UserInfoSection>
 
+        {/* Content Section - скроллится */}
+        <ContentSection>
           {isEditing ? (
-            /* РЕДАКТИРОВАНИЕ */
             <EditForm>
               <CategoryTabs>
                 <CategoryTab 
@@ -588,7 +618,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             </EditForm>
           ) : (
             <>
-              {/* О себе */}
               {stats.bio && <UserBio>{stats.bio}</UserBio>}
               {stats.stack && <UserStack>{stats.stack}</UserStack>}
               {stats.experience && <UserStats>Опыт: {stats.experience}</UserStats>}
@@ -596,7 +625,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
               <SectionDivider />
 
-              {/* СТАТИСТИКА */}
               <SectionTitle>Показатели</SectionTitle>
               <StatsRow>
                 <StatItem>
@@ -613,7 +641,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                 </StatItem>
               </StatsRow>
 
-              {/* Активность - без округления */}
               <ActivityBar>
                 <ActivityFill $width={monthPercent} />
               </ActivityBar>
@@ -622,18 +649,16 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                 {callsPercent > 0 && ` (+${callsPercent.toFixed(1)}%)`}
               </ActivityLabel>
 
-              {/* Динамика */}
-              {stats.weekly_growth > 0 && (
-                <ActivityLabel style={{ marginTop: 8, color: '#4caf50' }}>
-                  ▲ +{stats.weekly_growth}% за неделю
+              {/* Реальная динамика за неделю */}
+              {stats.weekly_growth !== 0 && (
+                <ActivityLabel style={{ marginTop: 8, color: stats.weekly_growth > 0 ? '#4caf50' : '#ff4444' }}>
+                  {stats.weekly_growth > 0 ? '▲' : '▼'} +{Math.abs(stats.weekly_growth)}% за неделю
                 </ActivityLabel>
               )}
 
               <SectionDivider />
 
-              {/* КОНТАКТЫ */}
               {isOwnProfile ? (
-                /* СВОЙ ПРОФИЛЬ */
                 <>
                   <SectionTitle>Контакты</SectionTitle>
                   <ContactSection>
@@ -669,7 +694,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                   </ContactSection>
                 </>
               ) : (
-                /* ЧУЖОЙ ПРОФИЛЬ */
                 <>
                   <SectionTitle>Контакты</SectionTitle>
                   <ContactSection>
@@ -711,18 +735,14 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             </>
           )}
 
-          <SectionDivider />
-
-          {/* ACCESS INFO */}
           {isCreator === false && (
             <Text style={{ marginTop: 8, fontSize: 12, color: '#666', textAlign: 'center' }}>
               Админ-режим только для создателя
             </Text>
           )}
-        </div>
+        </ContentSection>
       </Container>
 
-      {/* BOTTOM NAV */}
       <BottomNav>
         <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
