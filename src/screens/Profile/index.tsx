@@ -220,7 +220,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   }, [userId]);
 
   // Функция для расчета недельного роста
-  // Функция для расчета недельного роста
+  // Функция для расчета недельного роста через participants
 const calculateWeeklyGrowth = useCallback(async (targetUserId: string) => {
   try {
     console.log('📈 [PROFILE] Расчет недельного роста для пользователя:', targetUserId);
@@ -231,67 +231,21 @@ const calculateWeeklyGrowth = useCallback(async (targetUserId: string) => {
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-    // ИСПРАВЛЕНИЕ: используем правильную таблицу и колонку
-    // Вариант 1: если активность хранится в participant_days
+    // Используем таблицу participants
     const { data: activities, error } = await supabase
-      .from('participant_days')
-      .select('date')
+      .from('participants')
+      .select('created_at')
       .eq('user_id', targetUserId)
-      .gte('date', fourteenDaysAgo.toISOString().split('T')[0])
-      .order('date', { ascending: true });
+      .gte('created_at', fourteenDaysAgo.toISOString())
+      .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('❌ [PROFILE] Ошибка получения активностей (participant_days):', error);
-      
-      // Вариант 2: пробуем таблицу daily_logs
-      const { data: dailyLogs, error: logsError } = await supabase
-        .from('daily_logs')
-        .select('date')
-        .eq('user_id', targetUserId)
-        .gte('date', fourteenDaysAgo.toISOString().split('T')[0])
-        .order('date', { ascending: true });
-
-      if (logsError) {
-        console.error('❌ [PROFILE] Ошибка получения активностей (daily_logs):', logsError);
-        return 0;
-      }
-
-      if (!dailyLogs || dailyLogs.length < 7) {
-        console.log('⚠️ [PROFILE] Недостаточно данных в daily_logs для расчета роста');
-        return 0;
-      }
-
-      const now = new Date();
-      const oneWeekAgo = new Date(now.setDate(now.getDate() - 7));
-
-      const lastWeek = dailyLogs.filter(
-        (a) => new Date(a.date) >= oneWeekAgo
-      ).length;
-
-      const previousWeek = dailyLogs.filter(
-        (a) => new Date(a.date) < oneWeekAgo
-      ).length;
-
-      console.log('📅 [PROFILE] daily_logs - Недели:', { lastWeek, previousWeek });
-
-      if (previousWeek === 0) {
-        const result = lastWeek > 0 ? 100 : 0;
-        console.log('📈 [PROFILE] Рост (пред. неделя пуста):', result);
-        return result;
-      }
-
-      const growth = Math.round(((lastWeek - previousWeek) / previousWeek) * 100);
-      const clamped = Math.max(-100, Math.min(1000, growth));
-      
-      console.log('📈 [PROFILE] Рост рассчитан (daily_logs):', { growth, clamped });
-      
-      return clamped;
+      console.error('❌ [PROFILE] Ошибка получения активностей:', error);
+      return 0;
     }
 
-    console.log('📊 [PROFILE] participant_days за 14 дней:', activities?.length || 0);
-
-    if (!activities || activities.length < 7) {
-      console.log('⚠️ [PROFILE] Недостаточно данных в participant_days для расчета роста (<7)');
+    if (!activities || activities.length < 2) {
+      console.log('⚠️ [PROFILE] Недостаточно данных для расчета роста');
       return 0;
     }
 
@@ -299,27 +253,22 @@ const calculateWeeklyGrowth = useCallback(async (targetUserId: string) => {
     const oneWeekAgo = new Date(now.setDate(now.getDate() - 7));
 
     const lastWeek = activities.filter(
-      (a) => new Date(a.date) >= oneWeekAgo
+      (a) => new Date(a.created_at) >= oneWeekAgo
     ).length;
 
     const previousWeek = activities.filter(
-      (a) => new Date(a.date) < oneWeekAgo
+      (a) => new Date(a.created_at) < oneWeekAgo
     ).length;
 
-    console.log('📅 [PROFILE] participant_days - Недели:', { lastWeek, previousWeek });
+    console.log('📅 [PROFILE] Недели:', { lastWeek, previousWeek });
 
     if (previousWeek === 0) {
-      const result = lastWeek > 0 ? 100 : 0;
-      console.log('📈 [PROFILE] Рост (пред. неделя пуста):', result);
-      return result;
+      return lastWeek > 0 ? 100 : 0;
     }
 
     const growth = Math.round(((lastWeek - previousWeek) / previousWeek) * 100);
-    const clamped = Math.max(-100, Math.min(1000, growth));
+    return Math.max(-100, Math.min(1000, growth));
     
-    console.log('📈 [PROFILE] Рост рассчитан:', { growth, clamped });
-    
-    return clamped;
   } catch (error) {
     console.error('❌ [PROFILE] Ошибка расчета роста:', error);
     return 0;
