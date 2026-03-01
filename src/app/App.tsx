@@ -21,7 +21,7 @@ import ChallengePaid from '../screens/ChallengePaid';
 import ChallengeCondition from '../screens/ChallengeCondition';
 
 /* =========================
-   SCREENS
+   SCREENS - ОБНОВЛЕННЫЙ ТИП
 ========================= */
 
 export type Screen =
@@ -31,6 +31,8 @@ export type Screen =
   | 'create-flow'
   | 'create-flow-free'
   | 'create-flow-paid'
+  | 'create-flow-condition'
+  | 'create-flow-invite'
   | 'challenge-details'
   | 'challenge-paid'
   | 'challenge-condition'
@@ -267,6 +269,17 @@ function App() {
         <CreateFlowPaid onNavigate={navigate} />
       )}
 
+      {/* Добавьте эти экраны, когда создадите компоненты */}
+      {/* 
+      {screen === 'create-flow-condition' && (
+        <CreateFlowCondition onNavigate={navigate} />
+      )}
+
+      {screen === 'create-flow-invite' && (
+        <CreateFlowInvite onNavigate={navigate} />
+      )}
+      */}
+
       {screen === 'challenge-details' && selectedChallengeId && (
         <ChallengeDetails
           challengeId={selectedChallengeId}
@@ -337,7 +350,6 @@ function App() {
         <AdminChallenge
           challengeId={selectedChallengeId}
           onBack={() => navigate('admin')}
-          // onNavigate удален, так как не используется в AdminChallenge
         />
       )}
 
