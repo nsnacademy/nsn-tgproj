@@ -4,7 +4,6 @@ import { supabase } from '../../shared/lib/supabase';
 import {
   SafeArea,
   Container,
-  
   HeaderContent,
   FixedHeader,
   ScrollContent,
@@ -45,6 +44,7 @@ import {
   HintText,
   CategoryTabs,
   CategoryTab,
+  PortfolioLink,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -197,19 +197,17 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       const fourteenDaysAgo = new Date();
       fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-      // Получаем активность за последние 14 дней
       const { data: activities } = await supabase
-        .from('challenges') // предположим, что такая таблица есть
+        .from('challenges')
         .select('created_at')
         .eq('user_id', targetUserId)
         .gte('created_at', fourteenDaysAgo.toISOString())
         .order('created_at', { ascending: true });
 
       if (!activities || activities.length < 7) {
-        return 0; // Недостаточно данных для расчета
+        return 0;
       }
 
-      // Разбиваем на две недели
       const now = new Date();
       const oneWeekAgo = new Date(now.setDate(now.getDate() - 7));
 
@@ -224,7 +222,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       if (previousWeek === 0) return lastWeek > 0 ? 100 : 0;
 
       const growth = Math.round(((lastWeek - previousWeek) / previousWeek) * 100);
-      return Math.max(-100, Math.min(1000, growth)); // Ограничиваем разумные пределы
+      return Math.max(-100, Math.min(1000, growth));
     } catch (error) {
       console.error('Error calculating weekly growth:', error);
       return 0;
@@ -247,7 +245,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       const targetUserId = userId || currentUser.id;
       const cacheKey = `profile_${targetUserId}`;
 
-      // Проверка кэша
       const cached = profileCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
         if (mounted) {
@@ -267,7 +264,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       }
 
       try {
-        // Параллельные запросы
         const [allUsersResult, userStatsResult, profileResult, weeklyGrowth] = await Promise.all([
           supabase
             .from('users')
@@ -328,7 +324,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             power_index: userStatsResult.data.power_index || 0,
             total_calls: userStatsResult.data.total_challenges || 0,
             monthly_active: Math.min(30, userStatsResult.data.total_days || 0),
-            weekly_growth: weeklyGrowth, // Реальное значение роста
+            weekly_growth: weeklyGrowth,
             percentile,
             rank: Math.round(rank),
             total_users: totalUsers,
@@ -485,7 +481,10 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, []);
 
-  // Прокрутка к началу при загрузке
+  const handlePortfolioClick = useCallback((url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }, []);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
@@ -514,7 +513,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
   return (
     <SafeArea>
-      {/* Фиксированная шапка */}
       <FixedHeader>
         <HeaderContent>
           <Title>Профиль</Title>
@@ -529,7 +527,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         </IndexBadge>
       </FixedHeader>
 
-      {/* Скроллящийся контент */}
       <ScrollContent ref={scrollRef}>
         <Container>
           {isEditing ? (
@@ -631,7 +628,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               {stats.bio && <UserBio>{stats.bio}</UserBio>}
               {stats.stack && <UserStack>{stats.stack}</UserStack>}
               {stats.experience && <UserStats>Опыт: {stats.experience}</UserStats>}
-              {stats.portfolio && <UserStats>Портфолио: {stats.portfolio}</UserStats>}
 
               <SectionDivider />
 
@@ -659,7 +655,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                 {callsPercent > 0 && ` (+${callsPercent.toFixed(1)}%)`}
               </ActivityLabel>
 
-              {/* Реальная динамика за неделю */}
               {stats.weekly_growth !== 0 && (
                 <ActivityLabel
                   style={{
@@ -667,7 +662,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                     color: stats.weekly_growth > 0 ? '#4caf50' : '#f44336',
                   }}
                 >
-                  {stats.weekly_growth > 0 ? '▲' : '▼'} +{Math.abs(stats.weekly_growth)}% за
+                  {stats.weekly_growth > 0 ? '▲' : '▼'} {Math.abs(stats.weekly_growth)}% за
                   неделю
                 </ActivityLabel>
               )}
@@ -676,8 +671,29 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
               {isOwnProfile ? (
                 <>
-                  <SectionTitle>Контакты</SectionTitle>
+                  <SectionTitle>Контакты и ссылки</SectionTitle>
                   <ContactSection>
+                    {stats.portfolio && (
+                      <ContactItem>
+                        <ContactLabel>Портфолио</ContactLabel>
+                        <ContactValue>
+                          <PortfolioLink 
+                            onClick={() => handlePortfolioClick(stats.portfolio)}
+                            title="Открыть в новой вкладке"
+                          >
+                            {stats.portfolio.length > 30 
+                              ? stats.portfolio.substring(0, 30) + '...' 
+                              : stats.portfolio}
+                          </PortfolioLink>
+                          <CopyIcon
+                            onClick={() => handleCopy(stats.portfolio, 'portfolio')}
+                            title={copied === 'portfolio' ? 'Скопировано!' : 'Копировать ссылку'}
+                          >
+                            📋
+                          </CopyIcon>
+                        </ContactValue>
+                      </ContactItem>
+                    )}
                     {stats.telegram && (
                       <ContactItem>
                         <ContactLabel>Telegram</ContactLabel>
@@ -713,8 +729,29 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                 </>
               ) : (
                 <>
-                  <SectionTitle>Контакты</SectionTitle>
+                  <SectionTitle>Контакты и ссылки</SectionTitle>
                   <ContactSection>
+                    {stats.portfolio && (
+                      <ContactItem>
+                        <ContactLabel>Портфолио</ContactLabel>
+                        <ContactValue>
+                          <PortfolioLink 
+                            onClick={() => handlePortfolioClick(stats.portfolio)}
+                            title="Открыть в новой вкладке"
+                          >
+                            {stats.portfolio.length > 30 
+                              ? stats.portfolio.substring(0, 30) + '...' 
+                              : stats.portfolio}
+                          </PortfolioLink>
+                          <CopyIcon
+                            onClick={() => handleCopy(stats.portfolio, 'portfolio')}
+                            title={copied === 'portfolio' ? 'Скопировано!' : 'Копировать ссылку'}
+                          >
+                            📋
+                          </CopyIcon>
+                        </ContactValue>
+                      </ContactItem>
+                    )}
                     {stats.telegram && (
                       <ContactItem>
                         <ContactLabel>Telegram</ContactLabel>

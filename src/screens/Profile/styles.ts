@@ -51,7 +51,7 @@ export const ToggleKnob = styled.div<{ $active: boolean }>`
 
 // Новые стили
 export const UserName = styled.h2`
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   margin-bottom: 10px;
 `;
@@ -403,5 +403,18 @@ export const ScrollContent = styled.div`
   &::-webkit-scrollbar-thumb {
     background: #333;
     border-radius: 2px;
+  }
+`;
+
+// Добавьте в конец файла со стилями
+export const PortfolioLink = styled.span`
+  color: #ffd700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 215, 0, 0.3);
+  transition: all 0.2s ease;
+
+  &:hover {
+    text-decoration-color: #ffd700;
   }
 `;
