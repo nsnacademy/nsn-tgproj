@@ -205,6 +205,11 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       const currentUser = await getCurrentUser();
       if (!currentUser || !mounted) return;
       setIsOwnProfile(!userId || userId === currentUser.id);
+      console.log('👤 [PROFILE] Проверка своего профиля:', { 
+        currentUserId: currentUser.id, 
+        targetUserId: userId, 
+        isOwnProfile: !userId || userId === currentUser.id 
+      });
     }
 
     checkOwnProfile();
@@ -217,20 +222,30 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   // Функция для расчета недельного роста
   const calculateWeeklyGrowth = useCallback(async (targetUserId: string) => {
     try {
+      console.log('📈 [PROFILE] Расчет недельного роста для пользователя:', targetUserId);
+      
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
       const fourteenDaysAgo = new Date();
       fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-      const { data: activities } = await supabase
+      const { data: activities, error } = await supabase
         .from('challenges')
         .select('created_at')
         .eq('user_id', targetUserId)
         .gte('created_at', fourteenDaysAgo.toISOString())
         .order('created_at', { ascending: true });
 
+      if (error) {
+        console.error('❌ [PROFILE] Ошибка получения активностей:', error);
+        return 0;
+      }
+
+      console.log('📊 [PROFILE] Активности за 14 дней:', activities?.length || 0);
+
       if (!activities || activities.length < 7) {
+        console.log('⚠️ [PROFILE] Недостаточно данных для расчета роста (<7)');
         return 0;
       }
 
@@ -245,12 +260,22 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         (a) => new Date(a.created_at) < oneWeekAgo
       ).length;
 
-      if (previousWeek === 0) return lastWeek > 0 ? 100 : 0;
+      console.log('📅 [PROFILE] Недели:', { lastWeek, previousWeek });
+
+      if (previousWeek === 0) {
+        const result = lastWeek > 0 ? 100 : 0;
+        console.log('📈 [PROFILE] Рост (пред. неделя пуста):', result);
+        return result;
+      }
 
       const growth = Math.round(((lastWeek - previousWeek) / previousWeek) * 100);
-      return Math.max(-100, Math.min(1000, growth));
+      const clamped = Math.max(-100, Math.min(1000, growth));
+      
+      console.log('📈 [PROFILE] Рост рассчитан:', { growth, clamped });
+      
+      return clamped;
     } catch (error) {
-      console.error('Error calculating weekly growth:', error);
+      console.error('❌ [PROFILE] Ошибка расчета роста:', error);
       return 0;
     }
   }, []);
@@ -260,9 +285,11 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     let mounted = true;
 
     async function loadData() {
-      // Не показываем лоадер если есть кэш
+      console.log('🔄 [PROFILE] Загрузка данных профиля...');
+      
       const currentUser = (await getCurrentUser()) as SupabaseUser | null;
       if (!currentUser || !mounted) {
+        console.log('❌ [PROFILE] Нет текущего пользователя');
         setIsLoading(false);
         return;
       }
@@ -270,9 +297,16 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       const targetUserId = userId || currentUser.id;
       const cacheKey = `profile_${targetUserId}`;
 
+      console.log('🎯 [PROFILE] Целевой пользователь:', { 
+        targetUserId, 
+        currentUserId: currentUser.id,
+        isOwn: targetUserId === currentUser.id 
+      });
+
       // Проверка кэша - если есть, показываем сразу без загрузки
       const cached = profileCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log('💾 [PROFILE] Данные из кэша:', cached.data);
         if (mounted) {
           setStats(cached.data);
           setEditForm({
@@ -293,6 +327,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       setIsLoading(true);
 
       try {
+        console.log('🔍 [PROFILE] Запрос к БД...');
+        
         const [allUsersResult, userStatsResult, profileResult, weeklyGrowth] = await Promise.all([
           supabase
             .from('users')
@@ -325,16 +361,34 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
         if (!mounted) return;
 
+        console.log('📥 [PROFILE] Результаты запросов:', {
+          allUsersCount: allUsersResult.count,
+          userStats: userStatsResult.data,
+          profileData: profileResult.data,
+          weeklyGrowth
+        });
+
+        if (userStatsResult.error) {
+          console.error('❌ [PROFILE] Ошибка получения статистики:', userStatsResult.error);
+        }
+
         if (userStatsResult.data) {
           let percentile = 50;
           let rank = 0;
           const totalUsers = allUsersResult.count || 1;
 
-          if (totalUsers > 0) {
-            rank =
-              Math.floor((100 - userStatsResult.data.power_index) * totalUsers) / 100 + 1;
-            rank = Math.max(1, Math.min(totalUsers, rank));
+          if (totalUsers > 0 && userStatsResult.data.power_index !== undefined) {
+            // Приблизительный расчет ранга на основе индекса
+            rank = Math.floor((100 - userStatsResult.data.power_index) * totalUsers) / 100 + 1;
+            rank = Math.max(1, Math.min(totalUsers, Math.round(rank)));
             percentile = Math.round(((totalUsers - rank) / totalUsers) * 100);
+            
+            console.log('📊 [PROFILE] Расчет ранга:', {
+              power_index: userStatsResult.data.power_index,
+              totalUsers,
+              rank,
+              percentile
+            });
           }
 
           const newStats = {
@@ -360,6 +414,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             hashtag: getHashtag(userStatsResult.data.power_index || 0),
           };
 
+          console.log('✅ [PROFILE] Итоговые данные профиля:', newStats);
+
           profileCache.set(cacheKey, { data: newStats, timestamp: Date.now() });
 
           setStats(newStats);
@@ -372,12 +428,15 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
             email: newStats.email,
             role: newStats.role,
           });
+        } else {
+          console.warn('⚠️ [PROFILE] Нет данных пользователя');
         }
       } catch (error) {
-        console.error('Error loading profile:', error);
+        console.error('💥 [PROFILE] Критическая ошибка:', error);
       } finally {
         if (mounted) {
           setIsLoading(false);
+          console.log('🏁 [PROFILE] Загрузка завершена');
         }
       }
     }
@@ -399,6 +458,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         return;
       }
       const creator = await checkIsCreator(user.id);
+      console.log('👑 [PROFILE] Проверка прав создателя:', { userId: user.id, isCreator: creator });
       if (mounted) {
         setIsCreator(creator);
       }
@@ -413,6 +473,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
   const onToggleAdmin = useCallback(() => {
     if (locked || !isCreator) return;
+    console.log('🔄 [PROFILE] Переключение в админ-режим');
     localStorage.setItem('adminMode', 'true');
     setAdminMode(true);
     setLocked(true);
@@ -424,6 +485,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
 
   useEffect(() => {
     if (screen === 'profile') {
+      console.log('👁️ [PROFILE] Открыт экран профиля');
       localStorage.setItem('adminMode', 'false');
       setAdminMode(false);
     }
@@ -432,6 +494,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   const handleSave = useCallback(async () => {
     if (!stats) return;
 
+    console.log('💾 [PROFILE] Сохранение профиля...');
     const currentUser = await getCurrentUser();
     if (!currentUser) return;
 
@@ -441,6 +504,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         .select('id')
         .eq('user_id', currentUser.id)
         .maybeSingle();
+
+      console.log('📝 [PROFILE] Существующий профиль:', existingProfile);
 
       let result;
 
@@ -475,9 +540,10 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       }
 
       if (result.error) {
-        console.error('Save error:', result.error);
+        console.error('❌ [PROFILE] Ошибка сохранения:', result.error);
         alert('Ошибка при сохранении: ' + result.error.message);
       } else {
+        console.log('✅ [PROFILE] Профиль сохранен');
         const cacheKey = `profile_${currentUser.id}`;
         const updatedStats = {
           ...stats,
@@ -495,18 +561,19 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         setIsEditing(false);
       }
     } catch (error) {
-      console.error('Save error:', error);
+      console.error('💥 [PROFILE] Критическая ошибка сохранения:', error);
       alert('Ошибка при сохранении');
     }
   }, [stats, editForm]);
 
   const handleCopy = useCallback(async (text: string, type: string) => {
     try {
+      console.log(`📋 [PROFILE] Копирование ${type}:`, text);
       await navigator.clipboard.writeText(text);
       setCopied(type);
       setTimeout(() => setCopied(null), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      console.error('❌ [PROFILE] Ошибка копирования:', err);
     }
   }, []);
 
