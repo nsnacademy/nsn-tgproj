@@ -354,17 +354,7 @@ export const CancelButton = styled.button`
   cursor: pointer;
 `;
 
-export const CopyIcon = styled.span`
-  margin-left: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  opacity: 0.5;
-  transition: opacity 0.2s;
 
-  &:hover {
-    opacity: 1;
-  }
-`;
 
 // Добавьте в начало файла со стилями
 
@@ -491,22 +481,50 @@ export const ScrollContent = styled.div<{ $hasReturnBar?: boolean }>`
   }
 `;
 
-// Добавьте в конец файла со стилями
+// Обновите CopyIcon
+export const CopyIcon = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+
+  &:hover {
+    color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+`;
+
+// Добавьте новые стили для портфолио
 export const PortfolioContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: #0a0a0a;
-  border-radius: 12px;
-  padding: 12px 16px;
+  border-radius: 8px;
+  padding: 8px 12px;
   margin: 8px 0;
   border: 1px solid #333;
+  font-size: 14px;
+
+  &:hover {
+    border-color: #ffd700;
+  }
 `;
 
 export const PortfolioText = styled.span`
   color: #ffd700;
-  font-size: 14px;
   word-break: break-all;
   flex: 1;
-  margin-right: 12px;
+  margin-right: 8px;
+  font-family: monospace;
+  font-size: 13px;
 `;
