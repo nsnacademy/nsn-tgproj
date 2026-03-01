@@ -373,7 +373,7 @@ export const FixedHeader = styled.div`
   left: 0;
   right: 0;
   background: #000;
-  padding: 60px 20px 20px;
+  padding: 90px 20px 10px;
   z-index: 10;
   border-bottom: 1px solid #222;
 `;
@@ -382,7 +382,7 @@ export const HeaderContent = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: -12px;
 `;
 
 export const ScrollContent = styled.div`
