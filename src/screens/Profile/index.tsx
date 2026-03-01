@@ -97,6 +97,53 @@ type SupabaseUser = {
 const profileCache = new Map<string, { data: UserStats; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 минут
 
+// Функция для получения точного ранга пользователя
+const getUserRank = async (targetUserId: string) => {
+  try {
+    console.log('📊 [PROFILE] Получение точного ранга для пользователя:', targetUserId);
+    
+    // Получаем всех пользователей с индексами, отсортированных по убыванию
+    const { data: allUsers, error } = await supabase
+      .from('users')
+      .select('id, power_index, username')
+      .order('power_index', { ascending: false });
+
+    if (error) {
+      console.error('❌ [PROFILE] Ошибка получения списка пользователей:', error);
+      return { rank: 0, totalUsers: 0, percentile: 0 };
+    }
+
+    const totalUsers = allUsers?.length || 0;
+    console.log('📊 [PROFILE] Всего пользователей:', totalUsers);
+    
+    // Находим индекс текущего пользователя в массиве (0-based)
+    const userIndex = allUsers?.findIndex(u => u.id === targetUserId) ?? -1;
+    
+    // Ранг = индекс + 1 (1-based ranking)
+    const rank = userIndex >= 0 ? userIndex + 1 : 0;
+    
+    // Процентиль: какой процент пользователей имеет индекс ниже
+    // (чем меньше ранг, тем выше процентиль)
+    const percentile = totalUsers > 0 && rank > 0 
+      ? Math.round(((totalUsers - rank) / totalUsers) * 100)
+      : 0;
+
+    console.log('📊 [PROFILE] Точный ранг:', {
+      targetUserId,
+      rank,
+      totalUsers,
+      percentile,
+      better_than: totalUsers - rank,
+      worse_than: rank - 1
+    });
+
+    return { rank, totalUsers, percentile };
+  } catch (error) {
+    console.error('❌ [PROFILE] Ошибка расчета ранга:', error);
+    return { rank: 0, totalUsers: 0, percentile: 0 };
+  }
+};
+
 // Функция для генерации хештега на основе индекса
 const getHashtag = (index: number): string => {
   if (index >= 100) return '#хардкор';
@@ -220,234 +267,232 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   }, [userId]);
 
   // Функция для расчета недельного роста
-  // Функция для расчета недельного роста
-const calculateWeeklyGrowth = useCallback(async (targetUserId: string) => {
-  try {
-    console.log('📈 [PROFILE] Расчет недельного роста для пользователя:', targetUserId);
-    
-    const now = new Date();
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const fourteenDaysAgo = new Date();
-    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-
-    console.log('📅 [PROFILE] Диапазон дат:', {
-      fourteenDaysAgo: fourteenDaysAgo.toISOString(),
-      sevenDaysAgo: sevenDaysAgo.toISOString(),
-      now: now.toISOString()
-    });
-
-    // Получаем все участия пользователя в челленджах
-    const { data: participations, error } = await supabase
-      .from('participants')
-      .select('joined_at, challenge_id, completed')
-      .eq('user_id', targetUserId)
-      .gte('joined_at', fourteenDaysAgo.toISOString())
-      .order('joined_at', { ascending: true });
-
-    if (error) {
-      console.error('❌ [PROFILE] Ошибка получения участий:', error);
-      return 0;
-    }
-
-    console.log('📊 [PROFILE] Участий за 14 дней:', participations?.length || 0);
-    
-    if (participations && participations.length > 0) {
-      console.log('📅 [PROFILE] Даты участий:', participations.map(p => new Date(p.joined_at).toLocaleDateString()));
-    }
-
-    if (!participations || participations.length < 2) {
-      console.log('⚠️ [PROFILE] Недостаточно данных для расчета роста (<2 участий)');
-      return 0;
-    }
-
-    // Разбиваем на две недели
-    const lastWeek = participations.filter(
-      (p) => new Date(p.joined_at) >= sevenDaysAgo
-    ).length;
-
-    const previousWeek = participations.filter(
-      (p) => new Date(p.joined_at) < sevenDaysAgo
-    ).length;
-
-    console.log('📅 [PROFILE] Недели:', { 
-      lastWeek, 
-      previousWeek,
-      lastWeekDates: participations.filter(p => new Date(p.joined_at) >= sevenDaysAgo).map(p => new Date(p.joined_at).toLocaleDateString()),
-      previousWeekDates: participations.filter(p => new Date(p.joined_at) < sevenDaysAgo).map(p => new Date(p.joined_at).toLocaleDateString())
-    });
-
-    if (previousWeek === 0) {
-      const result = lastWeek > 0 ? 100 : 0;
-      console.log('📈 [PROFILE] Рост (пред. неделя пуста):', result);
-      return result;
-    }
-
-    const growth = Math.round(((lastWeek - previousWeek) / previousWeek) * 100);
-    const clamped = Math.max(-100, Math.min(1000, growth));
-    
-    console.log('📈 [PROFILE] Рост рассчитан:', { 
-      raw: growth, 
-      clamped,
-      formula: `${lastWeek} - ${previousWeek} / ${previousWeek} * 100 = ${growth}%`
-    });
-    
-    return clamped;
-  } catch (error) {
-    console.error('❌ [PROFILE] Ошибка расчета роста:', error);
-    return 0;
-  }
-}, []);
-
-  // Загрузка данных с реальным расчетом роста
-  // Загрузка данных с реальным расчетом роста и ранга
-useEffect(() => {
-  let mounted = true;
-
-  async function loadData() {
-    console.log('🔄 [PROFILE] Загрузка данных профиля...');
-    
-    const currentUser = (await getCurrentUser()) as SupabaseUser | null;
-    if (!currentUser || !mounted) {
-      console.log('❌ [PROFILE] Нет текущего пользователя');
-      setIsLoading(false);
-      return;
-    }
-
-    const targetUserId = userId || currentUser.id;
-    const cacheKey = `profile_${targetUserId}`;
-
-    console.log('🎯 [PROFILE] Целевой пользователь:', { 
-      targetUserId, 
-      currentUserId: currentUser.id,
-      isOwn: targetUserId === currentUser.id 
-    });
-
-    // Проверка кэша - если есть, показываем сразу без загрузки
-    const cached = profileCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log('💾 [PROFILE] Данные из кэша:', cached.data);
-      if (mounted) {
-        setStats(cached.data);
-        setEditForm({
-          bio: cached.data.bio,
-          stack: cached.data.stack,
-          experience: cached.data.experience,
-          portfolio: cached.data.portfolio,
-          telegram: cached.data.telegram,
-          email: cached.data.email,
-          role: cached.data.role,
-        });
-        setIsLoading(false);
-      }
-      return;
-    }
-
-    // Если нет кэша, показываем скелетон
-    setIsLoading(true);
-
+  const calculateWeeklyGrowth = useCallback(async (targetUserId: string) => {
     try {
-      console.log('🔍 [PROFILE] Запрос к БД...');
+      console.log('📈 [PROFILE] Расчет недельного роста для пользователя:', targetUserId);
       
-      // Получаем данные пользователя и профиль
-      const [userStatsResult, profileResult, weeklyGrowth] = await Promise.all([
-        supabase
-          .from('users')
-          .select(
-            `
-            username, 
-            total_days, 
-            total_challenges, 
-            current_streak, 
-            max_streak, 
-            power_index
-          `
-          )
-          .eq('id', targetUserId)
-          .single(),
+      const now = new Date();
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-        supabase
-          .from('profiles')
-          .select('bio, stack, experience, portfolio, telegram, email, role')
-          .eq('user_id', targetUserId)
-          .maybeSingle(),
-
-        calculateWeeklyGrowth(targetUserId),
-      ]);
-
-      if (!mounted) return;
-
-      console.log('📥 [PROFILE] Результаты запросов:', {
-        userStats: userStatsResult.data,
-        profileData: profileResult.data,
-        weeklyGrowth
+      console.log('📅 [PROFILE] Диапазон дат:', {
+        fourteenDaysAgo: fourteenDaysAgo.toISOString(),
+        sevenDaysAgo: sevenDaysAgo.toISOString(),
+        now: now.toISOString()
       });
 
-      if (userStatsResult.error) {
-        console.error('❌ [PROFILE] Ошибка получения статистики:', userStatsResult.error);
+      // Получаем все участия пользователя в челленджах
+      const { data: participations, error } = await supabase
+        .from('participants')
+        .select('joined_at, challenge_id, completed')
+        .eq('user_id', targetUserId)
+        .gte('joined_at', fourteenDaysAgo.toISOString())
+        .order('joined_at', { ascending: true });
+
+      if (error) {
+        console.error('❌ [PROFILE] Ошибка получения участий:', error);
+        return 0;
       }
 
-      if (userStatsResult.data) {
-        // Получаем точный ранг пользователя
-        const { rank, totalUsers, percentile } = await getUserRank(targetUserId);
-
-        const newStats = {
-          username: userStatsResult.data.username || 'user',
-          bio: profileResult.data?.bio || '',
-          stack: profileResult.data?.stack || '',
-          experience: profileResult.data?.experience || '',
-          portfolio: profileResult.data?.portfolio || '',
-          telegram: profileResult.data?.telegram || '',
-          email: profileResult.data?.email || '',
-          role: profileResult.data?.role || 'developer',
-          total_days: userStatsResult.data.total_days || 0,
-          total_challenges: userStatsResult.data.total_challenges || 0,
-          current_streak: userStatsResult.data.current_streak || 0,
-          max_streak: userStatsResult.data.max_streak || 0,
-          power_index: userStatsResult.data.power_index || 0,
-          total_calls: userStatsResult.data.total_challenges || 0,
-          monthly_active: Math.min(30, userStatsResult.data.total_days || 0),
-          weekly_growth: weeklyGrowth,
-          percentile,
-          rank,
-          total_users: totalUsers,
-          hashtag: getHashtag(userStatsResult.data.power_index || 0),
-        };
-
-        console.log('✅ [PROFILE] Итоговые данные профиля:', newStats);
-
-        profileCache.set(cacheKey, { data: newStats, timestamp: Date.now() });
-
-        setStats(newStats);
-        setEditForm({
-          bio: newStats.bio,
-          stack: newStats.stack,
-          experience: newStats.experience,
-          portfolio: newStats.portfolio,
-          telegram: newStats.telegram,
-          email: newStats.email,
-          role: newStats.role,
-        });
-      } else {
-        console.warn('⚠️ [PROFILE] Нет данных пользователя');
+      console.log('📊 [PROFILE] Участий за 14 дней:', participations?.length || 0);
+      
+      if (participations && participations.length > 0) {
+        console.log('📅 [PROFILE] Даты участий:', participations.map(p => new Date(p.joined_at).toLocaleDateString()));
       }
+
+      if (!participations || participations.length < 2) {
+        console.log('⚠️ [PROFILE] Недостаточно данных для расчета роста (<2 участий)');
+        return 0;
+      }
+
+      // Разбиваем на две недели
+      const lastWeek = participations.filter(
+        (p) => new Date(p.joined_at) >= sevenDaysAgo
+      ).length;
+
+      const previousWeek = participations.filter(
+        (p) => new Date(p.joined_at) < sevenDaysAgo
+      ).length;
+
+      console.log('📅 [PROFILE] Недели:', { 
+        lastWeek, 
+        previousWeek,
+        lastWeekDates: participations.filter(p => new Date(p.joined_at) >= sevenDaysAgo).map(p => new Date(p.joined_at).toLocaleDateString()),
+        previousWeekDates: participations.filter(p => new Date(p.joined_at) < sevenDaysAgo).map(p => new Date(p.joined_at).toLocaleDateString())
+      });
+
+      if (previousWeek === 0) {
+        const result = lastWeek > 0 ? 100 : 0;
+        console.log('📈 [PROFILE] Рост (пред. неделя пуста):', result);
+        return result;
+      }
+
+      const growth = Math.round(((lastWeek - previousWeek) / previousWeek) * 100);
+      const clamped = Math.max(-100, Math.min(1000, growth));
+      
+      console.log('📈 [PROFILE] Рост рассчитан:', { 
+        raw: growth, 
+        clamped,
+        formula: `${lastWeek} - ${previousWeek} / ${previousWeek} * 100 = ${growth}%`
+      });
+      
+      return clamped;
     } catch (error) {
-      console.error('💥 [PROFILE] Критическая ошибка:', error);
-    } finally {
-      if (mounted) {
+      console.error('❌ [PROFILE] Ошибка расчета роста:', error);
+      return 0;
+    }
+  }, []);
+
+  // Загрузка данных с реальным расчетом роста и ранга
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadData() {
+      console.log('🔄 [PROFILE] Загрузка данных профиля...');
+      
+      const currentUser = (await getCurrentUser()) as SupabaseUser | null;
+      if (!currentUser || !mounted) {
+        console.log('❌ [PROFILE] Нет текущего пользователя');
         setIsLoading(false);
-        console.log('🏁 [PROFILE] Загрузка завершена');
+        return;
+      }
+
+      const targetUserId = userId || currentUser.id;
+      const cacheKey = `profile_${targetUserId}`;
+
+      console.log('🎯 [PROFILE] Целевой пользователь:', { 
+        targetUserId, 
+        currentUserId: currentUser.id,
+        isOwn: targetUserId === currentUser.id 
+      });
+
+      // Проверка кэша - если есть, показываем сразу без загрузки
+      const cached = profileCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log('💾 [PROFILE] Данные из кэша:', cached.data);
+        if (mounted) {
+          setStats(cached.data);
+          setEditForm({
+            bio: cached.data.bio,
+            stack: cached.data.stack,
+            experience: cached.data.experience,
+            portfolio: cached.data.portfolio,
+            telegram: cached.data.telegram,
+            email: cached.data.email,
+            role: cached.data.role,
+          });
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      // Если нет кэша, показываем скелетон
+      setIsLoading(true);
+
+      try {
+        console.log('🔍 [PROFILE] Запрос к БД...');
+        
+        // Получаем данные пользователя и профиль
+        const [userStatsResult, profileResult, weeklyGrowth] = await Promise.all([
+          supabase
+            .from('users')
+            .select(
+              `
+              username, 
+              total_days, 
+              total_challenges, 
+              current_streak, 
+              max_streak, 
+              power_index
+            `
+            )
+            .eq('id', targetUserId)
+            .single(),
+
+          supabase
+            .from('profiles')
+            .select('bio, stack, experience, portfolio, telegram, email, role')
+            .eq('user_id', targetUserId)
+            .maybeSingle(),
+
+          calculateWeeklyGrowth(targetUserId),
+        ]);
+
+        if (!mounted) return;
+
+        console.log('📥 [PROFILE] Результаты запросов:', {
+          userStats: userStatsResult.data,
+          profileData: profileResult.data,
+          weeklyGrowth
+        });
+
+        if (userStatsResult.error) {
+          console.error('❌ [PROFILE] Ошибка получения статистики:', userStatsResult.error);
+        }
+
+        if (userStatsResult.data) {
+          // Получаем точный ранг пользователя
+          const { rank, totalUsers, percentile } = await getUserRank(targetUserId);
+
+          const newStats = {
+            username: userStatsResult.data.username || 'user',
+            bio: profileResult.data?.bio || '',
+            stack: profileResult.data?.stack || '',
+            experience: profileResult.data?.experience || '',
+            portfolio: profileResult.data?.portfolio || '',
+            telegram: profileResult.data?.telegram || '',
+            email: profileResult.data?.email || '',
+            role: profileResult.data?.role || 'developer',
+            total_days: userStatsResult.data.total_days || 0,
+            total_challenges: userStatsResult.data.total_challenges || 0,
+            current_streak: userStatsResult.data.current_streak || 0,
+            max_streak: userStatsResult.data.max_streak || 0,
+            power_index: userStatsResult.data.power_index || 0,
+            total_calls: userStatsResult.data.total_challenges || 0,
+            monthly_active: Math.min(30, userStatsResult.data.total_days || 0),
+            weekly_growth: weeklyGrowth,
+            percentile,
+            rank,
+            total_users: totalUsers,
+            hashtag: getHashtag(userStatsResult.data.power_index || 0),
+          };
+
+          console.log('✅ [PROFILE] Итоговые данные профиля:', newStats);
+
+          profileCache.set(cacheKey, { data: newStats, timestamp: Date.now() });
+
+          setStats(newStats);
+          setEditForm({
+            bio: newStats.bio,
+            stack: newStats.stack,
+            experience: newStats.experience,
+            portfolio: newStats.portfolio,
+            telegram: newStats.telegram,
+            email: newStats.email,
+            role: newStats.role,
+          });
+        } else {
+          console.warn('⚠️ [PROFILE] Нет данных пользователя');
+        }
+      } catch (error) {
+        console.error('💥 [PROFILE] Критическая ошибка:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+          console.log('🏁 [PROFILE] Загрузка завершена');
+        }
       }
     }
-  }
 
-  loadData();
+    loadData();
 
-  return () => {
-    mounted = false;
-  };
-}, [userId, calculateWeeklyGrowth]);
+    return () => {
+      mounted = false;
+    };
+  }, [userId, calculateWeeklyGrowth]);
 
   useEffect(() => {
     let mounted = true;
@@ -955,8 +1000,4 @@ useEffect(() => {
       </BottomNav>
     </SafeArea>
   );
-}
-
-function getUserRank(_targetUserId: string): { rank: any; totalUsers: any; percentile: any; } | PromiseLike<{ rank: any; totalUsers: any; percentile: any; }> {
-  throw new Error('Function not implemented.');
 }
