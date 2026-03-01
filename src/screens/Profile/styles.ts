@@ -490,3 +490,23 @@ export const ScrollContent = styled.div<{ $hasReturnBar?: boolean }>`
     border-radius: 2px;
   }
 `;
+
+// Добавьте в конец файла со стилями
+export const PortfolioContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0a0a0a;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  border: 1px solid #333;
+`;
+
+export const PortfolioText = styled.span`
+  color: #ffd700;
+  font-size: 14px;
+  word-break: break-all;
+  flex: 1;
+  margin-right: 12px;
+`;

@@ -44,9 +44,8 @@ import {
   HintText,
   CategoryTabs,
   CategoryTab,
-  PortfolioLink,
-  ReturnToAppBar,
-  ReturnButton,
+  PortfolioContainer,
+  PortfolioText,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -145,7 +144,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showReturnBar, setShowReturnBar] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [editForm, setEditForm] = useState({
     bio: '',
@@ -174,36 +172,6 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     () => (stats?.rank && stats?.total_users ? `${stats.rank} / ${stats.total_users}` : ''),
     [stats?.rank, stats?.total_users]
   );
-
-  // Проверка возврата из внешнего браузера
-  useEffect(() => {
-    // Проверяем, есть ли флаг в sessionStorage о том, что мы только что вернулись
-    const justReturned = sessionStorage.getItem('justReturnedFromBrowser');
-    if (justReturned === 'true') {
-      setShowReturnBar(false);
-      sessionStorage.removeItem('justReturnedFromBrowser');
-    }
-
-    // Слушаем событие visibilitychange для обнаружения возврата в приложение
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        const returnFlag = sessionStorage.getItem('returnToApp');
-        if (returnFlag === 'true') {
-          setShowReturnBar(false);
-          sessionStorage.removeItem('returnToApp');
-          
-          // Показываем уведомление о возврате
-          alert('Вы вернулись в приложение!');
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -514,79 +482,18 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, []);
 
-  // Функция для открытия во внешнем браузере с возможностью возврата
-  const openInExternalBrowser = useCallback((url: string) => {
-    // Добавляем https:// если нет протокола
-    let fullUrl = url;
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      fullUrl = 'https://' + url;
-    }
-
-    // Сохраняем текущий URL приложения для возврата
-    const appUrl = window.location.href;
-    sessionStorage.setItem('appReturnUrl', appUrl);
-    sessionStorage.setItem('returnToApp', 'true');
-    
-    // Показываем панель возврата
-    setShowReturnBar(true);
-
-    // Определяем тип устройства
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isAndroid = /Android/.test(navigator.userAgent);
-
-    try {
-      if (isIOS) {
-        // Для iOS используем специальную схему
-        window.location.href = fullUrl;
-        
-        // Пробуем открыть в Safari
-        setTimeout(() => {
-          window.location.href = fullUrl;
-        }, 100);
-      } 
-      else if (isAndroid) {
-        // Для Android создаем интент
-        const intentUrl = `intent://${fullUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end;`;
-        window.location.href = intentUrl;
-        
-        // Fallback
-        setTimeout(() => {
-          window.location.href = fullUrl;
-        }, 100);
-      }
-      else {
-        // Для десктопа - открываем в новой вкладке
-        window.open(fullUrl, '_blank', 'noopener,noreferrer');
-      }
-    } catch (error) {
-      console.error('Error opening external browser:', error);
-      alert(`Скопируйте ссылку для открытия в браузере:\n${fullUrl}`);
-      setShowReturnBar(false);
-      sessionStorage.removeItem('returnToApp');
-    }
-  }, []);
-
-  // Функция для возврата в приложение
-  const returnToApp = useCallback(() => {
-    const returnUrl = sessionStorage.getItem('appReturnUrl');
-    if (returnUrl) {
-      window.location.href = returnUrl;
-    } else {
-      // Если нет сохраненного URL, просто скрываем панель
-      setShowReturnBar(false);
-    }
-    sessionStorage.removeItem('returnToApp');
-    sessionStorage.setItem('justReturnedFromBrowser', 'true');
-  }, []);
-
-  // Функция для отображения домена из ссылки
-  const getDomainFromUrl = useCallback((url: string) => {
+  // Функция для отображения сокращенной ссылки
+  const getDisplayUrl = useCallback((url: string) => {
     try {
       let urlToParse = url;
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         urlToParse = 'https://' + url;
       }
       const domain = new URL(urlToParse).hostname.replace('www.', '');
+      const path = new URL(urlToParse).pathname;
+      if (path && path !== '/') {
+        return domain + (path.length > 15 ? path.substring(0, 15) + '...' : path);
+      }
       return domain;
     } catch {
       return url.length > 30 ? url.substring(0, 30) + '...' : url;
@@ -636,20 +543,8 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
         </IndexBadge>
       </FixedHeader>
 
-      {/* Панель возврата в приложение */}
-      {showReturnBar && (
-        <ReturnToAppBar>
-          <Text style={{ color: '#fff', marginRight: 12 }}>
-            Вы перешли во внешний браузер
-          </Text>
-          <ReturnButton onClick={returnToApp}>
-            Вернуться в приложение
-          </ReturnButton>
-        </ReturnToAppBar>
-      )}
-
       {/* Скроллящийся контент */}
-      <ScrollContent ref={scrollRef} $hasReturnBar={showReturnBar}>
+      <ScrollContent ref={scrollRef}>
         <Container>
           {isEditing ? (
             <EditForm>
@@ -751,22 +646,19 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               {stats.stack && <UserStack>{stats.stack}</UserStack>}
               {stats.experience && <UserStats>Опыт: {stats.experience}</UserStats>}
               
-              {/* Кликабельное портфолио с открытием во внешнем браузере */}
+              {/* Портфолио с иконкой копирования */}
               {stats.portfolio && (
-                <PortfolioLink 
-                  onClick={() => openInExternalBrowser(stats.portfolio)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      openInExternalBrowser(stats.portfolio);
-                    }
-                  }}
-                  title="Открыть во внешнем браузере"
-                >
-                  <span className="domain">{getDomainFromUrl(stats.portfolio)}</span>
-                  <span className="external-icon">↗</span>
-                </PortfolioLink>
+                <PortfolioContainer>
+                  <PortfolioText>
+                    🔗 {getDisplayUrl(stats.portfolio)}
+                  </PortfolioText>
+                  <CopyIcon
+                    onClick={() => handleCopy(stats.portfolio, 'portfolio')}
+                    title={copied === 'portfolio' ? 'Скопировано!' : 'Копировать ссылку'}
+                  >
+                    {copied === 'portfolio' ? '✅' : '📋'}
+                  </CopyIcon>
+                </PortfolioContainer>
               )}
 
               <SectionDivider />
@@ -822,7 +714,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                             onClick={() => handleCopy(stats.telegram, 'telegram')}
                             title={copied === 'telegram' ? 'Скопировано!' : 'Копировать'}
                           >
-                            📋
+                            {copied === 'telegram' ? '✅' : '📋'}
                           </CopyIcon>
                         </ContactValue>
                       </ContactItem>
@@ -836,7 +728,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                             onClick={() => handleCopy(stats.email, 'email')}
                             title={copied === 'email' ? 'Скопировано!' : 'Копировать'}
                           >
-                            📋
+                            {copied === 'email' ? '✅' : '📋'}
                           </CopyIcon>
                         </ContactValue>
                       </ContactItem>
@@ -859,7 +751,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                             onClick={() => handleCopy(stats.telegram, 'telegram')}
                             title={copied === 'telegram' ? 'Скопировано!' : 'Копировать'}
                           >
-                            📋
+                            {copied === 'telegram' ? '✅' : '📋'}
                           </CopyIcon>
                         </ContactValue>
                       </ContactItem>
@@ -873,7 +765,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
                             onClick={() => handleCopy(stats.email, 'email')}
                             title={copied === 'email' ? 'Скопировано!' : 'Копировать'}
                           >
-                            📋
+                            {copied === 'email' ? '✅' : '📋'}
                           </CopyIcon>
                         </ContactValue>
                       </ContactItem>
