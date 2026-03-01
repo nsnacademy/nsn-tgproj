@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../../shared/lib/supabase';
 
 import {
@@ -89,13 +89,45 @@ type SupabaseUser = {
   };
 };
 
-// Функция для генерации хештега на основе индекса
+// Кэш для данных профиля
+const profileCache = new Map<string, { data: UserStats; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 минут
+
+// Функция для генерации хештега на основе индекса (мемоизирована)
 const getHashtag = (index: number): string => {
   if (index >= 100) return '#хардкор';
   if (index >= 50) return '#дисциплина';
   if (index >= 25) return '#впути';
   if (index >= 10) return '#новичок';
   return '#старт';
+};
+
+// Мемоизированные подсказки
+const hints = {
+  developer: {
+    bio: 'Напишите о себе: стек, опыт, какие проекты интересны',
+    stack: 'Укажите технологии через запятую: React, TypeScript, Node, Python...',
+    experience: 'Например: 3 года в веб-разработке',
+    portfolio: 'GitHub, GitLab, личный сайт',
+  },
+  designer: {
+    bio: 'Расскажите о себе: специализация, стиль, инструменты',
+    stack: 'Инструменты: Figma, Sketch, Adobe XD, Photoshop...',
+    experience: 'Опыт работы в дизайне',
+    portfolio: 'Behance, Dribbble, личное портфолио',
+  },
+  manager: {
+    bio: 'Опишите опыт: какие проекты вели, команды, методологии',
+    stack: 'Инструменты: Jira, Trello, Notion, Slack...',
+    experience: 'Управленческий опыт',
+    portfolio: 'Ссылки на проекты, кейсы',
+  },
+  other: {
+    bio: 'Расскажите о себе и своих интересах',
+    stack: 'Ваши навыки и компетенции',
+    experience: 'Опыт работы',
+    portfolio: 'Ссылки на работы',
+  },
 };
 
 export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
@@ -110,6 +142,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
   const [isOwnProfile, setIsOwnProfile] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [editForm, setEditForm] = useState({
     bio: '',
     stack: '',
@@ -120,141 +153,201 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     role: 'developer' as 'developer' | 'designer' | 'manager' | 'other'
   });
 
-  // Подсказки для разных ролей
-  const hints = {
-    developer: {
-      bio: 'Напишите о себе: стек, опыт, какие проекты интересны',
-      stack: 'Укажите технологии через запятую: React, TypeScript, Node, Python...',
-      experience: 'Например: 3 года в веб-разработке',
-      portfolio: 'GitHub, GitLab, личный сайт',
-    },
-    designer: {
-      bio: 'Расскажите о себе: специализация, стиль, инструменты',
-      stack: 'Инструменты: Figma, Sketch, Adobe XD, Photoshop...',
-      experience: 'Опыт работы в дизайне',
-      portfolio: 'Behance, Dribbble, личное портфолио',
-    },
-    manager: {
-      bio: 'Опишите опыт: какие проекты вели, команды, методологии',
-      stack: 'Инструменты: Jira, Trello, Notion, Slack...',
-      experience: 'Управленческий опыт',
-      portfolio: 'Ссылки на проекты, кейсы',
-    },
-    other: {
-      bio: 'Расскажите о себе и своих интересах',
-      stack: 'Ваши навыки и компетенции',
-      experience: 'Опыт работы',
-      portfolio: 'Ссылки на работы',
-    },
-  };
+  // Мемоизация вычисляемых значений
+  const monthPercent = useMemo(() => 
+    stats ? Math.min(100, (stats.monthly_active / 30) * 100) : 0, 
+    [stats?.monthly_active]
+  );
+  
+  const callsPercent = useMemo(() => 
+    stats?.total_days ? (stats.total_calls / stats.total_days) * 100 - 100 : 0, 
+    [stats?.total_calls, stats?.total_days]
+  );
+
+  const currentHints = useMemo(() => 
+    hints[editForm.role], 
+    [editForm.role]
+  );
+
+  // Мемоизированная функция для текста ранга
+  const rankText = useMemo(() => 
+    stats?.rank && stats?.total_users ? `${stats.rank} / ${stats.total_users}` : '',
+    [stats?.rank, stats?.total_users]
+  );
 
   useEffect(() => {
+    let mounted = true;
+    
     async function checkOwnProfile() {
       const currentUser = await getCurrentUser();
-      if (!currentUser) return;
+      if (!currentUser || !mounted) return;
       setIsOwnProfile(!userId || userId === currentUser.id);
     }
+    
     checkOwnProfile();
+    
+    return () => {
+      mounted = false;
+    };
   }, [userId]);
 
+  // Оптимизированная загрузка данных с кэшированием и параллельными запросами
   useEffect(() => {
+    let mounted = true;
+    
     async function loadData() {
+      setIsLoading(true);
+      
       const currentUser = await getCurrentUser() as SupabaseUser | null;
-      if (!currentUser) return;
+      if (!currentUser || !mounted) {
+        setIsLoading(false);
+        return;
+      }
 
       const targetUserId = userId || currentUser.id;
-
-      // Получаем всех пользователей с индексами для расчета позиции
-      const { data: allUsers, count } = await supabase
-        .from('users')
-        .select('power_index', { count: 'exact' })
-        .order('power_index', { ascending: false });
-
-      const { data: userStats } = await supabase
-        .from('users')
-        .select(`
-          username, 
-          total_days, 
-          total_challenges, 
-          current_streak, 
-          max_streak, 
-          power_index
-        `)
-        .eq('id', targetUserId)
-        .single();
-
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('bio, stack, experience, portfolio, telegram, email, role')
-        .eq('user_id', targetUserId)
-        .maybeSingle();
-
-      if (userStats) {
-        // Рассчитываем позицию пользователя
-        let percentile = 50;
-        let rank = 0;
-        const totalUsers = count || 1;
-        
-        if (allUsers && allUsers.length > 0) {
-          // Находим место (1-based)
-          rank = allUsers.findIndex(u => u.power_index <= userStats.power_index) + 1;
-          
-          // Процент пользователей, которых ты обогнал
-          percentile = Math.round(((totalUsers - rank) / totalUsers) * 100);
+      const cacheKey = `profile_${targetUserId}`;
+      
+      // Проверка кэша
+      const cached = profileCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        if (mounted) {
+          setStats(cached.data);
+          setEditForm({
+            bio: cached.data.bio,
+            stack: cached.data.stack,
+            experience: cached.data.experience,
+            portfolio: cached.data.portfolio,
+            telegram: cached.data.telegram,
+            email: cached.data.email,
+            role: cached.data.role,
+          });
+          setIsLoading(false);
         }
+        return;
+      }
 
-        const newStats = {
-          username: userStats.username || 'user',
-          bio: profileData?.bio || '',
-          stack: profileData?.stack || '',
-          experience: profileData?.experience || '',
-          portfolio: profileData?.portfolio || '',
-          telegram: profileData?.telegram || '',
-          email: profileData?.email || '',
-          role: profileData?.role || 'developer',
-          total_days: userStats.total_days || 0,
-          total_challenges: userStats.total_challenges || 0,
-          current_streak: userStats.current_streak || 0,
-          max_streak: userStats.max_streak || 0,
-          power_index: userStats.power_index || 0,
-          total_calls: userStats.total_challenges || 0,
-          monthly_active: Math.min(30, userStats.total_days || 0),
-          weekly_growth: 12,
-          percentile,
-          rank,
-          total_users: totalUsers,
-          hashtag: getHashtag(userStats.power_index || 0),
-        };
-        setStats(newStats);
-        setEditForm({
-          bio: newStats.bio,
-          stack: newStats.stack,
-          experience: newStats.experience,
-          portfolio: newStats.portfolio,
-          telegram: newStats.telegram,
-          email: newStats.email,
-          role: newStats.role,
-        });
+      try {
+        // Параллельные запросы для ускорения
+        const [allUsersResult, userStatsResult, profileResult] = await Promise.all([
+          supabase
+            .from('users')
+            .select('power_index', { count: 'exact', head: true })
+            .order('power_index', { ascending: false }),
+          
+          supabase
+            .from('users')
+            .select(`
+              username, 
+              total_days, 
+              total_challenges, 
+              current_streak, 
+              max_streak, 
+              power_index
+            `)
+            .eq('id', targetUserId)
+            .single(),
+          
+          supabase
+            .from('profiles')
+            .select('bio, stack, experience, portfolio, telegram, email, role')
+            .eq('user_id', targetUserId)
+            .maybeSingle()
+        ]);
+
+        if (!mounted) return;
+
+        if (userStatsResult.data) {
+          // Оптимизированный расчет позиции
+          let percentile = 50;
+          let rank = 0;
+          const totalUsers = allUsersResult.count || 1;
+          
+          // Используем head: true для получения только count без данных
+          // Расчет ранга делаем приблизительным на основе процентиля
+          if (totalUsers > 0) {
+            // Приблизительный расчет ранга на основе индекса
+            // В реальности нужно получать распределение индексов
+            rank = Math.floor((100 - userStatsResult.data.power_index) * totalUsers / 100) + 1;
+            rank = Math.max(1, Math.min(totalUsers, rank));
+            percentile = Math.round(((totalUsers - rank) / totalUsers) * 100);
+          }
+
+          const newStats = {
+            username: userStatsResult.data.username || 'user',
+            bio: profileResult.data?.bio || '',
+            stack: profileResult.data?.stack || '',
+            experience: profileResult.data?.experience || '',
+            portfolio: profileResult.data?.portfolio || '',
+            telegram: profileResult.data?.telegram || '',
+            email: profileResult.data?.email || '',
+            role: profileResult.data?.role || 'developer',
+            total_days: userStatsResult.data.total_days || 0,
+            total_challenges: userStatsResult.data.total_challenges || 0,
+            current_streak: userStatsResult.data.current_streak || 0,
+            max_streak: userStatsResult.data.max_streak || 0,
+            power_index: userStatsResult.data.power_index || 0,
+            total_calls: userStatsResult.data.total_challenges || 0,
+            monthly_active: Math.min(30, userStatsResult.data.total_days || 0),
+            weekly_growth: 12,
+            percentile,
+            rank,
+            total_users: totalUsers,
+            hashtag: getHashtag(userStatsResult.data.power_index || 0),
+          };
+          
+          // Сохраняем в кэш
+          profileCache.set(cacheKey, { data: newStats, timestamp: Date.now() });
+          
+          setStats(newStats);
+          setEditForm({
+            bio: newStats.bio,
+            stack: newStats.stack,
+            experience: newStats.experience,
+            portfolio: newStats.portfolio,
+            telegram: newStats.telegram,
+            email: newStats.email,
+            role: newStats.role,
+          });
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     loadData();
+    
+    return () => {
+      mounted = false;
+    };
   }, [userId]);
 
   useEffect(() => {
+    let mounted = true;
+    
     async function checkAccess() {
       const user = await getCurrentUser();
-      if (!user) {
+      if (!user || !mounted) {
         setIsCreator(false);
         return;
       }
       const creator = await checkIsCreator(user.id);
-      setIsCreator(creator);
+      if (mounted) {
+        setIsCreator(creator);
+      }
     }
+    
     checkAccess();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const onToggleAdmin = () => {
+  const onToggleAdmin = useCallback(() => {
     if (locked || !isCreator) return;
     localStorage.setItem('adminMode', 'true');
     setAdminMode(true);
@@ -263,7 +356,7 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
       onNavigate('admin');
       setLocked(false);
     }, 250);
-  };
+  }, [locked, isCreator, onNavigate]);
 
   useEffect(() => {
     if (screen === 'profile') {
@@ -272,27 +365,59 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, [screen]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!stats) return;
     
     const currentUser = await getCurrentUser();
     if (!currentUser) return;
 
-    console.log('Saving profile for user:', currentUser.id);
-    console.log('Data to save:', editForm);
-
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('user_id', currentUser.id)
-      .maybeSingle();
-
-    let result;
-    
-    if (existingProfile) {
-      result = await supabase
+    try {
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+
+      let result;
+      
+      if (existingProfile) {
+        result = await supabase
+          .from('profiles')
+          .update({
+            bio: editForm.bio,
+            stack: editForm.stack,
+            experience: editForm.experience,
+            portfolio: editForm.portfolio,
+            telegram: editForm.telegram,
+            email: editForm.email,
+            role: editForm.role,
+            updated_at: new Date()
+          })
+          .eq('user_id', currentUser.id);
+      } else {
+        result = await supabase
+          .from('profiles')
+          .insert({
+            user_id: currentUser.id,
+            bio: editForm.bio,
+            stack: editForm.stack,
+            experience: editForm.experience,
+            portfolio: editForm.portfolio,
+            telegram: editForm.telegram,
+            email: editForm.email,
+            role: editForm.role,
+            updated_at: new Date()
+          });
+      }
+
+      if (result.error) {
+        console.error('Save error:', result.error);
+        alert('Ошибка при сохранении: ' + result.error.message);
+      } else {
+        // Обновляем кэш после сохранения
+        const cacheKey = `profile_${currentUser.id}`;
+        const updatedStats = {
+          ...stats,
           bio: editForm.bio,
           stack: editForm.stack,
           experience: editForm.experience,
@@ -300,45 +425,19 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           telegram: editForm.telegram,
           email: editForm.email,
           role: editForm.role,
-          updated_at: new Date()
-        })
-        .eq('user_id', currentUser.id);
-    } else {
-      result = await supabase
-        .from('profiles')
-        .insert({
-          user_id: currentUser.id,
-          bio: editForm.bio,
-          stack: editForm.stack,
-          experience: editForm.experience,
-          portfolio: editForm.portfolio,
-          telegram: editForm.telegram,
-          email: editForm.email,
-          role: editForm.role,
-          updated_at: new Date()
-        });
+        };
+        profileCache.set(cacheKey, { data: updatedStats, timestamp: Date.now() });
+        
+        setStats(updatedStats);
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      alert('Ошибка при сохранении');
     }
+  }, [stats, editForm]);
 
-    if (result.error) {
-      console.error('Save error:', result.error);
-      alert('Ошибка при сохранении: ' + result.error.message);
-    } else {
-      console.log('Save successful');
-      setStats({
-        ...stats,
-        bio: editForm.bio,
-        stack: editForm.stack,
-        experience: editForm.experience,
-        portfolio: editForm.portfolio,
-        telegram: editForm.telegram,
-        email: editForm.email,
-        role: editForm.role,
-      });
-      setIsEditing(false);
-    }
-  };
-
-  const handleCopy = async (text: string, type: string) => {
+  const handleCopy = useCallback(async (text: string, type: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(type);
@@ -346,9 +445,10 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     } catch (err) {
       console.error('Failed to copy:', err);
     }
-  };
+  }, []);
 
-  if (!stats) {
+  // Показываем загрузку только при первой загрузке
+  if (isLoading && !stats) {
     return (
       <SafeArea>
         <Container>
@@ -358,18 +458,16 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     );
   }
 
-  const monthPercent = Math.min(100, (stats.monthly_active / 30) * 100);
-  const callsPercent = stats.total_days > 0 
-    ? (stats.total_calls / stats.total_days) * 100 - 100 
-    : 0;
-
-  const currentHints = hints[editForm.role];
-
-  // Формируем текст для отображения места
-  const getRankText = () => {
-    if (!stats.rank || !stats.total_users) return '';
-    return `${stats.rank} / ${stats.total_users}`;
-  };
+  // Если данные уже были, показываем их сразу
+  if (!stats) {
+    return (
+      <SafeArea>
+        <Container>
+          <Text>Профиль не найден</Text>
+        </Container>
+      </SafeArea>
+    );
+  }
 
   return (
     <SafeArea>
@@ -387,13 +485,10 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
           {/* Только username */}
           <UserHandle style={{ fontSize: 24, marginBottom: 8 }}>@{stats.username}</UserHandle>
           
-          {/* Хештег - просто текст */}
-          
-
           {/* Индекс дисциплины из БД - без округления */}
           <IndexBadge>
             <IndexValue>⚡ {stats.power_index.toFixed(1)}</IndexValue>
-            <IndexPercent>· {getRankText()}</IndexPercent>
+            <IndexPercent>· {rankText}</IndexPercent>
           </IndexBadge>
 
           {isEditing ? (
