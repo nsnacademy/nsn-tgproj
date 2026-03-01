@@ -481,13 +481,36 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
     }
   }, []);
 
+  // Исправленная функция открытия ссылки для мобильных устройств
   const handlePortfolioClick = useCallback((url: string) => {
     // Добавляем https:// если нет протокола
     let fullUrl = url;
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       fullUrl = 'https://' + url;
     }
-    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+    
+    // Пробуем разные способы открытия ссылки
+    try {
+      // Способ 1: Создаем и кликаем на якорь (работает в большинстве случаев)
+      const anchor = document.createElement('a');
+      anchor.href = fullUrl;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      anchor.click();
+      
+      // Способ 2: Если не сработало, пробуем window.open с таймаутом
+      setTimeout(() => {
+        const win = window.open(fullUrl, '_blank');
+        if (!win) {
+          // Способ 3: Если window.open заблокирован, пробуем прямой переход
+          window.location.href = fullUrl;
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Error opening link:', error);
+      // Способ 4: Последний шанс - показать ссылку пользователю
+      alert(`Скопируйте ссылку: ${fullUrl}`);
+    }
   }, []);
 
   // Функция для отображения домена из ссылки
@@ -650,9 +673,18 @@ export default function Profile({ screen, onNavigate, userId }: ProfileProps) {
               {stats.stack && <UserStack>{stats.stack}</UserStack>}
               {stats.experience && <UserStats>Опыт: {stats.experience}</UserStats>}
               
-              {/* Кликабельное портфолио */}
+              {/* Кликабельное портфолио с улучшенной мобильной поддержкой */}
               {stats.portfolio && (
-                <PortfolioLink onClick={() => handlePortfolioClick(stats.portfolio)}>
+                <PortfolioLink 
+                  onClick={() => handlePortfolioClick(stats.portfolio)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handlePortfolioClick(stats.portfolio);
+                    }
+                  }}
+                >
                   {getDomainFromUrl(stats.portfolio)}
                 </PortfolioLink>
               )}

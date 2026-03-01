@@ -407,18 +407,22 @@ export const ScrollContent = styled.div`
 `;
 
 // Замените существующий PortfolioLink на этот
+// Замените существующий PortfolioLink на этот
 export const PortfolioLink = styled.div`
   color: #ffd700;
   cursor: pointer;
   font-size: 15px;
   margin: 8px 0;
-  padding: 8px 12px;
+  padding: 12px 16px; /* Увеличенный padding для мобильных */
   background: #0a0a0a;
-  border-radius: 8px;
+  border-radius: 12px; /* Чуть больше скругление */
   border: 1px solid #333;
-  display: inline-block;
+  display: block; /* На всю ширину */
   transition: all 0.2s ease;
   word-break: break-all;
+  -webkit-tap-highlight-color: rgba(255, 215, 0, 0.2); /* Подсветка при тапе */
+  user-select: none; /* Запрет выделения */
+  touch-action: manipulation; /* Оптимизация для тач-устройств */
 
   &:hover {
     background: #1a1a1a;
@@ -428,12 +432,21 @@ export const PortfolioLink = styled.div`
   }
 
   &:active {
+    background: #222;
     transform: translateY(0);
+    border-color: #ffd700;
   }
 
   &::before {
     content: '🔗 ';
-    margin-right: 4px;
-    opacity: 0.7;
+    margin-right: 6px;
+    opacity: 0.9;
+    font-size: 16px;
+  }
+
+  /* Стили для фокуса с клавиатуры */
+  &:focus-visible {
+    outline: 2px solid #ffd700;
+    outline-offset: 2px;
   }
 `;
