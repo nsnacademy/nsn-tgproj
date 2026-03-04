@@ -15,19 +15,21 @@ export const SafeArea = styled.div`
   overflow: hidden;
 `;
 
-export const Container = styled.div`
-  flex: 1;
+/* =========================
+   FIXED HEADER
+========================= */
+
+export const FixedHeader = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #000;
+  padding: 60px 20px 0;
+  z-index: 100;
   display: flex;
   flex-direction: column;
-`;
-
-export const Header = styled.div`
-  padding: 100px 20px 16px;
-  background: #000;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 16px;
 `;
 
 export const HeaderRow = styled.div`
@@ -78,20 +80,31 @@ export const ToggleKnob = styled.div<{ $active: boolean }>`
 `;
 
 /* =========================
-   CONTENT
+   SCROLL CONTENT
 ========================= */
 
-export const Content = styled.div`
+export const ScrollContent = styled.div`
+  flex: 1;
+  margin-top: 210px; /* Высота фиксированного хедера (60px + 150px статистики) */
+  margin-bottom: 20px;
   padding: 20px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 24px;
-`;
 
-export const SectionTitle = styled.h2`
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+  }
 `;
 
 /* =========================
@@ -136,6 +149,12 @@ export const StatLabel = styled.div`
 /* =========================
    CHALLENGE GRID
 ========================= */
+
+export const SectionTitle = styled.h2`
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+`;
 
 export const ChallengeGrid = styled.div`
   display: flex;
@@ -194,7 +213,7 @@ export const PendingBadge = styled.div`
 export const CardStats = styled.div`
   display: flex;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   padding: 12px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -218,6 +237,46 @@ export const CardStatLabel = styled.div`
   text-transform: uppercase;
   letter-spacing: 0.5px;
 `;
+
+/* =========================
+   CARD BADGES
+========================= */
+
+export const CardBadges = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+`;
+
+export const BadgeItem = styled.div<{ $type: 'report' | 'request' }>`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  background: ${({ $type }) => 
+    $type === 'report' 
+      ? 'rgba(64, 158, 255, 0.15)' 
+      : 'rgba(255, 184, 0, 0.15)'};
+  border: 1px solid ${({ $type }) => 
+    $type === 'report' 
+      ? 'rgba(64, 158, 255, 0.3)' 
+      : 'rgba(255, 184, 0, 0.3)'};
+`;
+
+export const BadgeIcon = styled.span`
+  font-size: 12px;
+`;
+
+export const BadgeText = styled.span`
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.9;
+`;
+
+/* =========================
+   CARD ACTIONS
+========================= */
 
 export const CardActions = styled.div`
   display: flex;

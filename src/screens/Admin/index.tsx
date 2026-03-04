@@ -2,17 +2,19 @@ import { useEffect, useState } from 'react';
 
 import {
   SafeArea,
-  Container,
-  Header,
+  FixedHeader,
   HeaderRow,
   HeaderTitle,
   HeaderSubtitle,
+  ToggleContainer,
+  Toggle,
+  ToggleKnob,
   StatsCard,
   StatsGrid,
   StatItem,
   StatValue,
   StatLabel,
-  Content,
+  ScrollContent,
   SectionTitle,
   ChallengeGrid,
   ChallengeCard,
@@ -23,6 +25,10 @@ import {
   CardStat,
   CardStatValue,
   CardStatLabel,
+  CardBadges,
+  BadgeItem,
+  BadgeIcon,
+  BadgeText,
   CardActions,
   ActionButton,
   PendingBadge,
@@ -30,9 +36,6 @@ import {
   EmptyIcon,
   EmptyText,
   LoadingState,
-  ToggleContainer,
-  Toggle,
-  ToggleKnob,
 } from './styles';
 
 import { BottomNav, NavItem } from '../Home/styles';
@@ -65,6 +68,10 @@ type AdminChallenge = {
   participants_count?: number;
   status?: 'active' | 'completed';
   entry_type?: 'free' | 'paid' | 'condition';
+  
+  // Новые поля
+  pending_reports_count?: number;
+  pending_requests_count?: number;
 };
 
 export default function Admin({ screen, onNavigate }: AdminProps) {
@@ -76,6 +83,8 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   
   // Состояние для общего количества заявок
   const [totalRequestsCount, setTotalRequestsCount] = useState(0);
+  // Состояние для общего количества отчетов на проверке
+  const [totalPendingReportsCount, setTotalPendingReportsCount] = useState(0);
 
   /* =========================
      INIT
@@ -115,16 +124,16 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
       // Добавляем статус для каждого вызова
       const challengesWithStatus = (data ?? []).map((ch: AdminChallenge) => ({
         ...ch,
-        status: new Date(ch.end_at || '') < new Date() ? 'completed' : 'active'
+        status: ch.end_at && new Date(ch.end_at) < new Date() ? 'completed' : 'active'
       }));
       
       setChallenges(challengesWithStatus);
 
-      // Загружаем количество участников для каждого вызова
-      await loadParticipantsCount(challengesWithStatus);
+      // Загружаем дополнительные данные для каждого вызова
+      await loadAdditionalData(challengesWithStatus);
 
-      // Загружаем общее количество заявок по всем вызовам
-      await loadTotalRequests(challengesWithStatus);
+      // Загружаем общее количество заявок и отчетов
+      await loadTotals(challengesWithStatus);
 
       setAccessChecked(true);
       setLoading(false);
@@ -134,10 +143,10 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   }, [onNavigate]);
 
   /* =========================
-     ЗАГРУЗКА КОЛИЧЕСТВА УЧАСТНИКОВ ДЛЯ КАЖДОГО ВЫЗОВА
+     ЗАГРУЗКА ДОПОЛНИТЕЛЬНЫХ ДАННЫХ
   ========================= */
 
-  const loadParticipantsCount = async (challengesData: AdminChallenge[]) => {
+  const loadAdditionalData = async (challengesData: AdminChallenge[]) => {
     if (!challengesData.length) return;
 
     const updatedChallenges = [...challengesData];
@@ -145,55 +154,104 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
     for (let i = 0; i < updatedChallenges.length; i++) {
       const ch = updatedChallenges[i];
       
-      const { count, error } = await supabase
+      // Загружаем количество участников
+      const { count: participantsCount } = await supabase
         .from('participants')
         .select('*', { count: 'exact', head: true })
         .eq('challenge_id', ch.id);
 
-      if (!error) {
-        updatedChallenges[i] = {
-          ...ch,
-          participants_count: count || 0
-        };
+      // Загружаем количество заявок на одобрение
+      const { count: requestsCount } = await supabase
+        .from('entry_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('challenge_id', ch.id)
+        .eq('status', 'pending');
+
+      // Загружаем количество отчетов на проверке
+      // Отчеты связаны с participants, поэтому нужно сделать join
+      const { data: participants } = await supabase
+        .from('participants')
+        .select('id')
+        .eq('challenge_id', ch.id);
+
+      let pendingReportsCount = 0;
+      if (participants && participants.length > 0) {
+        const participantIds = participants.map(p => p.id);
+        
+        const { count } = await supabase
+          .from('reports')
+          .select('*', { count: 'exact', head: true })
+          .in('participant_id', participantIds)
+          .eq('status', 'pending');
+
+        pendingReportsCount = count || 0;
       }
+
+      updatedChallenges[i] = {
+        ...ch,
+        participants_count: participantsCount || 0,
+        pending_requests_count: requestsCount || 0,
+        pending_reports_count: pendingReportsCount
+      };
     }
 
     setChallenges(updatedChallenges);
   };
 
   /* =========================
-     ЗАГРУЗКА ОБЩЕГО КОЛИЧЕСТВА ЗАЯВОК
+     ЗАГРУЗКА ОБЩИХ КОЛИЧЕСТВ
   ========================= */
 
-  const loadTotalRequests = async (challengesData?: AdminChallenge[]) => {
+  const loadTotals = async (challengesData?: AdminChallenge[]) => {
     const challengesToUse = challengesData || challenges;
     
     if (challengesToUse && challengesToUse.length > 0) {
       const challengeIds = challengesToUse.map((ch: AdminChallenge) => ch.id);
       
-      const { count, error: countError } = await supabase
+      // Загружаем общее количество заявок
+      const { count: requestsCount } = await supabase
         .from('entry_requests')
         .select('*', { count: 'exact', head: true })
         .in('challenge_id', challengeIds)
         .eq('status', 'pending');
 
-      if (!countError) {
-        setTotalRequestsCount(count || 0);
+      setTotalRequestsCount(requestsCount || 0);
+
+      // Загружаем общее количество отчетов на проверке
+      const { data: participants } = await supabase
+        .from('participants')
+        .select('id')
+        .in('challenge_id', challengeIds);
+
+      let pendingReportsTotal = 0;
+      if (participants && participants.length > 0) {
+        const participantIds = participants.map(p => p.id);
+        
+        const { count } = await supabase
+          .from('reports')
+          .select('*', { count: 'exact', head: true })
+          .in('participant_id', participantIds)
+          .eq('status', 'pending');
+
+        pendingReportsTotal = count || 0;
       }
+
+      setTotalPendingReportsCount(pendingReportsTotal);
     }
   };
 
   /* =========================
-     REAL-TIME ПОДПИСКА НА ИЗМЕНЕНИЯ ЗАЯВОК
+     REAL-TIME ПОДПИСКА
   ========================= */
 
   useEffect(() => {
     if (!challenges.length) return;
 
     const challengeIds = challenges.map(ch => ch.id);
+console.log('[ADMIN] challenge IDs:', challengeIds); // добавим использование
     
-    // Создаем канал для отслеживания изменений
-    const channel = supabase
+    // Канал для заявок
+    const requestsChannel = supabase
       .channel('admin-requests-changes')
       .on(
         'postgres_changes',
@@ -202,47 +260,85 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
           schema: 'public', 
           table: 'entry_requests' 
         },
-        async (payload) => {
-          console.log('[ADMIN] Изменение в заявках:', payload);
+        async () => {
+          console.log('[ADMIN] Изменение в заявках');
           
-          // Обновляем общее количество заявок
-          const { count, error } = await supabase
-            .from('entry_requests')
-            .select('*', { count: 'exact', head: true })
-            .in('challenge_id', challengeIds)
-            .eq('status', 'pending');
-
-          if (!error) {
-            setTotalRequestsCount(count || 0);
-          }
-
-          // Проверяем, является ли это обновлением статуса заявки
-          const payloadAny = payload as any;
-          if (payloadAny.eventType === 'UPDATE' && 
-              payloadAny.new?.status === 'approved' && 
-              payloadAny.old?.status === 'pending') {
+          // Обновляем данные для всех вызовов
+          const updatedChallenges = [...challenges];
+          for (let i = 0; i < updatedChallenges.length; i++) {
+            const ch = updatedChallenges[i];
             
-            const challengeId = payloadAny.new.challenge_id;
-            
-            const { count: participantsCount } = await supabase
-              .from('participants')
+            const { count } = await supabase
+              .from('entry_requests')
               .select('*', { count: 'exact', head: true })
-              .eq('challenge_id', challengeId);
+              .eq('challenge_id', ch.id)
+              .eq('status', 'pending');
 
-            setChallenges(prev => 
-              prev.map(ch => 
-                ch.id === challengeId 
-                  ? { ...ch, participants_count: participantsCount || 0 }
-                  : ch
-              )
-            );
+            updatedChallenges[i] = {
+              ...ch,
+              pending_requests_count: count || 0
+            };
           }
+          setChallenges(updatedChallenges);
+          
+          // Обновляем общее количество
+          loadTotals(updatedChallenges);
+        }
+      )
+      .subscribe();
+
+    // Канал для отчетов
+    const reportsChannel = supabase
+      .channel('admin-reports-changes')
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'reports' 
+        },
+        async () => {
+          console.log('[ADMIN] Изменение в отчетах');
+          
+          // Обновляем данные для всех вызовов
+          const updatedChallenges = [...challenges];
+          for (let i = 0; i < updatedChallenges.length; i++) {
+            const ch = updatedChallenges[i];
+            
+            const { data: participants } = await supabase
+              .from('participants')
+              .select('id')
+              .eq('challenge_id', ch.id);
+
+            let pendingReportsCount = 0;
+            if (participants && participants.length > 0) {
+              const participantIds = participants.map(p => p.id);
+              
+              const { count } = await supabase
+                .from('reports')
+                .select('*', { count: 'exact', head: true })
+                .in('participant_id', participantIds)
+                .eq('status', 'pending');
+
+              pendingReportsCount = count || 0;
+            }
+
+            updatedChallenges[i] = {
+              ...ch,
+              pending_reports_count: pendingReportsCount
+            };
+          }
+          setChallenges(updatedChallenges);
+          
+          // Обновляем общее количество
+          loadTotals(updatedChallenges);
         }
       )
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      requestsChannel.unsubscribe();
+      reportsChannel.unsubscribe();
     };
   }, [challenges]);
 
@@ -273,21 +369,22 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   if (!accessChecked || loading) {
     return (
       <SafeArea>
-        <Container>
-          <Header>
-            <HeaderRow>
+        <FixedHeader>
+          <HeaderRow>
+            <div>
               <HeaderTitle>Админ-панель</HeaderTitle>
-              <ToggleContainer>
-                <Toggle $active={adminMode} onClick={onToggleBack}>
-                  <ToggleKnob $active={adminMode} />
-                </Toggle>
-              </ToggleContainer>
-            </HeaderRow>
-          </Header>
-          <Content>
-            <LoadingState>Загрузка данных...</LoadingState>
-          </Content>
-        </Container>
+              <HeaderSubtitle>Управление вашими вызовами</HeaderSubtitle>
+            </div>
+            <ToggleContainer>
+              <Toggle $active={adminMode} onClick={onToggleBack}>
+                <ToggleKnob $active={adminMode} />
+              </Toggle>
+            </ToggleContainer>
+          </HeaderRow>
+        </FixedHeader>
+        <ScrollContent>
+          <LoadingState>Загрузка данных...</LoadingState>
+        </ScrollContent>
         <BottomNav>
           <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -327,132 +424,151 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
 
   return (
     <SafeArea>
-      <Container>
-        <Header>
-          <HeaderRow>
-            <div>
-              <HeaderTitle>Админ-панель</HeaderTitle>
-              <HeaderSubtitle>Управление вашими вызовами</HeaderSubtitle>
-            </div>
-            <ToggleContainer>
-              <Toggle $active={adminMode} onClick={onToggleBack}>
-                <ToggleKnob $active={adminMode} />
-              </Toggle>
-            </ToggleContainer>
-          </HeaderRow>
-        </Header>
+      <FixedHeader>
+        <HeaderRow>
+          <div>
+            <HeaderTitle>Админ-панель</HeaderTitle>
+            <HeaderSubtitle>Управление вашими вызовами</HeaderSubtitle>
+          </div>
+          <ToggleContainer>
+            <Toggle $active={adminMode} onClick={onToggleBack}>
+              <ToggleKnob $active={adminMode} />
+            </Toggle>
+          </ToggleContainer>
+        </HeaderRow>
 
-        <Content>
-          {/* Статистика */}
-          <StatsCard>
-            <StatsGrid>
-              <StatItem>
-                <StatValue>{totalChallenges}</StatValue>
-                <StatLabel>Всего вызовов</StatLabel>
-              </StatItem>
-              <StatItem>
-                <StatValue>{activeChallenges}</StatValue>
-                <StatLabel>Активных</StatLabel>
-              </StatItem>
-              <StatItem>
-                <StatValue>{completedChallenges}</StatValue>
-                <StatLabel>Завершено</StatLabel>
-              </StatItem>
-              <StatItem>
-                <StatValue>{totalRequestsCount}</StatValue>
-                <StatLabel>Заявки</StatLabel>
-              </StatItem>
-            </StatsGrid>
-          </StatsCard>
+        {/* Статистика внутри фиксированного хедера */}
+        <StatsCard>
+          <StatsGrid>
+            <StatItem>
+              <StatValue>{totalChallenges}</StatValue>
+              <StatLabel>Всего вызовов</StatLabel>
+            </StatItem>
+            <StatItem>
+              <StatValue>{activeChallenges}</StatValue>
+              <StatLabel>Активных</StatLabel>
+            </StatItem>
+            <StatItem>
+              <StatValue>{completedChallenges}</StatValue>
+              <StatLabel>Завершено</StatLabel>
+            </StatItem>
+            <StatItem>
+              <StatValue>{totalRequestsCount}</StatValue>
+              <StatLabel>Заявки</StatLabel>
+            </StatItem>
+            <StatItem>
+              <StatValue>{totalPendingReportsCount}</StatValue>
+              <StatLabel>На проверке</StatLabel>
+            </StatItem>
+          </StatsGrid>
+        </StatsCard>
+      </FixedHeader>
 
-          {/* Список вызовов */}
-          <SectionTitle>Мои вызовы</SectionTitle>
+      <ScrollContent>
+        {/* Список вызовов */}
+        <SectionTitle>Мои вызовы</SectionTitle>
 
-          {challenges.length === 0 ? (
-            <EmptyState>
-              <EmptyIcon>
-                <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="24" cy="24" r="22" />
-                  <path d="M24 12v12l8 4" />
-                </svg>
-              </EmptyIcon>
-              <EmptyText>У вас пока нет созданных вызовов</EmptyText>
-            </EmptyState>
-          ) : (
-            <ChallengeGrid>
-              {challenges.map(ch => (
-                <ChallengeCard key={ch.id}>
-                  <CardHeader>
-                    <div style={{ flex: 1 }}>
-                      <CardTitle>{ch.title}</CardTitle>
-                      <CardMeta>
-                        {new Date(ch.start_at).toLocaleDateString('ru-RU', {
-                          day: 'numeric',
-                          month: 'short'
-                        })}
-                        {' → '}
-                        {ch.end_at
-                          ? new Date(ch.end_at).toLocaleDateString('ru-RU', {
-                              day: 'numeric',
-                              month: 'short'
-                            })
-                          : 'бессрочно'}
-                      </CardMeta>
-                    </div>
-                    
-                    {ch.pending_count > 0 && (
-                      <PendingBadge>{ch.pending_count}</PendingBadge>
-                    )}
-                  </CardHeader>
+        {challenges.length === 0 ? (
+          <EmptyState>
+            <EmptyIcon>
+              <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="24" cy="24" r="22" />
+                <path d="M24 12v12l8 4" />
+              </svg>
+            </EmptyIcon>
+            <EmptyText>У вас пока нет созданных вызовов</EmptyText>
+          </EmptyState>
+        ) : (
+          <ChallengeGrid>
+            {challenges.map(ch => (
+              <ChallengeCard key={ch.id}>
+                <CardHeader>
+                  <div style={{ flex: 1 }}>
+                    <CardTitle>{ch.title}</CardTitle>
+                    <CardMeta>
+                      {new Date(ch.start_at).toLocaleDateString('ru-RU', {
+                        day: 'numeric',
+                        month: 'short'
+                      })}
+                      {' → '}
+                      {ch.end_at
+                        ? new Date(ch.end_at).toLocaleDateString('ru-RU', {
+                            day: 'numeric',
+                            month: 'short'
+                          })
+                        : 'бессрочно'}
+                    </CardMeta>
+                  </div>
+                  
+                  {ch.pending_count > 0 && (
+                    <PendingBadge>{ch.pending_count}</PendingBadge>
+                  )}
+                </CardHeader>
 
-                  <CardStats>
-                    <CardStat>
-                      <CardStatValue>{ch.participants_count || 0}</CardStatValue>
-                      <CardStatLabel>участников</CardStatLabel>
-                    </CardStat>
-                    <CardStat>
-                      <CardStatValue>
-                        {ch.status === 'active' ? '🟢' : '🔴'}
-                      </CardStatValue>
-                      <CardStatLabel>
-                        {ch.status === 'active' ? 'Активен' : 'Завершён'}
-                      </CardStatLabel>
-                    </CardStat>
-                  </CardStats>
+                <CardStats>
+                  <CardStat>
+                    <CardStatValue>{ch.participants_count || 0}</CardStatValue>
+                    <CardStatLabel>участников</CardStatLabel>
+                  </CardStat>
+                  <CardStat>
+                    <CardStatValue>
+                      {ch.status === 'active' ? '🟢' : '🔴'}
+                    </CardStatValue>
+                    <CardStatLabel>
+                      {ch.status === 'active' ? 'Активен' : 'Завершён'}
+                    </CardStatLabel>
+                  </CardStat>
+                </CardStats>
 
-                  <CardActions>
-                    <ActionButton
-                      onClick={() => {
-                        console.log('[ADMIN] card click → admin-challenge', ch.id);
-                        onNavigate('admin-challenge', ch.id);
-                      }}
-                    >
-                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 5l7 7-7 7M5 12h14" />
-                      </svg>
-                      Отчеты
-                    </ActionButton>
-                    
-                    <ActionButton
-                      variant="secondary"
-                      onClick={() => {
-                        console.log('[ADMIN] open invite settings', ch.id);
-                        onNavigate('invite-settings', ch.id);
-                      }}
-                    >
-                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M4 12h16M12 4v16" />
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
-                      Управление
-                    </ActionButton>
-                  </CardActions>
-                </ChallengeCard>
-              ))}
-            </ChallengeGrid>
-          )}
-        </Content>
-      </Container>
+                {/* Бейджи с дополнительной информацией */}
+                <CardBadges>
+                  {ch.pending_reports_count ? (
+                    <BadgeItem $type="report">
+                      <BadgeIcon>📋</BadgeIcon>
+                      <BadgeText>{ch.pending_reports_count} отчета</BadgeText>
+                    </BadgeItem>
+                  ) : null}
+                  
+                  {ch.pending_requests_count ? (
+                    <BadgeItem $type="request">
+                      <BadgeIcon>📝</BadgeIcon>
+                      <BadgeText>{ch.pending_requests_count} заявки</BadgeText>
+                    </BadgeItem>
+                  ) : null}
+                </CardBadges>
+
+                <CardActions>
+                  <ActionButton
+                    onClick={() => {
+                      console.log('[ADMIN] card click → admin-challenge', ch.id);
+                      onNavigate('admin-challenge', ch.id);
+                    }}
+                  >
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 5l7 7-7 7M5 12h14" />
+                    </svg>
+                    Отчеты
+                  </ActionButton>
+                  
+                  <ActionButton
+                    variant="secondary"
+                    onClick={() => {
+                      console.log('[ADMIN] open invite settings', ch.id);
+                      onNavigate('invite-settings', ch.id);
+                    }}
+                  >
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M4 12h16M12 4v16" />
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                    Управление
+                  </ActionButton>
+                </CardActions>
+              </ChallengeCard>
+            ))}
+          </ChallengeGrid>
+        )}
+      </ScrollContent>
 
       {/* =========================
           BOTTOM NAV
