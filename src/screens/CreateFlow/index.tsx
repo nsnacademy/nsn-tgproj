@@ -25,7 +25,7 @@ type Props = {
   onNavigate: (screen: Screen) => void;
 };
 
-// Константы вынесены отдельно для лучшей читаемости
+// Обновленные тексты
 const TEXTS = {
   free: "Участие в вызове бесплатное. Все участники обязаны выполнять условия, заданные создателем.",
   closed: {
@@ -33,9 +33,9 @@ const TEXTS = {
     description: "Вы сами управляете доступом:",
     options: [
       "• Платный вход — участник платит взнос",
-      "• По условию — нужно выполнить требование",
-      "• По приглашению — только по ссылке/коду"
+      "• По условию — нужно выполнить требование"
     ],
+    note: "💬 В каждом вызове есть реферальная ссылка для приглашения участников",
     commission: "💰 Комиссия платформы:",
     commissionDetails: [
       "• 15% от дохода с платных участников",
@@ -44,9 +44,8 @@ const TEXTS = {
     ],
     warning: "⚠️ Важно:",
     warningDetails: [
-      "• При нарушении правил вызов может быть удалён",
-      "• Спорные ситуации решаются в пользу платформы",
-      "• За мошенничество — блокировка без возврата средств"
+      "• Спорные ситуации обсуждаются с основателем платформы",
+      "• За мошенничество — блокировка в приложении"
     ]
   }
 } as const;
@@ -80,6 +79,10 @@ const ClosedInfo = memo(({ accepted, onAccept }: { accepted: boolean; onAccept: 
       </Explanation>
 
       <ListItems items={TEXTS.closed.options} className="ml-8 opacity-08" />
+
+      <Explanation style={{ marginTop: 8, marginBottom: 8, opacity: 0.7 }}>
+        {TEXTS.closed.note}
+      </Explanation>
 
       <Explanation $bold style={{ marginTop: 12, marginBottom: 4 }}>
         {TEXTS.closed.commission}
@@ -186,7 +189,7 @@ export function CreateFlow({ onNavigate }: Props) {
               </Radio>
               <Label>
                 Закрытый вызов
-                <span>Управляйте доступом: платный, по условию, по приглашению</span>
+                <span>Платный вход или доступ по условию</span>
               </Label>
             </Option>
 

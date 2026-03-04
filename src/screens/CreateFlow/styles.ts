@@ -54,12 +54,17 @@ export const FixedHeader = styled.div`
   padding: 60px 24px 20px;
   z-index: 100;
   border-bottom: 1px solid ${colors.borderGray};
+  display: flex;
+  justify-content: center;
 `;
 
 export const HeaderTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
   margin: 0;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
 `;
 
 // Контент с отступом под фиксированный хедер
@@ -68,6 +73,9 @@ export const Content = styled.div`
   margin-top: 90px;
   padding: 20px 24px 100px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 `;
 
 export const Options = styled.div`
@@ -76,16 +84,16 @@ export const Options = styled.div`
   gap: 16px;
   max-width: 420px;
   width: 100%;
-  margin: 0 auto;
 `;
 
 export const OptionWrap = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
 `;
 
-// ИСПРАВЛЕНО: ровные кружки через flex
+// Плашки по центру
 export const Option = styled.div<{ $active?: boolean }>`
   display: flex;
   align-items: flex-start;
@@ -96,13 +104,14 @@ export const Option = styled.div<{ $active?: boolean }>`
   border: 1px solid ${({ $active }) => ($active ? colors.lightGray : colors.borderGray)};
   cursor: pointer;
   transition: ${transitions.default};
+  width: 100%;
 
   &:active {
     transform: scale(0.98);
   }
 `;
 
-// ИСПРАВЛЕНО: точное центрирование кружка
+// Ровные кружки
 export const Radio = styled.div<{ $checked?: boolean }>`
   width: 20px;
   height: 20px;
@@ -144,6 +153,7 @@ export const InfoWrapper = styled.div<{ $isVisible?: boolean }>`
     grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     ${transitions.opacity};
   margin-top: ${({ $isVisible }) => ($isVisible ? '4px' : '0')};
+  width: 100%;
 `;
 
 export const InfoContent = styled.div`
@@ -154,6 +164,7 @@ export const InfoContent = styled.div`
   border: 1px solid ${colors.lightGray};
   border-radius: 16px;
   line-height: 1.5;
+  width: 100%;
 `;
 
 // === EXPLANATION WITH VARIANTS ===
@@ -194,6 +205,7 @@ export const Consent = styled.div<{ $checked?: boolean }>`
   border-radius: 12px;
   background: ${({ $checked }) => ($checked ? 'rgba(255, 215, 0, 0.1)' : 'transparent')};
   transition: ${transitions.default};
+  width: 100%;
 
   input {
     width: 18px;
@@ -220,10 +232,8 @@ export const Footer = styled.div`
   left: 0;
   right: 0;
   display: flex;
+  justify-content: center;
   gap: 12px;
-  max-width: 420px;
-  width: 100%;
-  margin: 0 auto;
   padding: 16px 24px 32px;
   background: ${colors.black};
   border-top: 1px solid ${colors.borderGray};
@@ -232,7 +242,7 @@ export const Footer = styled.div`
 // === BUTTONS ===
 export const BackButton = styled.button`
   ${buttonBase}
-  flex: 1;
+  width: 200px;
   background: transparent;
   color: ${colors.white};
   border: 1px solid ${colors.lightGray};
@@ -244,7 +254,7 @@ export const BackButton = styled.button`
 
 export const NextButton = styled.button<{ disabled?: boolean }>`
   ${buttonBase}
-  flex: 1;
+  width: 200px;
   background: ${colors.white};
   color: ${colors.black};
   border: none;
