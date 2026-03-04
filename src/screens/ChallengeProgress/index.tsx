@@ -504,7 +504,7 @@ export default function ChallengeProgress({
     }
   };
 
-  const canSendReport = !challengeFinished && (todayStatus === 'none' || todayStatus === 'rejected');
+  
 
   return (
     <SafeArea>
@@ -842,6 +842,7 @@ export default function ChallengeProgress({
 
       {/* Кнопка действия */}
       {/* Кнопка действия */}
+{/* Кнопка действия */}
 <ActionBlock>
   {challengeFinished ? (
     // 🏁 ВЫЗОВ ЗАВЕРШЁН
@@ -854,17 +855,15 @@ export default function ChallengeProgress({
         {userCompleted ? 'Вызов успешно завершён' : 'Вызов завершён'}
       </span>
     </DisabledButton>
-  ) : !canSendReport ? (
-    // 🔒 КНОПКА ЗАБЛОКИРОВАНА (вызов не начался или пропущено)
+  ) : new Date(challenge.start_at) > new Date() ? (
+    // ⏳ ВЫЗОВ ЕЩЕ НЕ НАЧАЛСЯ
     <DisabledButton>
       <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="10" cy="10" r="8" />
           <path d="M8 8l4 4M12 8l-4 4" />
         </svg>
-        {currentDay === 1 && new Date(challenge.start_at) > new Date() 
-          ? `Старт ${new Date(challenge.start_at).toLocaleDateString('ru-RU')}`
-          : 'Отчёт недоступен'}
+        Старт {new Date(challenge.start_at).toLocaleDateString('ru-RU')}
       </span>
     </DisabledButton>
   ) : todayStatus === 'none' || todayStatus === 'rejected' ? (
