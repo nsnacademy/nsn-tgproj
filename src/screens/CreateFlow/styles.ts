@@ -51,7 +51,7 @@ export const FixedHeader = styled.div`
   left: 0;
   right: 0;
   background: ${colors.black};
-  padding: 60px 24px 20px;
+  padding: 90px 24px 20px;
   z-index: 100;
   border-bottom: 1px solid ${colors.borderGray};
   display: flex;
@@ -71,7 +71,7 @@ export const HeaderTitle = styled.h1`
 export const Content = styled.div`
   flex: 1;
   margin-top: 90px;
-  padding: 20px 24px 100px;
+  padding: 80px 24px 100px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -81,7 +81,7 @@ export const Content = styled.div`
 export const Options = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px; /* УМЕНЬШИЛ с 16px до 8px */
   max-width: 420px;
   width: 100%;
 `;
