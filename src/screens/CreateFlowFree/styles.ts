@@ -5,7 +5,7 @@ export const SafeArea = styled.div`
   min-height: 100vh;
   background: #000;
   color: #fff;
-  padding: 90 px 24px;
+  padding: 90px 24px;
   display: flex;
   flex-direction: column;
 `;
