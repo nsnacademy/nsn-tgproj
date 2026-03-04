@@ -80,11 +80,6 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   const [accessChecked, setAccessChecked] = useState(false);
   const [challenges, setChallenges] = useState<AdminChallenge[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Состояние для общего количества заявок
-  const [totalRequestsCount, setTotalRequestsCount] = useState(0);
-  // Состояние для общего количества отчетов на проверке
-  const [totalPendingReportsCount, setTotalPendingReportsCount] = useState(0);
 
   /* =========================
      INIT
@@ -132,9 +127,6 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
       // Загружаем дополнительные данные для каждого вызова
       await loadAdditionalData(challengesWithStatus);
 
-      // Загружаем общее количество заявок и отчетов
-      await loadTotals(challengesWithStatus);
-
       setAccessChecked(true);
       setLoading(false);
     }
@@ -168,7 +160,6 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
         .eq('status', 'pending');
 
       // Загружаем количество отчетов на проверке
-      // Отчеты связаны с participants, поэтому нужно сделать join
       const { data: participants } = await supabase
         .from('participants')
         .select('id')
@@ -199,57 +190,12 @@ export default function Admin({ screen, onNavigate }: AdminProps) {
   };
 
   /* =========================
-     ЗАГРУЗКА ОБЩИХ КОЛИЧЕСТВ
-  ========================= */
-
-  const loadTotals = async (challengesData?: AdminChallenge[]) => {
-    const challengesToUse = challengesData || challenges;
-    
-    if (challengesToUse && challengesToUse.length > 0) {
-      const challengeIds = challengesToUse.map((ch: AdminChallenge) => ch.id);
-      
-      // Загружаем общее количество заявок
-      const { count: requestsCount } = await supabase
-        .from('entry_requests')
-        .select('*', { count: 'exact', head: true })
-        .in('challenge_id', challengeIds)
-        .eq('status', 'pending');
-
-      setTotalRequestsCount(requestsCount || 0);
-
-      // Загружаем общее количество отчетов на проверке
-      const { data: participants } = await supabase
-        .from('participants')
-        .select('id')
-        .in('challenge_id', challengeIds);
-
-      let pendingReportsTotal = 0;
-      if (participants && participants.length > 0) {
-        const participantIds = participants.map(p => p.id);
-        
-        const { count } = await supabase
-          .from('reports')
-          .select('*', { count: 'exact', head: true })
-          .in('participant_id', participantIds)
-          .eq('status', 'pending');
-
-        pendingReportsTotal = count || 0;
-      }
-
-      setTotalPendingReportsCount(pendingReportsTotal);
-    }
-  };
-
-  /* =========================
      REAL-TIME ПОДПИСКА
   ========================= */
 
   useEffect(() => {
     if (!challenges.length) return;
 
-    const challengeIds = challenges.map(ch => ch.id);
-console.log('[ADMIN] challenge IDs:', challengeIds); // добавим использование
-    
     // Канал для заявок
     const requestsChannel = supabase
       .channel('admin-requests-changes')
@@ -260,8 +206,8 @@ console.log('[ADMIN] challenge IDs:', challengeIds); // добавим испо�
           schema: 'public', 
           table: 'entry_requests' 
         },
-        async () => {
-          console.log('[ADMIN] Изменение в заявках');
+        async (payload) => {
+          console.log('[ADMIN] Изменение в заявках:', payload);
           
           // Обновляем данные для всех вызовов
           const updatedChallenges = [...challenges];
@@ -280,9 +226,6 @@ console.log('[ADMIN] challenge IDs:', challengeIds); // добавим испо�
             };
           }
           setChallenges(updatedChallenges);
-          
-          // Обновляем общее количество
-          loadTotals(updatedChallenges);
         }
       )
       .subscribe();
@@ -297,8 +240,8 @@ console.log('[ADMIN] challenge IDs:', challengeIds); // добавим испо�
           schema: 'public', 
           table: 'reports' 
         },
-        async () => {
-          console.log('[ADMIN] Изменение в отчетах');
+        async (payload) => {
+          console.log('[ADMIN] Изменение в отчетах:', payload);
           
           // Обновляем данные для всех вызовов
           const updatedChallenges = [...challenges];
@@ -329,9 +272,6 @@ console.log('[ADMIN] challenge IDs:', challengeIds); // добавим испо�
             };
           }
           setChallenges(updatedChallenges);
-          
-          // Обновляем общее количество
-          loadTotals(updatedChallenges);
         }
       )
       .subscribe();
@@ -437,7 +377,7 @@ console.log('[ADMIN] challenge IDs:', challengeIds); // добавим испо�
           </ToggleContainer>
         </HeaderRow>
 
-        {/* Статистика внутри фиксированного хедера */}
+        {/* Статистика внутри фиксированного хедера - ТОЛЬКО ВСЕГО, АКТИВНЫХ, ЗАВЕРШЕНО */}
         <StatsCard>
           <StatsGrid>
             <StatItem>
@@ -451,14 +391,6 @@ console.log('[ADMIN] challenge IDs:', challengeIds); // добавим испо�
             <StatItem>
               <StatValue>{completedChallenges}</StatValue>
               <StatLabel>Завершено</StatLabel>
-            </StatItem>
-            <StatItem>
-              <StatValue>{totalRequestsCount}</StatValue>
-              <StatLabel>Заявки</StatLabel>
-            </StatItem>
-            <StatItem>
-              <StatValue>{totalPendingReportsCount}</StatValue>
-              <StatLabel>На проверке</StatLabel>
             </StatItem>
           </StatsGrid>
         </StatsCard>
@@ -520,12 +452,12 @@ console.log('[ADMIN] challenge IDs:', challengeIds); // добавим испо�
                   </CardStat>
                 </CardStats>
 
-                {/* Бейджи с дополнительной информацией */}
+                {/* Бейджи с дополнительной информацией (ЗАЯВКИ и НА ПРОВЕРКЕ только здесь) */}
                 <CardBadges>
                   {ch.pending_reports_count ? (
                     <BadgeItem $type="report">
                       <BadgeIcon>📋</BadgeIcon>
-                      <BadgeText>{ch.pending_reports_count} отчета</BadgeText>
+                      <BadgeText>{ch.pending_reports_count} на проверке</BadgeText>
                     </BadgeItem>
                   ) : null}
                   

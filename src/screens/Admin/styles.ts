@@ -111,6 +111,10 @@ export const ScrollContent = styled.div`
    STATS CARD
 ========================= */
 
+/* =========================
+   STATS CARD
+========================= */
+
 export const StatsCard = styled.div`
   background: rgba(255, 255, 255, 0.06);
   border-radius: 20px;
@@ -121,7 +125,7 @@ export const StatsCard = styled.div`
 
 export const StatsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr); /* Было 4, стало 3 */
   gap: 12px;
 `;
 
@@ -355,6 +359,9 @@ export const LoadingState = styled.div`
   font-size: 14px;
   opacity: 0.6;
 `;
+
+
+
 
 /* =========================
    BOTTOM NAV (импортируется из Home/styles)
