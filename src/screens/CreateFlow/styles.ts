@@ -1,16 +1,49 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 
-/* === PAGE === */
+// === VARIABLES ===
+const colors = {
+  black: '#000',
+  white: '#fff',
+  gold: '#FFD700',
+  darkGray: '#121212',
+  gray: '#111',
+  lightGray: '#333',
+  borderGray: '#222',
+  textGray: '#555',
+  warning: '#FFA500',
+} as const;
+
+const transitions = {
+  default: 'all 0.2s ease',
+  opacity: 'opacity 0.2s ease',
+  transform: 'transform 0.2s ease',
+} as const;
+
+// === MIXINS ===
+const flexCenter = css`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const buttonBase = css`
+  height: 52px;
+  border-radius: 16px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: ${transitions.default};
+`;
+
+// === MAIN STYLES ===
 export const SafeArea = styled.div`
   min-height: 100vh;
-  background: #000;
-  color: #fff;
+  background: ${colors.black};
+  color: ${colors.white};
   padding: 50px 24px;
   display: flex;
   flex-direction: column;
 `;
 
-/* === CENTER === */
 export const Center = styled.div`
   flex: 1;
   max-width: 420px;
@@ -21,73 +54,60 @@ export const Center = styled.div`
   justify-content: center;
 `;
 
-/* === TITLE === */
 export const Title = styled.h1`
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 20px;
 `;
 
-/* === OPTIONS === */
 export const Options = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
 `;
 
-/* === OPTION WRAP === */
 export const OptionWrap = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  position: relative;
 `;
 
-/* === OPTION === */
 export const Option = styled.div<{ $active?: boolean }>`
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 16px 18px;
   border-radius: 18px;
-  background: ${({ $active }) => ($active ? '#121212' : '#0b0b0b')};
-  border: 1px solid ${({ $active }) => ($active ? '#333' : '#222')};
+  background: ${({ $active }) => ($active ? colors.darkGray : '#0b0b0b')};
+  border: 1px solid ${({ $active }) => ($active ? colors.lightGray : colors.borderGray)};
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: ${transitions.default};
 
   &:active {
     transform: scale(0.98);
   }
 `;
 
-/* === FIXED RADIO === */
 export const Radio = styled.div<{ $checked?: boolean }>`
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  border: 2px solid ${({ $checked }) => ($checked ? '#fff' : '#555')};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  padding: 0;
-  margin: 0;
+  border: 2px solid ${({ $checked }) => ($checked ? colors.white : colors.textGray)};
+  ${flexCenter};
+
+  &::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: ${colors.white};
+    opacity: ${({ $checked }) => ($checked ? 1 : 0)};
+    transition: ${transitions.opacity};
+  }
 `;
 
-export const RadioInner = styled.div<{ $checked?: boolean }>`
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #fff;
-  opacity: ${({ $checked }) => ($checked ? 1 : 0)};
-  transition: opacity 0.2s ease;
-`;
-
-/* === LABEL === */
 export const Label = styled.div`
   display: flex;
   flex-direction: column;
   font-size: 16px;
-  flex: 1;
 
   span {
     font-size: 14px;
@@ -96,24 +116,54 @@ export const Label = styled.div`
   }
 `;
 
-/* === INFO BLOCK (NO ANIMATION) === */
-export const InfoBlock = styled.div`
+// === OPTIMIZED INFO WRAPPER ===
+export const InfoWrapper = styled.div<{ $isVisible?: boolean }>`
+  display: grid;
+  grid-template-rows: ${({ $isVisible }) => ($isVisible ? '1fr' : '0fr')};
+  opacity: ${({ $isVisible }) => ($isVisible ? 1 : 0)};
+  transition: 
+    grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    ${transitions.opacity};
+  margin-top: ${({ $isVisible }) => ($isVisible ? '12px' : '0')};
+`;
+
+export const InfoContent = styled.div`
+  min-height: 0;
+  overflow: hidden;
   padding: 16px 18px;
-  background: #111;
-  border: 1px solid #333;
+  background: ${colors.gray};
+  border: 1px solid ${colors.lightGray};
   border-radius: 16px;
   line-height: 1.5;
-  margin-top: 4px;
 `;
 
-/* === EXPLANATION === */
-export const Explanation = styled.div`
-  font-size: 13px;
+// === EXPLANATION WITH VARIANTS ===
+export const Explanation = styled.div<{
+  $bold?: boolean;
+  $large?: boolean;
+  $warning?: boolean;
+  $opacity?: string;
+}>`
+  font-size: ${({ $large }) => ($large ? '16px' : '13px')};
   line-height: 1.45;
-  opacity: 0.6;
+  opacity: ${({ $opacity }) => $opacity || 0.6};
+  font-weight: ${({ $bold }) => ($bold ? 500 : 400)};
+  color: ${({ $warning }) => ($warning ? colors.warning : 'inherit')};
+
+  &.ml-8 {
+    margin-left: 8px;
+  }
+
+  &.opacity-08 {
+    opacity: 0.8;
+  }
+
+  &.warning {
+    color: ${colors.warning};
+  }
 `;
 
-/* === CONSENT === */
+// === CONSENT ===
 export const Consent = styled.div<{ $checked?: boolean }>`
   margin-top: 16px;
   display: flex;
@@ -124,18 +174,17 @@ export const Consent = styled.div<{ $checked?: boolean }>`
   padding: 8px 12px;
   border-radius: 12px;
   background: ${({ $checked }) => ($checked ? 'rgba(255, 215, 0, 0.1)' : 'transparent')};
-  transition: background 0.2s ease;
+  transition: ${transitions.default};
 
   input {
     width: 18px;
     height: 18px;
     cursor: pointer;
-    accent-color: #FFD700;
-    margin: 0;
+    accent-color: ${colors.gold};
   }
 
   span {
-    color: ${({ $checked }) => ($checked ? '#FFD700' : '#fff')};
+    color: ${({ $checked }) => ($checked ? colors.gold : colors.white)};
     font-weight: ${({ $checked }) => ($checked ? 500 : 400)};
   }
 
@@ -144,26 +193,22 @@ export const Consent = styled.div<{ $checked?: boolean }>`
   }
 `;
 
-/* === FOOTER === */
+// === FOOTER ===
 export const Footer = styled.div`
   display: flex;
   gap: 12px;
   max-width: 420px;
   width: 100%;
-  margin: 20px auto 0;
+  margin: 0 auto;
 `;
 
-/* === BUTTONS === */
+// === BUTTONS ===
 export const BackButton = styled.button`
+  ${buttonBase}
   flex: 1;
-  height: 52px;
-  border-radius: 16px;
   background: transparent;
-  color: #fff;
-  border: 1px solid #333;
-  font-size: 15px;
-  cursor: pointer;
-  transition: background 0.2s ease;
+  color: ${colors.white};
+  border: 1px solid ${colors.lightGray};
 
   &:hover {
     background: rgba(255, 255, 255, 0.05);
@@ -171,20 +216,17 @@ export const BackButton = styled.button`
 `;
 
 export const NextButton = styled.button<{ disabled?: boolean }>`
+  ${buttonBase}
   flex: 1;
-  height: 52px;
-  border-radius: 16px;
-  background: #fff;
-  color: #000;
+  background: ${colors.white};
+  color: ${colors.black};
   border: none;
-  font-size: 15px;
   font-weight: 600;
   opacity: ${({ disabled }) => (disabled ? 0.45 : 1)};
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
   cursor: ${({ disabled }) => (disabled ? 'default' : 'pointer')};
-  transition: opacity 0.2s ease;
 
   &:hover {
-    background: ${({ disabled }) => (disabled ? '#fff' : '#f0f0f0')};
+    background: ${({ disabled }) => (disabled ? colors.white : '#f0f0f0')};
   }
 `;
