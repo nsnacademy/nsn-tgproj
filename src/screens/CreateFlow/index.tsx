@@ -1,12 +1,14 @@
 import { useState, useCallback, useMemo, memo } from 'react';
 import {
   SafeArea,
-  Center,
-  Title,
+  FixedHeader,
+  HeaderTitle,
+  Content,
   Options,
   OptionWrap,
   Option,
   Radio,
+  RadioInner,
   Label,
   InfoWrapper,
   InfoContent,
@@ -149,14 +151,20 @@ export function CreateFlow({ onNavigate }: Props) {
 
   return (
     <SafeArea>
-      <Center>
-        <Title>Тип доступа к вызову</Title>
+      {/* Фиксированная верхняя плашка */}
+      <FixedHeader>
+        <HeaderTitle>Тип доступа к вызову</HeaderTitle>
+      </FixedHeader>
 
+      {/* Контент с отступом сверху 90px */}
+      <Content>
         <Options>
           {/* OPEN OPTION */}
           <OptionWrap>
             <Option $active={accessType === 'open'} onClick={handleOpenClick}>
-              <Radio $checked={accessType === 'open'} />
+              <Radio $checked={accessType === 'open'}>
+                <RadioInner $checked={accessType === 'open'} />
+              </Radio>
               <Label>
                 Открытый вызов
                 <span>Свободный вход, без подтверждения</span>
@@ -173,7 +181,9 @@ export function CreateFlow({ onNavigate }: Props) {
           {/* CLOSED OPTION */}
           <OptionWrap>
             <Option $active={accessType === 'closed'} onClick={handleClosedClick}>
-              <Radio $checked={accessType === 'closed'} />
+              <Radio $checked={accessType === 'closed'}>
+                <RadioInner $checked={accessType === 'closed'} />
+              </Radio>
               <Label>
                 Закрытый вызов
                 <span>Управляйте доступом: платный, по условию, по приглашению</span>
@@ -187,7 +197,7 @@ export function CreateFlow({ onNavigate }: Props) {
             </InfoWrapper>
           </OptionWrap>
         </Options>
-      </Center>
+      </Content>
 
       <Footer>
         <BackButton onClick={handleBack}>Назад</BackButton>

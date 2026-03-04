@@ -39,40 +39,56 @@ export const SafeArea = styled.div`
   min-height: 100vh;
   background: ${colors.black};
   color: ${colors.white};
-  padding: 50px 24px;
   display: flex;
   flex-direction: column;
+  position: relative;
 `;
 
-export const Center = styled.div`
-  flex: 1;
-  max-width: 420px;
-  width: 100%;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+// Фиксированная верхняя плашка
+export const FixedHeader = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: ${colors.black};
+  padding: 60px 24px 20px;
+  z-index: 100;
+  border-bottom: 1px solid ${colors.borderGray};
 `;
 
-export const Title = styled.h1`
+export const HeaderTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  margin-bottom: 20px;
+  margin: 0;
+`;
+
+// Контент с отступом под фиксированный хедер
+export const Content = styled.div`
+  flex: 1;
+  margin-top: 90px;
+  padding: 20px 24px 100px;
+  overflow-y: auto;
 `;
 
 export const Options = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
 `;
 
 export const OptionWrap = styled.div`
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 `;
 
+// ИСПРАВЛЕНО: ровные кружки через flex
 export const Option = styled.div<{ $active?: boolean }>`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   padding: 16px 18px;
   border-radius: 18px;
@@ -86,28 +102,31 @@ export const Option = styled.div<{ $active?: boolean }>`
   }
 `;
 
+// ИСПРАВЛЕНО: точное центрирование кружка
 export const Radio = styled.div<{ $checked?: boolean }>`
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
   border-radius: 50%;
   border: 2px solid ${({ $checked }) => ($checked ? colors.white : colors.textGray)};
   ${flexCenter};
+  margin-top: 2px;
+`;
 
-  &::after {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: ${colors.white};
-    opacity: ${({ $checked }) => ($checked ? 1 : 0)};
-    transition: ${transitions.opacity};
-  }
+export const RadioInner = styled.div<{ $checked?: boolean }>`
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: ${colors.white};
+  opacity: ${({ $checked }) => ($checked ? 1 : 0)};
+  transition: ${transitions.opacity};
 `;
 
 export const Label = styled.div`
   display: flex;
   flex-direction: column;
   font-size: 16px;
+  flex: 1;
 
   span {
     font-size: 14px;
@@ -124,7 +143,7 @@ export const InfoWrapper = styled.div<{ $isVisible?: boolean }>`
   transition: 
     grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     ${transitions.opacity};
-  margin-top: ${({ $isVisible }) => ($isVisible ? '12px' : '0')};
+  margin-top: ${({ $isVisible }) => ($isVisible ? '4px' : '0')};
 `;
 
 export const InfoContent = styled.div`
@@ -181,6 +200,7 @@ export const Consent = styled.div<{ $checked?: boolean }>`
     height: 18px;
     cursor: pointer;
     accent-color: ${colors.gold};
+    margin: 0;
   }
 
   span {
@@ -195,11 +215,18 @@ export const Consent = styled.div<{ $checked?: boolean }>`
 
 // === FOOTER ===
 export const Footer = styled.div`
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   gap: 12px;
   max-width: 420px;
   width: 100%;
   margin: 0 auto;
+  padding: 16px 24px 32px;
+  background: ${colors.black};
+  border-top: 1px solid ${colors.borderGray};
 `;
 
 // === BUTTONS ===
