@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 
 import {
   SafeArea,
-  Container,
+  FixedHeader,
   HeaderRow,
   BackButton,
   Title,
+  ScrollContent,
   Section,
   SectionHeader,
   SectionTitle,
@@ -49,7 +50,7 @@ import { supabase, getCurrentUser } from '../../shared/lib/supabase';
 
 type InviteSettingsProps = {
   challengeId: string;
-  onBack: () => void; // onBack будет вести в admin
+  onBack: () => void;
 };
 
 type Invite = {
@@ -78,7 +79,6 @@ type Request = {
   };
 };
 
-// Тип для сырых данных из БД
 type RawParticipant = {
   id: string;
   user_id: string;
@@ -764,9 +764,6 @@ export default function InviteSettings({
   const handleBackClick = () => {
     console.log('🔙 [NAVIGATION] Нажата кнопка назад');
     console.log('📍 [NAVIGATION] Текущий экран: InviteSettings, challengeId:', challengeId);
-    console.log('🎯 [NAVIGATION] Вызов onBack() для перехода на экран admin-reports'); // 👈 ИСПРАВЛЕНО
-    
-    // Логируем стек вызовов для отладки
     console.trace('[NAVIGATION] Стек вызовов:');
     
     onBack();
@@ -778,35 +775,39 @@ export default function InviteSettings({
   if (loading || !invite) {
     return (
       <SafeArea>
-        <Container>
+        <FixedHeader>
           <HeaderRow>
             <BackButton onClick={handleBackClick}>
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
+              Назад
             </BackButton>
             <Title>Управление вызовом</Title>
           </HeaderRow>
-          <Section>
-            <InfoMessage>Загрузка...</InfoMessage>
-          </Section>
-        </Container>
+        </FixedHeader>
+        <ScrollContent>
+          <InfoMessage>Загрузка...</InfoMessage>
+        </ScrollContent>
       </SafeArea>
     );
   }
 
   return (
     <SafeArea>
-      <Container>
+      <FixedHeader>
         <HeaderRow>
           <BackButton onClick={handleBackClick}>
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M15 18l-6-6 6-6" />
             </svg>
+            Назад
           </BackButton>
           <Title>Управление вызовом</Title>
         </HeaderRow>
+      </FixedHeader>
 
+      <ScrollContent>
         {/* 🔗 ПРИГЛАШЕНИЕ */}
         <Section>
           <SectionHeader>
@@ -1035,7 +1036,7 @@ export default function InviteSettings({
             Удалить вызов
           </DangerButton>
         </Section>
-      </Container>
+      </ScrollContent>
     </SafeArea>
   );
 }

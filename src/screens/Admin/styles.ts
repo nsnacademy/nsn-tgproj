@@ -25,7 +25,7 @@ export const FixedHeader = styled.div`
   left: 0;
   right: 0;
   background: #000;
-  padding: 60px 20px 0;
+  padding: 90px 20px 0;
   z-index: 100;
   display: flex;
   flex-direction: column;

@@ -10,11 +10,29 @@ export const SafeArea = styled.div`
   color: #fff;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
 `;
 
 export const Container = styled.div`
   flex: 1;
-  padding: 100px 20px 140px;
+  display: flex;
+  flex-direction: column;
+`;
+
+/* =========================
+   FIXED HEADER
+========================= */
+
+export const FixedHeader = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #000;
+  padding: 60px 20px 16px;
+  z-index: 100;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 `;
 
 export const HeaderRow = styled.div`
@@ -22,36 +40,73 @@ export const HeaderRow = styled.div`
   align-items: center;
   justify-content: center;
   position: relative;
-  margin-bottom: 24px;
 `;
 
 export const BackButton = styled.button`
   position: absolute;
   left: 0;
-
-  padding: 10px 14px;
-  border-radius: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
   border: none;
-
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
   font-size: 14px;
   font-weight: 500;
-
   cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
 
   &:active {
     transform: scale(0.97);
+  }
+
+  svg {
+    margin-right: 4px;
   }
 `;
 
 export const Title = styled.h1`
   font-size: 22px;
   font-weight: 600;
+  margin: 0;
 `;
 
 /* =========================
-   CONTENT
+   SCROLL CONTENT
+========================= */
+
+export const ScrollContent = styled.div`
+  flex: 1;
+  margin-top: 110px; /* Высота фиксированного хедера */
+  margin-bottom: 20px;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+  }
+`;
+
+/* =========================
+   SECTIONS
 ========================= */
 
 export const Section = styled.div`
@@ -61,6 +116,20 @@ export const Section = styled.div`
   display: flex;
   flex-direction: column;
   gap: 18px;
+`;
+
+export const SectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+`;
+
+export const SectionTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
 `;
 
 export const Row = styled.div`
@@ -83,7 +152,6 @@ export const Input = styled.input`
   width: 120px;
   padding: 8px 10px;
   border-radius: 10px;
-
   background: #000;
   color: #fff;
   border: 1px solid rgba(255,255,255,0.2);
@@ -91,6 +159,11 @@ export const Input = styled.input`
 
   &:focus {
     border-color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `;
 
@@ -103,15 +176,15 @@ export const PrimaryButton = styled.button<{ disabled?: boolean }>`
   padding: 14px;
   border-radius: 14px;
   border: none;
-
   font-weight: 600;
   font-size: 15px;
-
   background: #fff;
   color: #000;
-
   cursor: pointer;
   transition: opacity 0.2s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:disabled {
     opacity: 0.4;
@@ -120,6 +193,15 @@ export const PrimaryButton = styled.button<{ disabled?: boolean }>`
 
   &:active:not(:disabled) {
     transform: scale(0.98);
+  }
+`;
+
+export const DangerButton = styled(PrimaryButton)`
+  background: #ff3b30;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #ff5a4a;
   }
 `;
 
@@ -136,10 +218,8 @@ export const Toggle = styled.div<{
   padding: 3px;
   display: flex;
   align-items: center;
-
   background: ${({ $active }) =>
     $active ? '#fff' : 'rgba(255,255,255,0.3)'};
-
   cursor: pointer;
   transition: background 0.2s ease;
 `;
@@ -150,33 +230,12 @@ export const ToggleKnob = styled.div<{
   width: 20px;
   height: 20px;
   border-radius: 50%;
-
   background: ${({ $active }) =>
     $active ? '#000' : '#fff'};
-
   transform: translateX(
     ${({ $active }) => ($active ? '18px' : '0')}
   );
-
   transition: transform 0.2s ease;
-`;
-
-/* =========================
-   SECTION HEADER
-========================= */
-
-export const SectionHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-`;
-
-export const SectionTitle = styled.h3`
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-  margin: 0;
 `;
 
 /* =========================
@@ -272,19 +331,6 @@ export const EmptyUsers = styled.div`
 `;
 
 /* =========================
-   DANGER BUTTON
-========================= */
-
-export const DangerButton = styled(PrimaryButton)`
-  background: #ff3b30;
-  color: #fff;
-
-  &:hover:not(:disabled) {
-    background: #ff5a4a;
-  }
-`;
-
-/* =========================
    REQUESTS SECTION
 ========================= */
 
@@ -347,10 +393,25 @@ export const RequestUsername = styled.div`
   opacity: 0.9;
 `;
 
+export const RequestMeta = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+`;
+
 export const RequestDate = styled.div`
   font-size: 11px;
   opacity: 0.5;
-  margin-top: 2px;
+`;
+
+export const RequestBadge = styled.span`
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffd700;
+  margin-left: 8px;
 `;
 
 export const RequestActions = styled.div`
@@ -455,12 +516,6 @@ export const InfoMessage = styled.div`
   font-size: 14px;
 `;
 
-// Добавить в конец файла styles.ts:
-
-/* =========================
-   REQUEST STYLES (ДОБАВИТЬ)
-========================= */
-
 export const RequestAvatar = styled.div`
   width: 40px;
   height: 40px;
@@ -473,20 +528,4 @@ export const RequestAvatar = styled.div`
   font-weight: 600;
   color: #fff;
   flex-shrink: 0;
-`;
-
-export const RequestMeta = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-`;
-
-export const RequestBadge = styled.span`
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffd700;
-  margin-left: 8px;
 `;
