@@ -39,6 +39,9 @@ type Props = {
       | 'create-flow'
       | 'create-flow-free'
       | 'create-flow-paid'
+      | 'challenge-progress',  // ✅ добавлено
+    challengeId?: string,       // ✅ добавлено
+    participantId?: string      // ✅ добавлено
   ) => void;
 };
 
@@ -162,13 +165,14 @@ export function CreateFlowFree({ onNavigate }: Props) {
       has_rating: hasRating,
     };
 
-    const { data: challenge } = await supabase
+    const { data: challenge, error: challengeError } = await supabase
       .from('challenges')
       .insert(payload)
       .select('id')
       .single();
 
-    if (!challenge) {
+    if (challengeError || !challenge) {
+      console.error('[publishChallenge] error creating challenge:', challengeError);
       setSubmitting(false);
       return;
     }
@@ -190,19 +194,28 @@ export function CreateFlowFree({ onNavigate }: Props) {
       }
     }
 
-    const { error: participantError } = await supabase
+    /* === ADD CREATOR AS PARTICIPANT === */
+    const { data: participant, error: participantError } = await supabase
       .from('participants')
       .insert({
         user_id: user.id,
         challenge_id: challenge.id,
-      });
+      })
+      .select('id')
+      .single();
 
     if (participantError && participantError.code !== '23505') {
       console.warn('[publishChallenge] participant insert error', participantError);
     }
 
     setSubmitting(false);
-    onNavigate('home');
+
+    // ✅ Перенаправляем сразу на экран прогресса, если вызов начинается сейчас
+    if (startMode === 'now' && participant) {
+      onNavigate('challenge-progress', challenge.id, participant.id);
+    } else {
+      onNavigate('home');
+    }
   }
 
   /* ==================== PREVIEW ==================== */
