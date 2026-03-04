@@ -54,7 +54,7 @@ export const FixedHeader = styled.div`
   padding: 90px 24px 20px;
   z-index: 100;
   border-bottom: 1px solid ${colors.borderGray};
-  /* Текст слева, а не по центру */
+  /* Текст слева */
   display: flex;
   justify-content: flex-start;
 `;
@@ -83,7 +83,7 @@ export const Content = styled.div`
 export const Options = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 15px; /* Расстояние между плашками 15px */
+  gap: 5px; /* ОТСТУП МЕЖДУ ПЛАШКАМИ 5px */
   max-width: 420px;
   width: 100%;
 `;
@@ -95,7 +95,7 @@ export const OptionWrap = styled.div`
   width: 100%;
 `;
 
-// Плашки по центру (сами плашки центрируются через родительский align-items: center)
+// Плашки по центру
 export const Option = styled.div<{ $active?: boolean }>`
   display: flex;
   align-items: flex-start;
@@ -107,7 +107,6 @@ export const Option = styled.div<{ $active?: boolean }>`
   cursor: pointer;
   transition: ${transitions.default};
   width: 100%;
-  /* Сама плашка занимает всю ширину Options (420px) и центрируется через родителя */
 
   &:active {
     transform: scale(0.98);
