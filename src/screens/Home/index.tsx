@@ -236,8 +236,9 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
        <Header>
   <div style={{ 
     display: 'flex', 
-    alignItems: 'flex-end',  /* меняем с center на flex-end */
-    justifyContent: 'space-between' 
+    alignItems: 'flex-start',  /* меняем на flex-start */
+    justifyContent: 'space-between',
+    minHeight: '32px'  /* фиксируем высоту */
   }}>
     <StatusLabel>Состояние</StatusLabel>
     <InfoButton onClick={() => setIsInfoOpen(true)}>?</InfoButton>

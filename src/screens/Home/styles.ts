@@ -424,21 +424,18 @@ export const InfoButton = styled.button`
   transition: all 0.2s ease;
   flex-shrink: 0;
   
-  /* Смещаем знак вопроса вниз */
-  line-height: 1;
-  padding-top: 4px;  /* Добавляем отступ сверху внутри кнопки */
-  
-  /* Или можно использовать transform */
-  /* transform: translateY(2px); */
+  /* Смещаем весь кружок вниз */
+  margin-top: 4px;
+  align-self: flex-end;
 
   &:hover {
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.4);
-    transform: scale(1.05) translateY(2px);  /* сохраняем смещение при наведении */
+    transform: scale(1.05);
   }
 
   &:active {
-    transform: scale(0.95) translateY(2px);
+    transform: scale(0.95);
   }
 `;
 
