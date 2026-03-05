@@ -233,21 +233,25 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
     <SafeArea>
       <FixedHeaderWrapper>
         <HeaderSpacer />
-        <Header>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <StatusLabel>Состояние</StatusLabel>
-            <InfoButton onClick={() => setIsInfoOpen(true)}>?</InfoButton>
-          </div>
-          <StatusTitle>
-            {tab === 'active'
-              ? active.length === 0
-                ? 'Нет активных вызовов'
-                : `Активные вызовы (${active.length})`
-              : completed.length === 0
-              ? 'Нет завершённых вызовов'
-              : `Завершённые вызовы (${completed.length})`}
-          </StatusTitle>
-        </Header>
+       <Header>
+  <div style={{ 
+    display: 'flex', 
+    alignItems: 'flex-end',  /* меняем с center на flex-end */
+    justifyContent: 'space-between' 
+  }}>
+    <StatusLabel>Состояние</StatusLabel>
+    <InfoButton onClick={() => setIsInfoOpen(true)}>?</InfoButton>
+  </div>
+  <StatusTitle>
+    {tab === 'active'
+      ? active.length === 0
+        ? 'Нет активных вызовов'
+        : `Активные вызовы (${active.length})`
+      : completed.length === 0
+      ? 'Нет завершённых вызовов'
+      : `Завершённые вызовы (${completed.length})`}
+  </StatusTitle>
+</Header>
 
         <Tabs>
           <Tab $active={tab === 'active'} onClick={() => setTab('active')}>

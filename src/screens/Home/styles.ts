@@ -422,7 +422,7 @@ export const InfoButton = styled.button`
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-left: 12px;
+  margin-bottom: 4px;  /* добавили отступ снизу */
   flex-shrink: 0;
 
   &:hover {
