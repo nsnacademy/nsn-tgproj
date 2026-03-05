@@ -238,7 +238,7 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
     display: 'flex', 
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: '8px'  /* добавили отступ снизу */
+    marginBottom: '1px'  /* добавили отступ снизу */
   }}>
     <StatusLabel>Состояние</StatusLabel>
     <InfoButton onClick={() => setIsInfoOpen(true)}>?</InfoButton>
