@@ -80,7 +80,7 @@ export const HeaderOffset = styled.div`
 export const HomeContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 20px 20px 120px;
+  padding: 60px 20px 120px;
 `;
 
 export const CenterWrapper = styled.div`
@@ -422,17 +422,23 @@ export const InfoButton = styled.button`
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 4px;  /* добавили отступ снизу */
   flex-shrink: 0;
+  
+  /* Смещаем знак вопроса вниз */
+  line-height: 1;
+  padding-top: 4px;  /* Добавляем отступ сверху внутри кнопки */
+  
+  /* Или можно использовать transform */
+  /* transform: translateY(2px); */
 
   &:hover {
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.4);
-    transform: scale(1.05);
+    transform: scale(1.05) translateY(2px);  /* сохраняем смещение при наведении */
   }
 
   &:active {
-    transform: scale(0.95);
+    transform: scale(0.95) translateY(2px);
   }
 `;
 
