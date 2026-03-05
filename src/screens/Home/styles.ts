@@ -408,6 +408,10 @@ export const SkeletonProgress = styled.div`
    INFO BUTTON & MODAL
 ====================== */
 
+/* ======================
+   INFO BUTTON & MODAL
+====================== */
+
 export const InfoButton = styled.button`
   width: 32px;
   height: 32px;
@@ -424,9 +428,8 @@ export const InfoButton = styled.button`
   transition: all 0.2s ease;
   flex-shrink: 0;
   
-  /* Смещаем весь кружок вниз */
-  margin-top: 4px;
-  align-self: flex-end;
+  /* Убираем margin-top и align-self */
+  /* Весь кружок теперь на одном уровне с "Состояние" */
 
   &:hover {
     background: rgba(255, 255, 255, 0.2);
