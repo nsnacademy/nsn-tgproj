@@ -463,7 +463,7 @@ export const RuleText = styled.div`
    HEADER - FIXED
 ====================== */
 export const FixedHeader = styled.div`
-  padding: 50px 16px 12px;
+  padding: 90px 16px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;

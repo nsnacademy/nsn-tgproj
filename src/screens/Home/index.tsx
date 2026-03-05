@@ -8,6 +8,20 @@ import {
   Header,
   StatusLabel,
   StatusTitle,
+  InfoButton,
+  ModalOverlay,
+  ModalContent,
+  ModalClose,
+  ModalTitle,
+  ModalDescription,
+  ModalSection,
+  ModalSectionHeader,
+  ModalSectionIcon,
+  ModalSectionTitle,
+  ModalSectionText,
+  ModalList,
+  ModalListItem,
+  ModalFooter,
   Tabs,
   Tab,
   HeaderOffset,
@@ -52,32 +66,77 @@ type HomeProps = {
   refreshKey: number;
 };
 
-
 type ChallengeItem = {
   participant_id: string;
   challenge_id: string;
-
   title: string;
   start_at: string;
   end_at: string | null;
   duration_days: number;
-
   has_goal: boolean;
   goal_value: number | null;
   user_progress: number | null;
-
   participants_count: number;
   user_completed: boolean;
   challenge_finished: boolean;
-
   rating_place?: number | null;
 };
 
-export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
+// Текст для модального окна (без смайлов, в стиле навигации)
+const INFO_TEXT = {
+  title: "Projects365",
+  description: "Платформа для дисциплины и достижения целей через вызовы.",
+  
+  sections: [
+    {
+      icon: "○",
+      title: "Участие в вызовах",
+      text: "Присоединяйтесь к активным вызовам или создавайте свои. Доступны бесплатные, платные и по условию варианты входа."
+    },
+    {
+      icon: "📈",
+      title: "Индекс дисциплины",
+      text: "Каждый выполненный день приносит вам индекс. Чем больше вызовов в день, тем выше множитель."
+    },
+    {
+      icon: "🔥",
+      title: "Система стриков",
+      text: "При ежедневном выполнении растет стрик. За достижение 7, 14, 21 и 30 дней начисляются крупные бонусы."
+    },
+    {
+      icon: "🏆",
+      title: "Награды создателям",
+      text: "Создатели получают бонусы за успешные вызовы: за каждого участника, дошедшего до конца, и за длительность вызова."
+    },
+    {
+      icon: "💬",
+      title: "Чат вызова",
+      text: "У каждого вызова есть чат, доступный только участникам после вступления."
+    }
+  ],
 
+  stats: [
+    "1 отчет в день — +1.0 индекса",
+    "2 отчета в день — +1.5 за каждый",
+    "3 отчета в день — +1.7 за каждый",
+    "4+ отчета в день — +0.2 за каждый дополнительный"
+  ],
+
+  creatorBonus: [
+    "Отличный участник (≥80% отчетов): +1.0",
+    "Хороший участник (50-79% отчетов): +0.5",
+    "Бонус за длительность: от +2 до +25",
+    "Бонус за успех вызова: до +15"
+  ],
+
+  footer: "Начните свой путь к дисциплине уже сегодня."
+};
+
+export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
   const [tab, setTab] = useState<'active' | 'completed'>('active');
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ChallengeItem[]>([]);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   async function load() {
     console.log('[HOME] load called');
@@ -133,7 +192,6 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
     console.log('[HOME] items from rpc:', data);
     console.log('[HOME] number of items:', data?.length || 0);
     
-    // Логируем каждый элемент для отладки
     if (data && data.length > 0) {
       data.forEach((item: ChallengeItem, index: number) => {
         console.log(`[HOME] Item ${index + 1}:`, {
@@ -156,6 +214,16 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
     }
   }, [screen, refreshKey]);
 
+  // Закрытие модалки по ESC
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isInfoOpen) {
+        setIsInfoOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isInfoOpen]);
 
   const active = items.filter(i => !i.challenge_finished);
   const completed = items.filter(i => i.challenge_finished);
@@ -166,7 +234,10 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
       <FixedHeaderWrapper>
         <HeaderSpacer />
         <Header>
-          <StatusLabel>Состояние</StatusLabel>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <StatusLabel>Состояние</StatusLabel>
+            <InfoButton onClick={() => setIsInfoOpen(true)}>?</InfoButton>
+          </div>
           <StatusTitle>
             {tab === 'active'
               ? active.length === 0
@@ -205,42 +276,21 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
               const progressValue = Number(item.user_progress ?? 0);
               const goalValue = Number(item.goal_value ?? 0);
 
-              // ИСПРАВЛЕНО: правильный подсчет дней с учетом будущих дат
               const start = new Date(item.start_at);
               const today = new Date();
               
-              console.log(`[HOME] Calculating days for: ${item.title}`);
-              console.log(`[HOME] Raw start_at: ${item.start_at}`);
-              console.log(`[HOME] Start date object:`, start);
-              console.log(`[HOME] Today:`, today);
-              
-              // Создаем даты в UTC, обнуляя время
               const startUTC = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
               const todayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
               
-              console.log(`[HOME] Start UTC: ${new Date(startUTC).toISOString()}`);
-              console.log(`[HOME] Today UTC: ${new Date(todayUTC).toISOString()}`);
-              
-              // Вычисляем разницу в днях (может быть отрицательной, если челлендж еще не начался)
               const diffDays = Math.floor((todayUTC - startUTC) / (1000 * 60 * 60 * 24));
-              console.log(`[HOME] diffDays: ${diffDays}`);
               
-              // ИСПРАВЛЕНО: если челлендж еще не начался (diffDays < 0), показываем день 1
-              // Если начался, но прошло больше дней чем длительность, показываем последний день
               let currentDay;
               if (diffDays < 0) {
-                // Челлендж еще не начался
                 currentDay = 1;
-                console.log(`[HOME] Challenge hasn't started yet, showing day 1`);
               } else {
-                // Челлендж начался, считаем день с учетом максимальной длительности
                 currentDay = Math.min(item.duration_days, diffDays + 1);
-                console.log(`[HOME] Challenge started, calculated day: ${currentDay}`);
               }
-              
-              console.log(`[HOME] final currentDay: ${currentDay} из ${item.duration_days}`);
 
-              // 🔥 ЕДИНЫЙ ПРОЦЕНТ
               const progressPercent = item.has_goal && goalValue > 0
                 ? Math.min(100, Math.round((progressValue / goalValue) * 100))
                 : Math.min(
@@ -248,9 +298,6 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                     Math.round((progressValue / item.duration_days) * 100)
                   );
 
-              console.log(`[HOME] progressPercent: ${progressPercent}%`);
-
-              // Определяем статус вызова
               const getStatusText = () => {
                 if (item.challenge_finished) {
                   return item.user_completed ? 'Успешно завершён' : 'Завершён';
@@ -262,7 +309,6 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
 
               return (
                 <Card key={item.participant_id}>
-                  {/* HEADER: TITLE + BADGES */}
                   <CardHeader>
                     <CardTitleRow>
                       <CardTitle>{item.title}</CardTitle>
@@ -278,7 +324,6 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                     </ChallengeTypeBadge>
                   </CardHeader>
 
-                  {/* STATS */}
                   <CardStats>
                     <StatItem>
                       <StatValue>{item.participants_count}</StatValue>
@@ -298,7 +343,6 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                     </StatItem>
                   </CardStats>
 
-                  {/* PROGRESS SECTION */}
                   <ProgressWrapper>
                     <ProgressHeader>
                       <ProgressInfo>
@@ -334,7 +378,6 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                     </ProgressHeader>
                   </ProgressWrapper>
 
-                  {/* ACTION BUTTON */}
                   {!item.challenge_finished ? (
                     <PrimaryButton
                       onClick={() =>
@@ -371,55 +414,84 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
-     <BottomNav>
-  {/* HOME */}
-  <NavItem
-    $active={screen === 'home'}
-    onClick={() => onNavigate('home')}
-  >
-    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M3 10.5L12 3l9 7.5" />
-      <path d="M5 9.5V21h14V9.5" />
-    </svg>
-  </NavItem>
+      {/* Модальное окно с информацией */}
+      <ModalOverlay $isOpen={isInfoOpen} onClick={() => setIsInfoOpen(false)}>
+        <ModalContent onClick={e => e.stopPropagation()}>
+          <ModalClose onClick={() => setIsInfoOpen(false)}>✕</ModalClose>
+          
+          <ModalTitle>{INFO_TEXT.title}</ModalTitle>
+          <ModalDescription>{INFO_TEXT.description}</ModalDescription>
 
-  {/* CREATE */}
-  <NavItem
-    $active={screen === 'create'}
-    onClick={() => onNavigate('create')}
-  >
-    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
-    </svg>
-  </NavItem>
+          {INFO_TEXT.sections.map((section, idx) => (
+            <ModalSection key={idx}>
+              <ModalSectionHeader>
+                <ModalSectionIcon>{section.icon}</ModalSectionIcon>
+                <ModalSectionTitle>{section.title}</ModalSectionTitle>
+              </ModalSectionHeader>
+              <ModalSectionText>{section.text}</ModalSectionText>
+            </ModalSection>
+          ))}
 
-  {/* STATS (ПОКА НЕТ ЭКРАНА) */}
-  <NavItem
-    $active={false}
-    onClick={() => {}}
-  >
-    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-      <line x1="6" y1="18" x2="6" y2="14" />
-      <line x1="12" y1="18" x2="12" y2="10" />
-      <line x1="18" y1="18" x2="18" y2="6" />
-    </svg>
-  </NavItem>
+          <ModalSection>
+            <ModalSectionHeader>
+              <ModalSectionIcon>⚡</ModalSectionIcon>
+              <ModalSectionTitle>Индекс дисциплины</ModalSectionTitle>
+            </ModalSectionHeader>
+            <ModalList>
+              {INFO_TEXT.stats.map((item, idx) => (
+                <ModalListItem key={idx}>{item}</ModalListItem>
+              ))}
+            </ModalList>
+          </ModalSection>
 
-  {/* PROFILE */}
-  <NavItem
-    $active={screen === 'profile'}
-    onClick={() => onNavigate('profile')}
-  >
-    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="7" r="4" />
-      <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
-    </svg>
-  </NavItem>
-</BottomNav>
+          <ModalSection>
+            <ModalSectionHeader>
+              <ModalSectionIcon>🎯</ModalSectionIcon>
+              <ModalSectionTitle>Бонусы создателям</ModalSectionTitle>
+            </ModalSectionHeader>
+            <ModalList>
+              {INFO_TEXT.creatorBonus.map((item, idx) => (
+                <ModalListItem key={idx}>{item}</ModalListItem>
+              ))}
+            </ModalList>
+          </ModalSection>
 
+          <ModalFooter>{INFO_TEXT.footer}</ModalFooter>
+        </ModalContent>
+      </ModalOverlay>
+
+      <BottomNav>
+        <NavItem $active={screen === 'home'} onClick={() => onNavigate('home')}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 10.5L12 3l9 7.5" />
+            <path d="M5 9.5V21h14V9.5" />
+          </svg>
+        </NavItem>
+
+        <NavItem $active={screen === 'create'} onClick={() => onNavigate('create')}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+        </NavItem>
+
+        <NavItem $active={false}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="6" y1="18" x2="6" y2="14" />
+            <line x1="12" y1="18" x2="12" y2="10" />
+            <line x1="18" y1="18" x2="18" y2="6" />
+          </svg>
+        </NavItem>
+
+        <NavItem $active={screen === 'profile'} onClick={() => onNavigate('profile')}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="7" r="4" />
+            <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+          </svg>
+        </NavItem>
+      </BottomNav>
     </SafeArea>
   );
 }

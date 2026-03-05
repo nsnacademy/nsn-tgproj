@@ -30,7 +30,7 @@ export const FixedHeader = styled.div`
   left: 0;
   right: 0;
   background: #000;
-  padding: 60px 20px 16px;
+  padding: 90px 20px 16px;
   z-index: 100;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 `;
@@ -45,7 +45,7 @@ export const HeaderRow = styled.div`
 export const BackButton = styled.button`
   position: absolute;
   left: 0;
-  padding: 8px 12px;
+  padding: 8px 5px;
   border-radius: 10px;
   border: none;
   background: rgba(255, 255, 255, 0.1);

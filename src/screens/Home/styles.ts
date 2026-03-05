@@ -404,3 +404,190 @@ export const SkeletonProgress = styled.div`
   margin: 16px 0;
 `;
 
+/* ======================
+   INFO BUTTON & MODAL
+====================== */
+
+export const InfoButton = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 12px;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+export const ModalOverlay = styled.div<{ $isOpen: boolean }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: ${({ $isOpen }) => ($isOpen ? 1 : 0)};
+  pointer-events: ${({ $isOpen }) => ($isOpen ? 'auto' : 'none')};
+  transition: opacity 0.3s ease;
+`;
+
+export const ModalContent = styled.div`
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+  position: relative;
+  animation: slideUp 0.3s ease;
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #111;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 2px;
+  }
+`;
+
+export const ModalClose = styled.button`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #fff;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #333;
+    border-color: #666;
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+export const ModalTitle = styled.h2`
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding-right: 32px;
+`;
+
+export const ModalDescription = styled.p`
+  font-size: 14px;
+  opacity: 0.7;
+  line-height: 1.5;
+  margin-bottom: 24px;
+`;
+
+export const ModalSection = styled.div`
+  margin-bottom: 24px;
+`;
+
+export const ModalSectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+`;
+
+export const ModalSectionIcon = styled.span`
+  font-size: 20px;
+  opacity: 0.9;
+`;
+
+export const ModalSectionTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.9;
+`;
+
+export const ModalSectionText = styled.p`
+  font-size: 13px;
+  opacity: 0.7;
+  line-height: 1.5;
+  margin-left: 28px;
+`;
+
+export const ModalList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 28px;
+`;
+
+export const ModalListItem = styled.li`
+  font-size: 13px;
+  opacity: 0.7;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &::before {
+    content: "—";
+    color: #666;
+    font-size: 14px;
+  }
+`;
+
+export const ModalFooter = styled.div`
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.8;
+`;
