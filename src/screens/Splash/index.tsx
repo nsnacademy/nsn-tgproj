@@ -42,7 +42,7 @@ export function Splash({ onFinish }: Props) {
 
   return (
     <SplashContainer>
-      <Title>cronos</Title>
+      <Title>НАЧАТЬ С НАЧАЛА</Title>
       <ProgressBar>
         <ProgressFill $progress={progress} />
       </ProgressBar>
