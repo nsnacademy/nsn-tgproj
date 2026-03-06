@@ -122,7 +122,7 @@ export const CardTitleRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 6px;
+  margin-bottom: -8px;
 `;
 
 export const CardTitle = styled.div`
