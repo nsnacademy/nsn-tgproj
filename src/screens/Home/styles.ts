@@ -30,7 +30,7 @@ export const HeaderSpacer = styled.div`
 `;
 
 export const Header = styled.div`
-  padding: 90px 20px 0;
+  padding: 95px 20px 0;
 `;
 
 export const StatusLabel = styled.div`
@@ -50,7 +50,7 @@ export const StatusTitle = styled.div`
 export const Tabs = styled.div`
   display: flex;
   gap: 18px;
-  padding: 14px 20px 16px;
+  padding: 7px 20px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 `;
 
