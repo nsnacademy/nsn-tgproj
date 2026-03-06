@@ -1,5 +1,10 @@
-import { useEffect } from 'react';
-import { SplashContainer, Title } from './styles';
+import { useEffect, useState } from 'react';
+import { 
+  SplashContainer, 
+  Title, 
+  ProgressBar, 
+  ProgressFill
+} from './styles';
 import { initTelegramFullscreenHack } from '../../shared/lib/telegram';
 
 type Props = {
@@ -7,22 +12,40 @@ type Props = {
 };
 
 export function Splash({ onFinish }: Props) {
+  const [progress, setProgress] = useState(0);
+
   useEffect(() => {
-    // 🔹 fullscreen hack (как в рабочем примере)
+    // 🔹 fullscreen hack
     initTelegramFullscreenHack();
 
-    // 🔹 переход дальше через 5 секунд
-    const timer = setTimeout(() => {
-      onFinish();
-    }, 5000);
+    // 🔹 анимация прогресса за 3 секунды
+    const startTime = Date.now();
+    const duration = 3000;
 
-    return () => clearTimeout(timer);
+    const animateProgress = () => {
+      const elapsed = Date.now() - startTime;
+      const newProgress = Math.min((elapsed / duration) * 100, 100);
+      
+      setProgress(newProgress);
+
+      if (elapsed < duration) {
+        requestAnimationFrame(animateProgress);
+      } else {
+        onFinish();
+      }
+    };
+
+    const frame = requestAnimationFrame(animateProgress);
+
+    return () => cancelAnimationFrame(frame);
   }, [onFinish]);
 
   return (
     <SplashContainer>
-      <Title>nsnproj</Title>
-      <p>Загрузка...</p>
+      <Title>cronos</Title>
+      <ProgressBar>
+        <ProgressFill $progress={progress} />
+      </ProgressBar>
     </SplashContainer>
   );
 }
