@@ -12,39 +12,33 @@ type Props = {
 };
 
 export function Splash({ onFinish }: Props) {
-  const [progress, setProgress] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     // 🔹 fullscreen hack
     initTelegramFullscreenHack();
 
-    // 🔹 анимация прогресса за 3 секунды
-    const startTime = Date.now();
-    const duration = 3000;
+    // 🔹 показываем анимацию через небольшой таймаут для надежности
+    const showTimer = setTimeout(() => {
+      setIsVisible(true);
+    }, 50);
 
-    const animateProgress = () => {
-      const elapsed = Date.now() - startTime;
-      const newProgress = Math.min((elapsed / duration) * 100, 100);
-      
-      setProgress(newProgress);
+    // 🔹 переход дальше через 3 секунды
+    const finishTimer = setTimeout(() => {
+      onFinish();
+    }, 3000);
 
-      if (elapsed < duration) {
-        requestAnimationFrame(animateProgress);
-      } else {
-        onFinish();
-      }
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(finishTimer);
     };
-
-    const frame = requestAnimationFrame(animateProgress);
-
-    return () => cancelAnimationFrame(frame);
   }, [onFinish]);
 
   return (
     <SplashContainer>
       <Title>НАЧАТЬ С НАЧАЛА</Title>
       <ProgressBar>
-        <ProgressFill $progress={progress} />
+        <ProgressFill $isVisible={isVisible} />
       </ProgressBar>
     </SplashContainer>
   );
