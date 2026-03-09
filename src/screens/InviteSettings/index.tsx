@@ -110,6 +110,9 @@ export default function InviteSettings({
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [processing, setProcessing] = useState<string | null>(null);
 
+  // 👇 Флаг для принудительного обновления
+  const [refreshKey, setRefreshKey] = useState(0);
+
   /* =========================
      DEBUG LOGS
   ========================= */
@@ -123,7 +126,8 @@ export default function InviteSettings({
     participantsCount,
     limitEnabled,
     maxParticipants,
-    showRequests
+    showRequests,
+    refreshKey
   });
 
   /* =========================
@@ -387,7 +391,7 @@ export default function InviteSettings({
 
   useEffect(() => {
     loadAllData();
-  }, [challengeId]);
+  }, [challengeId, refreshKey]); // 👈 Добавили refreshKey в зависимости
 
   /* =========================
      REAL-TIME SUBSCRIPTION
@@ -757,14 +761,24 @@ export default function InviteSettings({
 
     console.log('✅ [DELETE] Вызов удален');
     console.log('🔙 [NAVIGATION] Вызов onBack() после удаления');
-    onBack(); // Возвращаемся в админ-панель
+    
+    // 👇 Увеличиваем refreshKey для принудительного обновления родительского компонента
+    setRefreshKey(prev => prev + 1);
+    
+    // 👇 Вызываем onBack с небольшой задержкой
+    setTimeout(() => {
+      onBack();
+    }, 100);
   };
 
-  // 👇 Функция-обработчик для кнопки назад с логами
+  // 👇 Функция-обработчик для кнопки назад с логами и принудительным обновлением
   const handleBackClick = () => {
     console.log('🔙 [NAVIGATION] Нажата кнопка назад');
     console.log('📍 [NAVIGATION] Текущий экран: InviteSettings, challengeId:', challengeId);
     console.trace('[NAVIGATION] Стек вызовов:');
+    
+    // 👇 Увеличиваем refreshKey для принудительного обновления родительского компонента
+    setRefreshKey(prev => prev + 1);
     
     onBack();
   };
@@ -781,7 +795,7 @@ export default function InviteSettings({
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
-              
+              Назад
             </BackButton>
             <Title>Управление вызовом</Title>
           </HeaderRow>
