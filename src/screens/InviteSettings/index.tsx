@@ -497,7 +497,7 @@ export default function InviteSettings({
   const copyLink = async () => {
     if (!invite || !invite.is_active) return;
 
-    const link = `https://t.me/Projects365_bot?startapp=invite_${invite.code}`;
+    const link = `https://t.me/nsndsc_bot?startapp=invite_${invite.code}`;
     await navigator.clipboard.writeText(link);
     alert('Ссылка скопирована!');
   };
