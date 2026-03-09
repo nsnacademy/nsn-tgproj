@@ -84,7 +84,7 @@ type ChallengeItem = {
 
 // Текст для модального окна (без смайлов, в стиле навигации)
 const INFO_TEXT = {
-  title: "Начать с начала",
+  title: "nsndsc",
   description: "Платформа для дисциплины и достижения целей через вызовы.",
   
   sections: [

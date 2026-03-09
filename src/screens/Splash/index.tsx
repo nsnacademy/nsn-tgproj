@@ -36,7 +36,7 @@ export function Splash({ onFinish }: Props) {
 
   return (
     <SplashContainer>
-      <Title>НАЧАТЬ С НАЧАЛА</Title>
+      <Title>nsndsc</Title>
       <ProgressBar>
         <ProgressFill $isVisible={isVisible} />
       </ProgressBar>
