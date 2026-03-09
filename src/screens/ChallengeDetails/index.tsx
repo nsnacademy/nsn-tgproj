@@ -70,26 +70,54 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
   /* ================= LOAD ================= */
 
   useEffect(() => {
-  // 🔗 обработка реферальной ссылки
-  const initData = window.Telegram?.WebApp?.initDataUnsafe as
-    | { start_param?: string }
-    | undefined;
+    // 🔗 обработка start_param из Telegram
+    const initData = window.Telegram?.WebApp?.initDataUnsafe as
+      | { start_param?: string }
+      | undefined;
 
-  const startParam = initData?.start_param;
+    const startParam = initData?.start_param;
 
-  if (startParam && startParam.startsWith('challenge_')) {
-    const idFromLink = startParam.replace('challenge_', '');
+    // Проверяем только challenge_ ссылки, invite_ обрабатываются где-то еще
+    if (startParam?.startsWith('challenge_')) {
+      const idFromLink = startParam.replace('challenge_', '');
 
-    if (idFromLink && idFromLink !== challengeId) {
-      window.dispatchEvent(
-        new CustomEvent('navigate-to-challenge', {
-          detail: { challengeId: idFromLink },
-        })
-      );
-      return; // ⛔ важно: НЕ грузим текущий challenge
+      if (idFromLink && idFromLink !== challengeId) {
+        window.dispatchEvent(
+          new CustomEvent('navigate-to-challenge', {
+            detail: { challengeId: idFromLink },
+          })
+        );
+        return; // ⛔ важно: НЕ грузим текущий challenge
+      }
     }
-  }
 
+    // 🔗 обработка invite ссылок
+    if (startParam?.startsWith('invite_')) {
+      const inviteCode = startParam.replace('invite_', '');
+      
+      // Загружаем инвайт асинхронно
+      loadInvite(inviteCode);
+      return; // ⛔ ждем результата loadInvite
+    }
+
+    async function loadInvite(code: string) {
+      const { data } = await supabase
+        .from('challenge_invites')
+        .select('challenge_id')
+        .eq('code', code)
+        .single();
+
+      if (!data) return;
+
+      // Если полученный challenge_id отличается от текущего - навигируем
+      if (data.challenge_id !== challengeId) {
+        window.dispatchEvent(
+          new CustomEvent('navigate-to-challenge', {
+            detail: { challengeId: data.challenge_id },
+          })
+        );
+      }
+    }
 
     async function load() {
       const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -127,29 +155,26 @@ export function ChallengeDetails({ challengeId, onNavigateHome }: Props) {
 
       const creator = data.users as unknown as { username: string } | null;
 
-setChallenge({
-  title: data.title,
-  description: data.description,
-  rules: data.rules,
-  start_mode: data.start_mode,
-  start_date: data.start_date,
-  duration_days: data.duration_days,
-  report_mode: data.report_mode,
-  metric_name: data.metric_name,
-  has_goal: data.has_goal,
-  goal_value: data.goal_value,
-  has_limit: data.has_limit,
-  limit_per_day: data.limit_per_day,
-  has_proof: data.has_proof,
-  proof_types: data.proof_types,
-  has_rating: data.has_rating,
-  max_participants: data.max_participants,
-  chat_link: data.chat_link,
-
-  // ✅ ТЕПЕРЬ РАБОТАЕТ И В RUNTIME И В TS
-  username: creator?.username ?? 'unknown',
-});
-
+      setChallenge({
+        title: data.title,
+        description: data.description,
+        rules: data.rules,
+        start_mode: data.start_mode,
+        start_date: data.start_date,
+        duration_days: data.duration_days,
+        report_mode: data.report_mode,
+        metric_name: data.metric_name,
+        has_goal: data.has_goal,
+        goal_value: data.goal_value,
+        has_limit: data.has_limit,
+        limit_per_day: data.limit_per_day,
+        has_proof: data.has_proof,
+        proof_types: data.proof_types,
+        has_rating: data.has_rating,
+        max_participants: data.max_participants,
+        chat_link: data.chat_link,
+        username: creator?.username ?? 'unknown',
+      });
 
       /* === Награды === */
       if (data.has_rating) {
@@ -194,7 +219,15 @@ setChallenge({
       setLoading(false);
     }
 
-    load();
+    // Запускаем загрузку только если нет редиректа
+    if (!startParam?.startsWith('challenge_') && !startParam?.startsWith('invite_')) {
+      load();
+    } else if (startParam?.startsWith('invite_')) {
+      // Для invite запускаем loadInvite, но не load, так как это вызовет редирект
+      const inviteCode = startParam.replace('invite_', '');
+      loadInvite(inviteCode);
+    }
+    // Для challenge_ редирект уже произошел выше, load не вызываем
   }, [challengeId]);
 
   if (loading || !challenge) {
