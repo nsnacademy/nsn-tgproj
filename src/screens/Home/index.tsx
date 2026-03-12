@@ -30,24 +30,21 @@ import {
   EmptyText,
   Card,
   CardHeader,
-  CardTitleRow,
-  CardTitle,
-  CardStats,
-  StatItem,
-  StatValue,
-  StatLabel,
-  ProgressWrapper,
-  ProgressHeader,
-  ProgressInfo,
+  Title,
+  Participants,
   ProgressBar,
-  ProgressFill,
-  ProgressText,
-  DaysInfo,
-  PrimaryButton,
+  Progress,
+  DayRow,
+  Day,
+  Percent,
+  Divider,
+  Stats,
+  Stat,
+  Icon,
+  StatText,
+  Report,
   BottomNav,
   NavItem,
-  StatusBadge,
-  ChallengeTypeBadge,
 } from './styles';
 
 type Screen =
@@ -82,7 +79,7 @@ type ChallengeItem = {
   rating_place?: number | null;
 };
 
-// Текст для модального окна (без смайлов, в стиле навигации)
+// Текст для модального окна
 const INFO_TEXT = {
   title: "nsndsc",
   description: "Платформа для дисциплины и достижения целей через вызовы.",
@@ -233,26 +230,26 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
     <SafeArea>
       <FixedHeaderWrapper>
         <HeaderSpacer />
-       <Header>
-  <div style={{ 
-    display: 'flex', 
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '1px'  /* добавили отступ снизу */
-  }}>
-    <StatusLabel>Состояние</StatusLabel>
-    <InfoButton onClick={() => setIsInfoOpen(true)}>?</InfoButton>
-  </div>
-  <StatusTitle>
-    {tab === 'active'
-      ? active.length === 0
-        ? 'Нет активных вызовов'
-        : `Активные вызовы (${active.length})`
-      : completed.length === 0
-      ? 'Нет завершённых вызовов'
-      : `Завершённые вызовы (${completed.length})`}
-  </StatusTitle>
-</Header>
+        <Header>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '1px'
+          }}>
+            <StatusLabel>Состояние</StatusLabel>
+            <InfoButton onClick={() => setIsInfoOpen(true)}>?</InfoButton>
+          </div>
+          <StatusTitle>
+            {tab === 'active'
+              ? active.length === 0
+                ? 'Нет активных вызовов'
+                : `Активные вызовы (${active.length})`
+              : completed.length === 0
+              ? 'Нет завершённых вызовов'
+              : `Завершённые вызовы (${completed.length})`}
+          </StatusTitle>
+        </Header>
 
         <Tabs>
           <Tab $active={tab === 'active'} onClick={() => setTab('active')}>
@@ -303,114 +300,41 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                     Math.round((progressValue / item.duration_days) * 100)
                   );
 
-              const getStatusText = () => {
-                if (item.challenge_finished) {
-                  return item.user_completed ? 'Успешно завершён' : 'Завершён';
-                }
-                if (diffDays < 0) return 'Скоро начнётся';
-                if (progressPercent >= 100) return 'Выполняется';
-                return 'В процессе';
-              };
+              const isActive = !item.challenge_finished && diffDays >= 0;
 
               return (
                 <Card key={item.participant_id}>
                   <CardHeader>
-                    <CardTitleRow>
-                      <CardTitle>{item.title}</CardTitle>
-                      {typeof item.rating_place === 'number' && item.rating_place <= 3 && (
-                        <StatusBadge $place={item.rating_place}>
-                          #{item.rating_place}
-                        </StatusBadge>
-                      )}
-                    </CardTitleRow>
-                    
-                    <ChallengeTypeBadge>
-                      {item.has_goal ? 'Специальная цель' : 'Ежедневный вызов'}
-                    </ChallengeTypeBadge>
+                    <Title>🔥 {item.title}</Title>
+                    <Participants>🔥 {item.participants_count} участника</Participants>
                   </CardHeader>
 
-                  <CardStats>
-                    <StatItem>
-                      <StatValue>{item.participants_count}</StatValue>
-                      <StatLabel>участников</StatLabel>
-                    </StatItem>
-                    
-                    <StatItem>
-                      <StatValue>{item.duration_days}</StatValue>
-                      <StatLabel>дней</StatLabel>
-                    </StatItem>
-                    
-                    <StatItem>
-                      <StatValue>
-                        {item.challenge_finished ? 'Завершён' : getStatusText()}
-                      </StatValue>
-                      <StatLabel>статус</StatLabel>
-                    </StatItem>
-                  </CardStats>
+                  <ProgressBar>
+                    <Progress style={{ width: `${progressPercent}%` }} />
+                  </ProgressBar>
 
-                  <ProgressWrapper>
-                    <ProgressHeader>
-                      <ProgressInfo>
-                        <ProgressText>
-                          {item.has_goal
-                            ? `Прогресс: ${progressValue} из ${goalValue}`
-                            : `Выполнено: ${progressValue} из ${item.duration_days} дней`}
-                        </ProgressText>
-                        <ProgressText $highlight>{progressPercent}%</ProgressText>
-                      </ProgressInfo>
-                      
-                      <ProgressBar>
-                        <ProgressFill 
-                          style={{ 
-                            width: `${progressPercent}%`,
-                            opacity: item.challenge_finished ? 0.7 : 1
-                          }} 
-                        />
-                      </ProgressBar>
+                  <DayRow>
+                    <Day>День {currentDay} / {item.duration_days}</Day>
+                    <Percent>{progressPercent}%</Percent>
+                  </DayRow>
 
-                      <DaysInfo>
-                        {diffDays < 0 ? (
-                          <>Старт {new Date(item.start_at).toLocaleDateString('ru-RU')}</>
-                        ) : (
-                          <>День {currentDay} из {item.duration_days}</>
-                        )}
-                        {item.challenge_finished && (
-                          <span style={{ marginLeft: '8px', opacity: 0.7 }}>
-                            • {item.user_completed ? '✓' : '✗'}
-                          </span>
-                        )}
-                      </DaysInfo>
-                    </ProgressHeader>
-                  </ProgressWrapper>
+                  <Divider />
 
-                  {!item.challenge_finished ? (
-                    <PrimaryButton
-                      onClick={() =>
-                        onNavigate(
-                          'challenge-progress',
-                          item.challenge_id,
-                          item.participant_id
-                        )
-                      }
-                      disabled={diffDays < 0}
-                      style={diffDays < 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                    >
-                      {diffDays < 0 ? 'Доступно с ' + new Date(item.start_at).toLocaleDateString('ru-RU') : 
-                       progressPercent >= 100 ? 'Посмотреть результат' : 'Продолжить вызов'}
-                    </PrimaryButton>
-                  ) : (
-                    <PrimaryButton
-                      onClick={() =>
-                        onNavigate(
-                          'challenge-progress',
-                          item.challenge_id,
-                          item.participant_id
-                        )
-                      }
-                      $variant="outline"
-                    >
-                      Посмотреть результат
-                    </PrimaryButton>
+                  <Stats>
+                    <Stat className="done">
+                      <Icon className="done">✔</Icon>
+                      <StatText>Выполнено: {progressValue}</StatText>
+                    </Stat>
+                    <Stat className="review">
+                      <Icon className="review">⏱</Icon>
+                      <StatText>4 на проверке</StatText>
+                    </Stat>
+                  </Stats>
+
+                  <Divider />
+
+                  {isActive && (
+                    <Report>📷 Отчет сегодня: фото + 5.2 км</Report>
                   )}
                 </Card>
               );
