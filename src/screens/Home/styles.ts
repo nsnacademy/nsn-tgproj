@@ -1,26 +1,13 @@
 import styled from 'styled-components';
 
-// Цветовая палитра NSNDSC
-const colors = {
-  bg: '#0b0f1c',
-  bgCard: 'linear-gradient(180deg, #1b2437, #1a2234)',
-  bgElement: '#3a4254',
-  accent: '#a78bfa',
-  accentGradient: 'linear-gradient(90deg, #a78bfa, #c4b5fd)',
-  success: '#1dbf73',
-  warning: '#f5b300',
-  text: '#ffffff',
-  textSecondary: '#b0b8c5',
-  border: '#394050',
-};
-
 /* ======================
    PAGE
 ====================== */
 export const SafeArea = styled.div`
   height: 100vh;
-  background: ${colors.bg};
-  color: ${colors.text};
+  background: #000;
+  color: #fff;
+
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -34,7 +21,7 @@ export const FixedHeaderWrapper = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  background: ${colors.bg};
+  background: #000;
   z-index: 1000;
 `;
 
@@ -49,44 +36,12 @@ export const Header = styled.div`
 export const StatusLabel = styled.div`
   font-size: 14px;
   opacity: 0.6;
-  color: ${colors.textSecondary};
 `;
 
 export const StatusTitle = styled.div`
   font-size: 22px;
   font-weight: 600;
   margin-top: 4px;
-  color: ${colors.text};
-`;
-
-/* ======================
-   INFO BUTTON
-====================== */
-export const InfoButton = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 16px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: ${colors.accent};
-    transform: scale(1.05);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
 `;
 
 /* ======================
@@ -96,21 +51,22 @@ export const Tabs = styled.div`
   display: flex;
   gap: 18px;
   padding: 7px 20px 16px;
-  border-bottom: 1px solid ${colors.border};
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 `;
 
 export const Tab = styled.div<{ $active?: boolean }>`
   font-size: 14px;
   cursor: pointer;
-  opacity: ${({ $active }) => ($active ? 1 : 0.6)};
+  opacity: ${({ $active }) => ($active ? 1 : 0.4)};
   padding-bottom: 6px;
+  position: relative;
   transition: all 0.2s ease;
+
   border-bottom: ${({ $active }) =>
-    $active ? `2px solid ${colors.accent}` : '2px solid transparent'};
-  color: ${({ $active }) => ($active ? colors.text : colors.textSecondary)};
+    $active ? '2px solid #fff' : '2px solid transparent'};
 
   &:hover {
-    opacity: 1;
+    opacity: ${({ $active }) => ($active ? 1 : 0.7)};
   }
 `;
 
@@ -139,212 +95,121 @@ export const EmptyText = styled.div`
   font-size: 14px;
   opacity: 0.6;
   padding: 0 20px;
-  color: ${colors.textSecondary};
 `;
 
 /* ======================
-   CARD — новый дизайн
+   CARD
 ====================== */
 export const Card = styled.div`
-  background: ${colors.bgCard};
-  border-radius: 26px;
-  padding: 28px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  color: ${colors.text};
-  transition: transform 0.2s ease;
+  background: rgba(255,255,255,0.06);
+  border-radius: 22px;
+  padding: 18px 20px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
     transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
   }
 `;
 
 export const CardHeader = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 `;
 
 export const CardTitleRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  margin-bottom: -9px;
 `;
 
 export const CardTitle = styled.div`
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  line-height: 1.4;
+  flex: 1;
 `;
 
-export const ParticipantsBadge = styled.div`
-  background: ${colors.bgElement};
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 500;
-  display: inline-flex;
+/* ======================
+   STATS
+====================== */
+export const CardStats = styled.div`
+  display: flex;
+  gap: 16px;
+  margin: 14px 0;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+`;
+
+export const StatItem = styled.div`
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  width: fit-content;
-  color: ${colors.textSecondary};
+  flex: 1;
+`;
+
+export const StatValue = styled.div`
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.9;
+`;
+
+export const StatLabel = styled.div`
+  font-size: 11px;
+  opacity: 0.5;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 /* ======================
    PROGRESS
 ====================== */
-export const ProgressSection = styled.div`
-  margin-bottom: 18px;
+export const ProgressWrapper = styled.div`
+  margin: 16px 0;
 `;
 
-export const DayRow = styled.div`
+export const ProgressHeader = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const ProgressInfo = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
 `;
 
-export const DayLabel = styled.span`
-  color: ${colors.textSecondary};
-  font-weight: 500;
-  font-size: 16px;
-`;
-
-export const DayValue = styled.span`
-  font-weight: 700;
-  color: ${colors.text};
-  margin-left: 4px;
-`;
-
-export const PercentValue = styled.span`
-  font-weight: 700;
-  color: ${colors.accent};
-  font-size: 20px;
-`;
-
-export const ProgressBarTrack = styled.div`
-  width: 100%;
-  height: 12px;
-  background: ${colors.bgElement};
+export const ProgressBar = styled.div`
+  height: 8px;
   border-radius: 10px;
+  background: rgba(255,255,255,0.12);
   overflow: hidden;
+  margin: 4px 0;
 `;
 
-export const ProgressBarFill = styled.div`
+export const ProgressFill = styled.div`
   height: 100%;
-  background: ${colors.accentGradient};
+  background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.9) 100%);
+  box-shadow: 0 0 8px rgba(255,255,255,0.4);
   border-radius: 10px;
-  box-shadow: 0 0 8px ${colors.accent}60;
   transition: width 0.3s ease;
 `;
 
-/* ======================
-   STATS GRID
-====================== */
-export const StatsGrid = styled.div`
-  display: flex;
-  gap: 16px;
-  margin: 24px 0;
-`;
-
-export const StatBlock = styled.div`
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 12px;
-  border-radius: 16px;
-`;
-
-export const StatIcon = styled.div`
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: 14px;
-  flex-shrink: 0;
-
-  &.done {
-    background: ${colors.success};
-    color: white;
-  }
-
-  &.review {
-    background: ${colors.warning};
-    color: white;
-  }
-`;
-
-export const StatContent = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-export const StatMain = styled.div`
-  font-size: 16px;
-  font-weight: 500;
-  color: ${colors.text};
-
-  strong {
-    font-weight: 700;
-  }
-`;
-
-export const StatSub = styled.div`
+export const ProgressText = styled.div<{ $highlight?: boolean }>`
   font-size: 13px;
-  color: ${colors.textSecondary};
-  margin-top: 2px;
+  opacity: ${({ $highlight }) => ($highlight ? 0.9 : 0.65)};
+  font-weight: ${({ $highlight }) => ($highlight ? 600 : 400)};
 `;
 
-/* ======================
-   REPORT BLOCK
-====================== */
-export const ReportBlock = styled.div`
-  background: ${colors.bgElement};
-  padding: 16px 20px;
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid ${colors.accent}40;
-  box-shadow: 0 4px 14px ${colors.accent}20;
-  margin: 20px 0 16px;
-`;
-
-export const ReportIcon = styled.span`
-  font-size: 24px;
-`;
-
-export const ReportText = styled.span`
-  font-size: 16px;
-  font-weight: 500;
-  color: ${colors.text};
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-
-  strong {
-    font-weight: 700;
-    color: white;
-  }
-`;
-
-export const PhotoBadge = styled.span`
-  background: #3f4a5e;
-  padding: 4px 10px;
-  border-radius: 30px;
-  font-size: 14px;
-  border: 1px solid #5f6b80;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: ${colors.textSecondary};
+export const DaysInfo = styled.div`
+  font-size: 12px;
+  opacity: 0.5;
+  margin-top: 4px;
 `;
 
 /* ======================
@@ -360,48 +225,62 @@ export const StatusBadge = styled.div<{ $place: number }>`
       case 1: return 'linear-gradient(135deg, #FFD700, #FFA500)';
       case 2: return 'linear-gradient(135deg, #C0C0C0, #A0A0A0)';
       case 3: return 'linear-gradient(135deg, #CD7F32, #A0522D)';
-      default: return colors.bgElement;
+      default: return 'rgba(255,255,255,0.1)';
     }
   }};
-  color: ${({ $place }) => $place <= 3 ? '#000' : colors.text};
+  color: ${({ $place }) => $place <= 3 ? '#000' : '#fff'};
   min-width: 28px;
   text-align: center;
+`;
+
+export const ChallengeTypeBadge = styled.div`
+  font-size: 11px;
+  opacity: 0.7;
+  background: rgba(255,255,255,0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-top: 4px;
 `;
 
 /* ======================
    BUTTON
 ====================== */
 export const PrimaryButton = styled.button<{ $variant?: 'primary' | 'outline' }>`
-  margin-top: 16px;
-  padding: 14px 20px;
+  margin-top: 14px;
+  padding: 12px 20px;
   width: 100%;
-  border-radius: 60px;
+  
+  border-radius: 14px;
+  border: ${({ $variant }) => 
+    $variant === 'outline' 
+      ? '1.5px solid rgba(255,255,255,0.3)' 
+      : 'none'};
+
+  background: ${({ $variant }) => 
+    $variant === 'outline' 
+      ? 'transparent' 
+      : '#fff'};
+  color: ${({ $variant }) => 
+    $variant === 'outline' 
+      ? '#fff' 
+      : '#000'};
+  
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: ${({ $variant }) => 
-    $variant === 'outline' ? `1.5px solid ${colors.bgElement}` : 'none'};
-  background: ${({ $variant }) => 
-    $variant === 'outline' ? 'transparent' : colors.text};
-  color: ${({ $variant }) => 
-    $variant === 'outline' ? colors.text : colors.bg};
 
   &:hover {
     background: ${({ $variant }) => 
-      $variant === 'outline' ? `${colors.bgElement}80` : '#e0e7ff'};
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+      $variant === 'outline' 
+        ? 'rgba(255,255,255,0.1)' 
+        : 'rgba(255,255,255,0.9)'};
+    transform: translateY(-1px);
   }
 
   &:active {
     transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
   }
 `;
 
@@ -413,11 +292,13 @@ export const BottomNav = styled.div`
   left: 16px;
   right: 16px;
   bottom: 18px;
+
   height: 68px;
-  background: rgba(11, 15, 28, 0.9);
+  background: rgba(0,0,0,0.9);
   border-radius: 34px;
   backdrop-filter: blur(20px);
-  border: 1px solid ${colors.border};
+  border: 1px solid rgba(255,255,255,0.1);
+
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -428,192 +309,39 @@ export const NavItem = styled.div<{ $active?: boolean }>`
   width: 48px;
   height: 48px;
   border-radius: 50%;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${({ $active }) => $active ? `${colors.accent}20` : 'transparent'};
-  color: ${({ $active }) => $active ? colors.accent : colors.textSecondary};
+
+  background: ${({ $active }) =>
+    $active ? 'rgba(255,255,255,0.15)' : 'transparent'};
+  color: ${({ $active }) =>
+    $active ? '#fff' : 'rgba(255,255,255,0.65)'};
+  
   transition: all 0.2s ease;
   cursor: pointer;
 
   &:hover {
-    background: ${({ $active }) => $active ? `${colors.accent}30` : `${colors.bgElement}40`};
+    background: ${({ $active }) =>
+      $active ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'};
   }
 `;
 
-/* ======================
-   MODAL
-====================== */
-export const ModalOverlay = styled.div<{ $isOpen: boolean }>`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: ${({ $isOpen }) => ($isOpen ? 1 : 0)};
-  pointer-events: ${({ $isOpen }) => ($isOpen ? 'auto' : 'none')};
-  transition: opacity 0.3s ease;
-`;
-
-export const ModalContent = styled.div`
-  background: ${colors.bgCard};
-  border: 1px solid ${colors.border};
-  border-radius: 24px;
-  width: 90%;
-  max-width: 400px;
-  max-height: 80vh;
-  overflow-y: auto;
-  padding: 24px;
-  position: relative;
-  animation: slideUp 0.3s ease;
-  color: ${colors.text};
-
-  @keyframes slideUp {
-    from {
-      transform: translateY(30px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-  &::-webkit-scrollbar-track {
-    background: #111;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: #333;
-    border-radius: 2px;
-  }
-`;
-
-export const ModalClose = styled.button`
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: ${colors.bgElement};
-  border: 1px solid ${colors.border};
-  color: ${colors.text};
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #4a5568;
-    border-color: ${colors.accent};
-  }
-`;
-
-export const ModalTitle = styled.h2`
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  padding-right: 32px;
-  background: linear-gradient(145deg, #ffffff, ${colors.accent});
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-`;
-
-export const ModalDescription = styled.p`
-  font-size: 14px;
-  opacity: 0.7;
-  line-height: 1.5;
-  margin-bottom: 24px;
-  color: ${colors.textSecondary};
-`;
-
-export const ModalSection = styled.div`
-  margin-bottom: 24px;
-`;
-
-export const ModalSectionHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-`;
-
-export const ModalSectionIcon = styled.span`
-  font-size: 20px;
-  color: ${colors.accent};
-`;
-
-export const ModalSectionTitle = styled.h3`
-  font-size: 16px;
-  font-weight: 600;
-  color: ${colors.text};
-`;
-
-export const ModalSectionText = styled.p`
-  font-size: 13px;
-  opacity: 0.7;
-  line-height: 1.5;
-  margin-left: 28px;
-  color: ${colors.textSecondary};
-`;
-
-export const ModalList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0 28px;
-`;
-
-export const ModalListItem = styled.li`
-  font-size: 13px;
-  opacity: 0.7;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: ${colors.textSecondary};
-
-  &::before {
-    content: "—";
-    color: ${colors.accent};
-    font-size: 14px;
-  }
-`;
-
-export const ModalFooter = styled.div`
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid ${colors.border};
-  text-align: center;
-  font-size: 13px;
-  font-weight: 500;
-  color: ${colors.text};
-`;
-
-// Скелетон-стили (оставлены без изменений, но с новыми цветами)
+// Добавьте скелетон-стили
 export const SkeletonCard = styled.div`
-  background: ${colors.bgCard};
-  border-radius: 26px;
-  padding: 28px;
-  margin-bottom: 18px;
-  border: 1px solid ${colors.border};
+  background: #0a0a0a;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid #222;
 `;
 
+// Обновите SkeletonLine - измените тип width на string | undefined
 export const SkeletonLine = styled.div<{ width?: string; height?: number }>`
   width: ${({ width }) => width || '100%'};
   height: ${({ height }) => height || 16}px;
-  background: ${colors.bgElement};
+  background: #222;
   border-radius: 4px;
   position: relative;
   overflow: hidden;
@@ -637,10 +365,11 @@ export const SkeletonLine = styled.div<{ width?: string; height?: number }>`
   }
 `;
 
+// Обновите SkeletonBadge
 export const SkeletonBadge = styled.div<{ width?: number; height?: number }>`
   width: ${({ width }) => width || 40}px;
   height: ${({ height }) => height || 24}px;
-  background: ${colors.bgElement};
+  background: #222;
   border-radius: 20px;
   position: relative;
   overflow: hidden;
@@ -673,4 +402,198 @@ export const SkeletonStats = styled.div`
 
 export const SkeletonProgress = styled.div`
   margin: 16px 0;
+`;
+
+/* ======================
+   INFO BUTTON & MODAL
+====================== */
+
+/* ======================
+   INFO BUTTON & MODAL
+====================== */
+
+export const InfoButton = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  
+  /* Убираем margin-top и align-self */
+  /* Весь кружок теперь на одном уровне с "Состояние" */
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+export const ModalOverlay = styled.div<{ $isOpen: boolean }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: ${({ $isOpen }) => ($isOpen ? 1 : 0)};
+  pointer-events: ${({ $isOpen }) => ($isOpen ? 'auto' : 'none')};
+  transition: opacity 0.3s ease;
+`;
+
+export const ModalContent = styled.div`
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+  position: relative;
+  animation: slideUp 0.3s ease;
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #111;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 2px;
+  }
+`;
+
+export const ModalClose = styled.button`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #fff;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #333;
+    border-color: #666;
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+export const ModalTitle = styled.h2`
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding-right: 32px;
+`;
+
+export const ModalDescription = styled.p`
+  font-size: 14px;
+  opacity: 0.7;
+  line-height: 1.5;
+  margin-bottom: 24px;
+`;
+
+export const ModalSection = styled.div`
+  margin-bottom: 24px;
+`;
+
+export const ModalSectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+`;
+
+export const ModalSectionIcon = styled.span`
+  font-size: 20px;
+  opacity: 0.9;
+`;
+
+export const ModalSectionTitle = styled.h3`
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.9;
+`;
+
+export const ModalSectionText = styled.p`
+  font-size: 13px;
+  opacity: 0.7;
+  line-height: 1.5;
+  margin-left: 28px;
+`;
+
+export const ModalList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 28px;
+`;
+
+export const ModalListItem = styled.li`
+  font-size: 13px;
+  opacity: 0.7;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &::before {
+    content: "—";
+    color: #666;
+    font-size: 14px;
+  }
+`;
+
+export const ModalFooter = styled.div`
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.8;
 `;
