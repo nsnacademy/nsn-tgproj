@@ -368,16 +368,6 @@ export const StatusBadge = styled.div<{ $place: number }>`
   text-align: center;
 `;
 
-export const ChallengeTypeBadge = styled.div`
-  font-size: 11px;
-  opacity: 0.7;
-  background: ${colors.bgElement};
-  padding: 4px 10px;
-  border-radius: 12px;
-  display: inline-block;
-  color: ${colors.textSecondary};
-`;
-
 /* ======================
    BUTTON
 ====================== */

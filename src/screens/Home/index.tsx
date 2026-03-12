@@ -33,7 +33,6 @@ import {
   CardTitleRow,
   CardTitle,
   ParticipantsBadge,
-  ChallengeTypeBadge,
   ProgressSection,
   DayRow,
   DayLabel,
@@ -312,6 +311,9 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
 
               const isActive = !item.challenge_finished && diffDays >= 0;
 
+              // Вычисляем количество дней на проверке
+              const pendingDays = isActive ? Math.max(0, currentDay - progressValue - 1) : 0;
+
               return (
                 <Card key={item.participant_id}>
                   <CardHeader>
@@ -359,8 +361,7 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                     <StatBlock>
                       <StatIcon className="review">⏱</StatIcon>
                       <StatContent>
-                        <StatMain>{Math.max(0, currentDay - progressValue - (diffDays < 0 ? 0 : 0))} на проверке</StatMain>
-                        {/* Здесь можно добавить реальное количество на проверке, если есть данные */}
+                        <StatMain>{pendingDays} на проверке</StatMain>
                       </StatContent>
                     </StatBlock>
                   </StatsGrid>
