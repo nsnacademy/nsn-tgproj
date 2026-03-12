@@ -96,25 +96,25 @@ export const EmptyText = styled.div`
 `;
 
 /* ======================
-   CARD - ОСНОВНАЯ КАРТОЧКА
+   CARD - УМЕНЬШЕННАЯ В 3 РАЗА
 ====================== */
 export const Card = styled.div`
   background: linear-gradient(180deg, #1b2437, #1a2234);
-  border-radius: 26px;
-  padding: 28px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   color: #fff;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
   }
 `;
 
 export const CardHeader = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 `;
 
 export const CardTitleRow = styled.div`
@@ -124,112 +124,114 @@ export const CardTitleRow = styled.div`
 `;
 
 export const CardTitle = styled.div`
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.3;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 `;
 
 /* ======================
-   PARTICIPANTS BADGE
+   PARTICIPANTS BADGE - УМЕНЬШЕН
 ====================== */
 export const ParticipantsBadge = styled.div`
   background: #3a4254;
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-size: 14px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   white-space: nowrap;
 `;
 
 /* ======================
-   DAY & PERCENT ROW
+   DAY & PERCENT ROW - УМЕНЬШЕН
 ====================== */
 export const DayPercentRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 10px;
-  font-size: 18px;
+  margin-bottom: 6px;
+  font-size: 14px;
 `;
 
 export const DayLabel = styled.span`
   color: #b0b8c5;
   font-weight: 500;
+  font-size: 13px;
 `;
 
 export const DayValue = styled.span`
   font-weight: 700;
   color: #fff;
+  font-size: 14px;
 `;
 
 export const PercentValue = styled.span`
   font-weight: 700;
   color: #c4b5fd;
-  font-size: 22px;
+  font-size: 16px;
 `;
 
 /* ======================
-   PROGRESS BAR
+   PROGRESS BAR - УМЕНЬШЕН
 ====================== */
 export const ProgressBar = styled.div`
   width: 100%;
-  height: 12px;
+  height: 8px;
   background: #3a4254;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 22px;
+  margin-bottom: 14px;
 `;
 
 export const ProgressFill = styled.div`
   height: 100%;
   background: linear-gradient(90deg, #a78bfa, #c4b5fd);
-  box-shadow: 0 0 8px rgba(167,139,250,0.6);
-  border-radius: 10px;
+  box-shadow: 0 0 6px rgba(167,139,250,0.6);
+  border-radius: 8px;
   transition: width 0.3s ease;
 `;
 
 /* ======================
-   DIVIDER
+   DIVIDER - УМЕНЬШЕН
 ====================== */
 export const Divider = styled.div`
   height: 1px;
   background: #394050;
-  margin: 18px 0;
+  margin: 12px 0;
 `;
 
 /* ======================
-   STATS ROW
+   STATS ROW - УМЕНЬШЕН
 ====================== */
 export const StatsRow = styled.div`
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
 `;
 
 export const StatItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 18px;
+  gap: 8px;
+  font-size: 14px;
   font-weight: 500;
   flex: 1;
 `;
 
 export const StatIcon = styled.div<{ $color: string }>`
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   background: ${({ $color }) => $color};
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 13px;
   flex-shrink: 0;
   color: #fff;
 `;
@@ -240,35 +242,35 @@ export const StatContent = styled.div`
 `;
 
 export const StatMain = styled.span`
-  font-size: 18px;
+  font-size: 14px;
   color: #fff;
 `;
 
 export const StatSub = styled.span`
-  font-size: 13px;
+  font-size: 11px;
   color: #9aa3b5;
-  margin-top: 2px;
+  margin-top: 1px;
 `;
 
 /* ======================
-   REPORT BLOCK
+   REPORT BLOCK - УМЕНЬШЕН
 ====================== */
 export const ReportBlock = styled.div`
   background: #2a3346;
-  padding: 16px 20px;
-  border-radius: 18px;
-  font-size: 18px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   border: 1px solid #4c3f6b;
-  box-shadow: 0 4px 14px rgba(128, 90, 213, 0.25);
-  margin-bottom: 16px;
+  box-shadow: 0 4px 10px rgba(128, 90, 213, 0.2);
+  margin-bottom: 12px;
   opacity: 0.95;
 `;
 
 export const ReportIcon = styled.span`
-  font-size: 24px;
+  font-size: 18px;
 `;
 
 export const ReportText = styled.span`
@@ -277,29 +279,30 @@ export const ReportText = styled.span`
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
+  font-size: 13px;
 `;
 
 export const ReportBadge = styled.span`
   background: #3f4a5e;
-  padding: 4px 10px;
-  border-radius: 30px;
-  font-size: 14px;
-  margin-left: 8px;
+  padding: 3px 8px;
+  border-radius: 24px;
+  font-size: 11px;
+  margin-left: 6px;
   border: 1px solid #5f6b80;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 `;
 
 /* ======================
-   BUTTON
+   BUTTON - УМЕНЬШЕН
 ====================== */
 export const PrimaryButton = styled.button<{ $variant?: 'primary' | 'outline' }>`
-  margin-top: 8px;
-  padding: 16px 24px;
+  margin-top: 6px;
+  padding: 12px 18px;
   width: 100%;
-  border-radius: 60px;
+  border-radius: 40px;
   border: ${({ $variant }) => 
     $variant === 'outline' 
       ? '1.5px solid rgba(255,255,255,0.3)' 
@@ -313,7 +316,7 @@ export const PrimaryButton = styled.button<{ $variant?: 'primary' | 'outline' }>
       ? '#fff' 
       : '#0b0d10'};
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -339,10 +342,10 @@ export const PrimaryButton = styled.button<{ $variant?: 'primary' | 'outline' }>
    BADGES
 ====================== */
 export const StatusBadge = styled.div<{ $place: number }>`
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 10px;
+  padding: 3px 6px;
+  border-radius: 8px;
   background: ${({ $place }) => {
     switch($place) {
       case 1: return 'linear-gradient(135deg, #FFD700, #FFA500)';
@@ -352,16 +355,16 @@ export const StatusBadge = styled.div<{ $place: number }>`
     }
   }};
   color: ${({ $place }) => $place <= 3 ? '#000' : '#fff'};
-  min-width: 28px;
+  min-width: 24px;
   text-align: center;
 `;
 
 export const ChallengeTypeBadge = styled.div`
-  font-size: 11px;
+  font-size: 10px;
   opacity: 0.7;
   background: rgba(255,255,255,0.1);
-  padding: 4px 10px;
-  border-radius: 12px;
+  padding: 3px 8px;
+  border-radius: 10px;
   display: inline-block;
   margin-top: 4px;
 `;
