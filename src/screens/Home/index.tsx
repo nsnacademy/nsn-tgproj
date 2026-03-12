@@ -32,27 +32,22 @@ import {
   CardHeader,
   CardTitleRow,
   CardTitle,
-  ParticipantsBadge,
-  DayPercentRow,
-  DayLabel,
-  DayValue,
-  PercentValue,
+  CardStats,
+  StatItem,
+  StatValue,
+  StatLabel,
+  ProgressWrapper,
+  ProgressHeader,
+  ProgressInfo,
   ProgressBar,
   ProgressFill,
-  Divider,
-  StatsRow,
-  StatItem,
-  StatIcon,
-  StatContent,
-  StatMain,
-  StatSub,
-  ReportBlock,
-  ReportIcon,
-  ReportText,
-  ReportBadge,
+  ProgressText,
+  DaysInfo,
+  PrimaryButton,
   BottomNav,
   NavItem,
-  PrimaryButton,
+  StatusBadge,
+  ChallengeTypeBadge,
 } from './styles';
 
 type Screen =
@@ -87,6 +82,7 @@ type ChallengeItem = {
   rating_place?: number | null;
 };
 
+// Текст для модального окна (без смайлов, в стиле навигации)
 const INFO_TEXT = {
   title: "nsndsc",
   description: "Платформа для дисциплины и достижения целей через вызовы.",
@@ -143,14 +139,19 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   async function load() {
+    console.log('[HOME] load called');
+
     setLoading(true);
 
     const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (!tgUser) {
+      console.log('[HOME] no tg user');
       setItems([]);
       setLoading(false);
       return;
     }
+
+    console.log('[HOME] tg user:', tgUser);
 
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -158,22 +159,49 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
       .eq('telegram_id', tgUser.id)
       .single();
 
-    if (userError || !user) {
+    if (userError) {
+      console.log('[HOME] user error:', userError);
+    }
+
+    if (!user) {
+      console.log('[HOME] no user found');
       setItems([]);
       setLoading(false);
       return;
     }
 
+    console.log('[HOME] found user:', user);
+
+    /* 🔥 ВАЖНО: автозавершение просроченных вызовов */
+    console.log('[HOME] calling finish_expired_challenges');
     await supabase.rpc('finish_expired_challenges');
 
+    /* 🔥 теперь грузим Home */
+    console.log('[HOME] calling get_home_challenges for user:', user.id);
     const { data, error } = await supabase.rpc('get_home_challenges', {
       p_user_id: user.id,
     });
 
     if (error) {
+      console.error('[HOME] rpc error', error);
       setItems([]);
       setLoading(false);
       return;
+    }
+
+    console.log('[HOME] items from rpc:', data);
+    console.log('[HOME] number of items:', data?.length || 0);
+    
+    if (data && data.length > 0) {
+      data.forEach((item: ChallengeItem, index: number) => {
+        console.log(`[HOME] Item ${index + 1}:`, {
+          title: item.title,
+          start_at: item.start_at,
+          duration_days: item.duration_days,
+          challenge_finished: item.challenge_finished,
+          user_progress: item.user_progress
+        });
+      });
     }
     
     setItems(data ?? []);
@@ -186,6 +214,7 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
     }
   }, [screen, refreshKey]);
 
+  // Закрытие модалки по ESC
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isInfoOpen) {
@@ -204,26 +233,26 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
     <SafeArea>
       <FixedHeaderWrapper>
         <HeaderSpacer />
-        <Header>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '1px'
-          }}>
-            <StatusLabel>Состояние</StatusLabel>
-            <InfoButton onClick={() => setIsInfoOpen(true)}>?</InfoButton>
-          </div>
-          <StatusTitle>
-            {tab === 'active'
-              ? active.length === 0
-                ? 'Нет активных вызовов'
-                : `Активные вызовы (${active.length})`
-              : completed.length === 0
-              ? 'Нет завершённых вызовов'
-              : `Завершённые вызовы (${completed.length})`}
-          </StatusTitle>
-        </Header>
+       <Header>
+  <div style={{ 
+    display: 'flex', 
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '1px'  /* добавили отступ снизу */
+  }}>
+    <StatusLabel>Состояние</StatusLabel>
+    <InfoButton onClick={() => setIsInfoOpen(true)}>?</InfoButton>
+  </div>
+  <StatusTitle>
+    {tab === 'active'
+      ? active.length === 0
+        ? 'Нет активных вызовов'
+        : `Активные вызовы (${active.length})`
+      : completed.length === 0
+      ? 'Нет завершённых вызовов'
+      : `Завершённые вызовы (${completed.length})`}
+  </StatusTitle>
+</Header>
 
         <Tabs>
           <Tab $active={tab === 'active'} onClick={() => setTab('active')}>
@@ -274,68 +303,85 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                     Math.round((progressValue / item.duration_days) * 100)
                   );
 
+              const getStatusText = () => {
+                if (item.challenge_finished) {
+                  return item.user_completed ? 'Успешно завершён' : 'Завершён';
+                }
+                if (diffDays < 0) return 'Скоро начнётся';
+                if (progressPercent >= 100) return 'Выполняется';
+                return 'В процессе';
+              };
+
               return (
                 <Card key={item.participant_id}>
                   <CardHeader>
                     <CardTitleRow>
-                      <CardTitle>
-                        {item.title}
-                      </CardTitle>
-                      <ParticipantsBadge>
-                        {item.participants_count} участника
-                      </ParticipantsBadge>
+                      <CardTitle>{item.title}</CardTitle>
+                      {typeof item.rating_place === 'number' && item.rating_place <= 3 && (
+                        <StatusBadge $place={item.rating_place}>
+                          #{item.rating_place}
+                        </StatusBadge>
+                      )}
                     </CardTitleRow>
+                    
+                    <ChallengeTypeBadge>
+                      {item.has_goal ? 'Специальная цель' : 'Ежедневный вызов'}
+                    </ChallengeTypeBadge>
                   </CardHeader>
 
-                  <DayPercentRow>
-                    <DayLabel>
-                      День <DayValue>{currentDay} / {item.duration_days}</DayValue>
-                    </DayLabel>
-                    <PercentValue>{progressPercent}%</PercentValue>
-                  </DayPercentRow>
-
-                  <ProgressBar>
-                    <ProgressFill 
-                      style={{ 
-                        width: `${progressPercent}%`,
-                      }} 
-                    />
-                  </ProgressBar>
-
-                  <Divider />
-
-                  <StatsRow>
+                  <CardStats>
                     <StatItem>
-                      <StatIcon $variant="success">✓</StatIcon>
-                      <StatContent>
-                        <StatMain>
-                          Выполнено: <strong>{progressValue}</strong>
-                        </StatMain>
-                        <StatSub>из {currentDay}</StatSub>
-                      </StatContent>
+                      <StatValue>{item.participants_count}</StatValue>
+                      <StatLabel>участников</StatLabel>
                     </StatItem>
-
+                    
                     <StatItem>
-                      <StatIcon $variant="warning">⏱</StatIcon>
-                      <StatContent>
-                        <StatMain>
-                          4 на проверке
-                        </StatMain>
-                      </StatContent>
+                      <StatValue>{item.duration_days}</StatValue>
+                      <StatLabel>дней</StatLabel>
                     </StatItem>
-                  </StatsRow>
+                    
+                    <StatItem>
+                      <StatValue>
+                        {item.challenge_finished ? 'Завершён' : getStatusText()}
+                      </StatValue>
+                      <StatLabel>статус</StatLabel>
+                    </StatItem>
+                  </CardStats>
 
-                  <Divider />
+                  <ProgressWrapper>
+                    <ProgressHeader>
+                      <ProgressInfo>
+                        <ProgressText>
+                          {item.has_goal
+                            ? `Прогресс: ${progressValue} из ${goalValue}`
+                            : `Выполнено: ${progressValue} из ${item.duration_days} дней`}
+                        </ProgressText>
+                        <ProgressText $highlight>{progressPercent}%</ProgressText>
+                      </ProgressInfo>
+                      
+                      <ProgressBar>
+                        <ProgressFill 
+                          style={{ 
+                            width: `${progressPercent}%`,
+                            opacity: item.challenge_finished ? 0.7 : 1
+                          }} 
+                        />
+                      </ProgressBar>
 
-                  <ReportBlock>
-                    <ReportIcon>📷</ReportIcon>
-                    <ReportText>
-                      <strong>Отчет сегодня:</strong> фото + 5.2 км
-                      <ReportBadge>
-                        отправлен
-                      </ReportBadge>
-                    </ReportText>
-                  </ReportBlock>
+                      <DaysInfo>
+                        {diffDays < 0 ? (
+                          <>Старт {new Date(item.start_at).toLocaleDateString('ru-RU')}</>
+                        ) : (
+                          <>День {currentDay} из {item.duration_days}</>
+                        )}
+                        {item.challenge_finished && (
+                          <span style={{ marginLeft: '8px', opacity: 0.7 }}>
+                            • {item.user_completed ? '✓' : '✗'}
+                          </span>
+                        )}
+                      </DaysInfo>
+                    </ProgressHeader>
+                  </ProgressWrapper>
 
                   {!item.challenge_finished ? (
                     <PrimaryButton
@@ -347,9 +393,10 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
                         )
                       }
                       disabled={diffDays < 0}
+                      style={diffDays < 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                       {diffDays < 0 ? 'Доступно с ' + new Date(item.start_at).toLocaleDateString('ru-RU') : 
-                       progressPercent >= 100 ? 'Посмотреть результат' : 'Добавить результат'}
+                       progressPercent >= 100 ? 'Посмотреть результат' : 'Продолжить вызов'}
                     </PrimaryButton>
                   ) : (
                     <PrimaryButton
@@ -372,6 +419,7 @@ export function Home({ screen, onNavigate, refreshKey }: HomeProps) {
         </CenterWrapper>
       </HomeContainer>
 
+      {/* Модальное окно с информацией */}
       <ModalOverlay $isOpen={isInfoOpen} onClick={() => setIsInfoOpen(false)}>
         <ModalContent onClick={e => e.stopPropagation()}>
           <ModalClose onClick={() => setIsInfoOpen(false)}>✕</ModalClose>

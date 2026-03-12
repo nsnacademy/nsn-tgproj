@@ -5,8 +5,9 @@ import styled from 'styled-components';
 ====================== */
 export const SafeArea = styled.div`
   height: 100vh;
-  background: radial-gradient(circle at 70% 30%, #1e1b4b 0%, #0b0d10 70%);
+  background: #000;
   color: #fff;
+
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -20,9 +21,7 @@ export const FixedHeaderWrapper = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(11,13,16,0.8);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid #1f2937;
+  background: #000;
   z-index: 1000;
 `;
 
@@ -31,25 +30,17 @@ export const HeaderSpacer = styled.div`
 `;
 
 export const Header = styled.div`
-  padding: 80px 16px 0;
+  padding: 95px 20px 0;
 `;
 
 export const StatusLabel = styled.div`
-  font-size: 12px;
+  font-size: 14px;
   opacity: 0.6;
-  color: #9ca3af;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
 `;
 
 export const StatusTitle = styled.div`
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  background: linear-gradient(145deg, #ffffff 0%, #b0b8ff 90%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 22px;
+  font-weight: 600;
   margin-top: 4px;
 `;
 
@@ -58,22 +49,24 @@ export const StatusTitle = styled.div`
 ====================== */
 export const Tabs = styled.div`
   display: flex;
-  gap: 16px;
-  padding: 6px 16px 12px;
+  gap: 18px;
+  padding: 7px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 `;
 
 export const Tab = styled.div<{ $active?: boolean }>`
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
-  color: ${({ $active }) => ($active ? '#fff' : '#9ca3af')};
-  padding-bottom: 4px;
-  border-bottom: ${({ $active }) =>
-    $active ? '2px solid #a78bfa' : '2px solid transparent'};
+  opacity: ${({ $active }) => ($active ? 1 : 0.4)};
+  padding-bottom: 6px;
+  position: relative;
   transition: all 0.2s ease;
 
+  border-bottom: ${({ $active }) =>
+    $active ? '2px solid #fff' : '2px solid transparent'};
+
   &:hover {
-    color: #fff;
+    opacity: ${({ $active }) => ($active ? 1 : 0.7)};
   }
 `;
 
@@ -81,224 +74,189 @@ export const Tab = styled.div<{ $active?: boolean }>`
    SCROLL
 ====================== */
 export const HeaderOffset = styled.div`
-  height: 140px;
+  height: 170px;
 `;
 
 export const HomeContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 40px 16px 100px;
-  scrollbar-width: thin;
-  scrollbar-color: #374151 transparent;
-
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: #374151;
-    border-radius: 4px;
-  }
+  padding: 60px 20px 120px;
 `;
 
 export const CenterWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
 `;
 
 export const EmptyText = styled.div`
   margin-top: 60px;
   text-align: center;
   font-size: 14px;
-  color: #9ca3af;
+  opacity: 0.6;
   padding: 0 20px;
 `;
 
 /* ======================
-   CARD - УЛЬТРА КОМПАКТНАЯ
+   CARD
 ====================== */
 export const Card = styled.div`
-  background: #1a1d24;
-  border: 1px solid #2d313a;
-  border-radius: 24px;
-  padding: 14px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-  transition: all 0.2s ease;
+  background: rgba(255,255,255,0.06);
+  border-radius: 22px;
+  padding: 18px 20px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
-    border-color: #6d28d9;
-    transform: translateY(-1px);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
   }
 `;
 
 export const CardHeader = styled.div`
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 `;
 
 export const CardTitleRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  margin-bottom: -9px;
 `;
 
 export const CardTitle = styled.div`
   font-size: 16px;
   font-weight: 600;
-  color: #fff;
-  letter-spacing: -0.01em;
+  line-height: 1.4;
+  flex: 1;
 `;
 
-export const ParticipantsBadge = styled.div`
-  background: #2d3748;
-  padding: 4px 10px;
-  border-radius: 30px;
-  font-size: 11px;
-  font-weight: 500;
-  color: #d1d5db;
-  border: 1px solid #4b5563;
-  white-space: nowrap;
-`;
-
-export const DayPercentRow = styled.div`
+/* ======================
+   STATS
+====================== */
+export const CardStats = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 6px;
-`;
-
-export const DayLabel = styled.span`
-  font-size: 12px;
-  color: #9ca3af;
-  font-weight: 500;
-`;
-
-export const DayValue = styled.span`
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  margin-left: 2px;
-`;
-
-export const PercentValue = styled.span`
-  font-size: 15px;
-  font-weight: 700;
-  color: #a78bfa;
-`;
-
-export const ProgressBar = styled.div`
-  width: 100%;
-  height: 6px;
-  background: #2d3748;
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 12px;
-`;
-
-export const ProgressFill = styled.div`
-  height: 100%;
-  background: linear-gradient(90deg, #a78bfa, #c4b5fd);
-  box-shadow: 0 0 6px rgba(167,139,250,0.5);
-  border-radius: 6px;
-  transition: width 0.3s ease;
-`;
-
-export const Divider = styled.div`
-  height: 1px;
-  background: #2d3748;
-  margin: 10px 0;
-`;
-
-export const StatsRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
+  margin: 14px 0;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 `;
 
 export const StatItem = styled.div`
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
   flex: 1;
 `;
 
-export const StatIcon = styled.div<{ $variant: 'success' | 'warning' }>`
-  width: 20px;
-  height: 20px;
-  background: ${({ $variant }) => $variant === 'success' ? '#10b981' : '#f59e0b'};
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  color: #fff;
-  flex-shrink: 0;
+export const StatValue = styled.div`
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.9;
 `;
 
-export const StatContent = styled.div`
+export const StatLabel = styled.div`
+  font-size: 11px;
+  opacity: 0.5;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+/* ======================
+   PROGRESS
+====================== */
+export const ProgressWrapper = styled.div`
+  margin: 16px 0;
+`;
+
+export const ProgressHeader = styled.div`
   display: flex;
   flex-direction: column;
-`;
-
-export const StatMain = styled.span`
-  font-size: 13px;
-  color: #fff;
-  font-weight: 500;
-`;
-
-export const StatSub = styled.span`
-  font-size: 10px;
-  color: #9ca3af;
-  margin-top: 1px;
-`;
-
-export const ReportBlock = styled.div`
-  background: #2d3748;
-  border: 1px solid #4b5563;
-  border-radius: 14px;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
 `;
 
-export const ReportIcon = styled.span`
-  font-size: 16px;
-  opacity: 0.8;
-`;
-
-export const ReportText = styled.span`
-  font-size: 12px;
-  color: #e5e7eb;
+export const ProgressInfo = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  font-weight: 500;
 `;
 
-export const ReportBadge = styled.span`
-  background: #4b5563;
-  padding: 2px 8px;
-  border-radius: 30px;
-  font-size: 10px;
-  color: #fff;
-  border: 1px solid #6b7280;
-  margin-left: 4px;
+export const ProgressBar = styled.div`
+  height: 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.12);
+  overflow: hidden;
+  margin: 4px 0;
 `;
 
+export const ProgressFill = styled.div`
+  height: 100%;
+  background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.9) 100%);
+  box-shadow: 0 0 8px rgba(255,255,255,0.4);
+  border-radius: 10px;
+  transition: width 0.3s ease;
+`;
+
+export const ProgressText = styled.div<{ $highlight?: boolean }>`
+  font-size: 13px;
+  opacity: ${({ $highlight }) => ($highlight ? 0.9 : 0.65)};
+  font-weight: ${({ $highlight }) => ($highlight ? 600 : 400)};
+`;
+
+export const DaysInfo = styled.div`
+  font-size: 12px;
+  opacity: 0.5;
+  margin-top: 4px;
+`;
+
+/* ======================
+   BADGES
+====================== */
+export const StatusBadge = styled.div<{ $place: number }>`
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: ${({ $place }) => {
+    switch($place) {
+      case 1: return 'linear-gradient(135deg, #FFD700, #FFA500)';
+      case 2: return 'linear-gradient(135deg, #C0C0C0, #A0A0A0)';
+      case 3: return 'linear-gradient(135deg, #CD7F32, #A0522D)';
+      default: return 'rgba(255,255,255,0.1)';
+    }
+  }};
+  color: ${({ $place }) => $place <= 3 ? '#000' : '#fff'};
+  min-width: 28px;
+  text-align: center;
+`;
+
+export const ChallengeTypeBadge = styled.div`
+  font-size: 11px;
+  opacity: 0.7;
+  background: rgba(255,255,255,0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-top: 4px;
+`;
+
+/* ======================
+   BUTTON
+====================== */
 export const PrimaryButton = styled.button<{ $variant?: 'primary' | 'outline' }>`
-  padding: 10px 16px;
+  margin-top: 14px;
+  padding: 12px 20px;
   width: 100%;
-  border-radius: 40px;
+  
+  border-radius: 14px;
   border: ${({ $variant }) => 
     $variant === 'outline' 
-      ? '1.5px solid #4b5563' 
+      ? '1.5px solid rgba(255,255,255,0.3)' 
       : 'none'};
+
   background: ${({ $variant }) => 
     $variant === 'outline' 
       ? 'transparent' 
@@ -306,29 +264,23 @@ export const PrimaryButton = styled.button<{ $variant?: 'primary' | 'outline' }>
   color: ${({ $variant }) => 
     $variant === 'outline' 
       ? '#fff' 
-      : '#0b0d10'};
+      : '#000'};
+  
   font-weight: 600;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
     background: ${({ $variant }) => 
       $variant === 'outline' 
-        ? 'rgba(255,255,255,0.05)' 
-        : '#e0e7ff'};
-    border-color: ${({ $variant }) => 
-      $variant === 'outline' ? '#a5b4fc' : 'none'};
+        ? 'rgba(255,255,255,0.1)' 
+        : 'rgba(255,255,255,0.9)'};
     transform: translateY(-1px);
   }
 
   &:active {
     transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 `;
 
@@ -339,12 +291,14 @@ export const BottomNav = styled.div`
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 16px;
-  height: 64px;
-  background: rgba(11,13,16,0.9);
+  bottom: 18px;
+
+  height: 68px;
+  background: rgba(0,0,0,0.9);
+  border-radius: 34px;
   backdrop-filter: blur(20px);
-  border: 1px solid #2d3748;
-  border-radius: 32px;
+  border: 1px solid rgba(255,255,255,0.1);
+
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -352,72 +306,120 @@ export const BottomNav = styled.div`
 `;
 
 export const NavItem = styled.div<{ $active?: boolean }>`
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   background: ${({ $active }) =>
-    $active ? 'rgba(167,139,250,0.15)' : 'transparent'};
+    $active ? 'rgba(255,255,255,0.15)' : 'transparent'};
   color: ${({ $active }) =>
-    $active ? '#a78bfa' : '#9ca3af'};
+    $active ? '#fff' : 'rgba(255,255,255,0.65)'};
+  
   transition: all 0.2s ease;
   cursor: pointer;
 
   &:hover {
-    background: rgba(255,255,255,0.05);
-    color: #fff;
-  }
-
-  svg {
-    width: 22px;
-    height: 22px;
+    background: ${({ $active }) =>
+      $active ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'};
   }
 `;
 
-/* ======================
-   BADGES
-====================== */
-export const StatusBadge = styled.div<{ $place: number }>`
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 8px;
-  background: ${({ $place }) => {
-    switch($place) {
-      case 1: return 'linear-gradient(135deg, #FFD700, #FFA500)';
-      case 2: return 'linear-gradient(135deg, #C0C0C0, #A0A0A0)';
-      case 3: return 'linear-gradient(135deg, #CD7F32, #A0522D)';
-      default: return 'rgba(255,255,255,0.1)';
+// Добавьте скелетон-стили
+export const SkeletonCard = styled.div`
+  background: #0a0a0a;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid #222;
+`;
+
+// Обновите SkeletonLine - измените тип width на string | undefined
+export const SkeletonLine = styled.div<{ width?: string; height?: number }>`
+  width: ${({ width }) => width || '100%'};
+  height: ${({ height }) => height || 16}px;
+  background: #222;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    animation: shimmer 1.5s infinite;
+    transform: translateX(-100%);
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
     }
-  }};
-  color: ${({ $place }) => $place <= 3 ? '#000' : '#fff'};
-  min-width: 22px;
-  text-align: center;
+  }
 `;
 
-export const ChallengeTypeBadge = styled.div`
-  font-size: 9px;
-  opacity: 0.7;
-  background: rgba(255,255,255,0.1);
-  padding: 2px 8px;
-  border-radius: 10px;
-  display: inline-block;
-  margin-top: 4px;
+// Обновите SkeletonBadge
+export const SkeletonBadge = styled.div<{ width?: number; height?: number }>`
+  width: ${({ width }) => width || 40}px;
+  height: ${({ height }) => height || 24}px;
+  background: #222;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    animation: shimmer 1.5s infinite;
+    transform: translateX(-100%);
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+`;
+
+export const SkeletonStats = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 16px 0;
+`;
+
+export const SkeletonProgress = styled.div`
+  margin: 16px 0;
 `;
 
 /* ======================
    INFO BUTTON & MODAL
 ====================== */
+
+/* ======================
+   INFO BUTTON & MODAL
+====================== */
+
 export const InfoButton = styled.button`
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid #374151;
-  color: #d1d5db;
-  font-size: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -425,11 +427,18 @@ export const InfoButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  
+  /* Убираем margin-top и align-self */
+  /* Весь кружок теперь на одном уровне с "Состояние" */
 
   &:hover {
-    background: #2d3748;
-    border-color: #6d28d9;
-    color: #fff;
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 `;
 
@@ -439,7 +448,7 @@ export const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(8px);
   z-index: 2000;
   display: flex;
@@ -451,14 +460,14 @@ export const ModalOverlay = styled.div<{ $isOpen: boolean }>`
 `;
 
 export const ModalContent = styled.div`
-  background: #1a1d24;
-  border: 1px solid #2d3748;
+  background: #0a0a0a;
+  border: 1px solid #333;
   border-radius: 24px;
   width: 90%;
-  max-width: 380px;
+  max-width: 400px;
   max-height: 80vh;
   overflow-y: auto;
-  padding: 20px;
+  padding: 24px;
   position: relative;
   animation: slideUp 0.3s ease;
 
@@ -476,9 +485,11 @@ export const ModalContent = styled.div`
   &::-webkit-scrollbar {
     width: 4px;
   }
+
   &::-webkit-scrollbar-track {
     background: #111;
   }
+
   &::-webkit-scrollbar-thumb {
     background: #333;
     border-radius: 2px;
@@ -487,15 +498,15 @@ export const ModalContent = styled.div`
 
 export const ModalClose = styled.button`
   position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 28px;
-  height: 28px;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #2d3748;
-  border: 1px solid #4b5563;
+  background: #1a1a1a;
+  border: 1px solid #333;
   color: #fff;
-  font-size: 16px;
+  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -503,154 +514,171 @@ export const ModalClose = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background: #374151;
-    border-color: #6d28d9;
+    background: #333;
+    border-color: #666;
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 `;
 
 export const ModalTitle = styled.h2`
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 6px;
-  padding-right: 28px;
-  background: linear-gradient(145deg, #ffffff, #b0b8ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding-right: 32px;
 `;
 
 export const ModalDescription = styled.p`
-  font-size: 13px;
-  color: #9ca3af;
+  font-size: 14px;
+  opacity: 0.7;
   line-height: 1.5;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 `;
 
 export const ModalSection = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 `;
 
 export const ModalSectionHeader = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 `;
 
 export const ModalSectionIcon = styled.span`
-  font-size: 18px;
-  color: #a78bfa;
+  font-size: 20px;
+  opacity: 0.9;
 `;
 
 export const ModalSectionTitle = styled.h3`
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  color: #fff;
+  opacity: 0.9;
 `;
 
 export const ModalSectionText = styled.p`
-  font-size: 12px;
-  color: #9ca3af;
+  font-size: 13px;
+  opacity: 0.7;
   line-height: 1.5;
-  margin-left: 26px;
+  margin-left: 28px;
 `;
 
 export const ModalList = styled.ul`
   list-style: none;
   padding: 0;
-  margin: 6px 0 0 26px;
+  margin: 8px 0 0 28px;
 `;
 
 export const ModalListItem = styled.li`
-  font-size: 12px;
-  color: #9ca3af;
-  margin-bottom: 4px;
+  font-size: 13px;
+  opacity: 0.7;
+  margin-bottom: 6px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 
   &::before {
     content: "—";
-    color: #4b5563;
-    font-size: 12px;
+    color: #666;
+    font-size: 14px;
   }
 `;
 
 export const ModalFooter = styled.div`
-  margin-top: 20px;
-  padding-top: 14px;
-  border-top: 1px solid #2d3748;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #333;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  color: #d1d5db;
+  opacity: 0.8;
 `;
 
-/* ======================
-   SKELETON LOADING
-====================== */
-export const SkeletonCard = styled.div`
-  background: #1a1d24;
-  border-radius: 24px;
-  padding: 14px;
-  margin-bottom: 14px;
-  border: 1px solid #2d313a;
+// Добавьте эти стили в ваш файл styles.js
+
+// Для иконок в статистике
+export const StatIcon = styled.div<{ $color: string }>`
+  width: 28px;
+  height: 28px;
+  background: ${({ $color }) => $color};
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #fff;
 `;
 
-export const SkeletonLine = styled.div<{ width?: string; height?: number }>`
-  width: ${({ width }) => width || '100%'};
-  height: ${({ height }) => height || 14}px;
-  background: #2d3748;
-  border-radius: 6px;
-  position: relative;
-  overflow: hidden;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-    animation: shimmer 1.5s infinite;
-    transform: translateX(-100%);
-  }
-
-  @keyframes shimmer {
-    100% {
-      transform: translateX(100%);
-    }
-  }
+// Для блока отчета
+export const ReportBlock = styled.div`
+  background: #2a3346;
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #4c3f6b;
+  box-shadow: 0 4px 14px rgba(128, 90, 213, 0.25);
+  margin-bottom: 16px;
 `;
 
-export const SkeletonBadge = styled.div<{ width?: number; height?: number }>`
-  width: ${({ width }) => width || 36}px;
-  height: ${({ height }) => height || 20}px;
-  background: #2d3748;
-  border-radius: 16px;
-  position: relative;
-  overflow: hidden;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-    animation: shimmer 1.5s infinite;
-    transform: translateX(-100%);
-  }
+export const ReportIcon = styled.span`
+  font-size: 22px;
 `;
 
-export const SkeletonStats = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin: 12px 0;
+export const ReportText = styled.span`
+  font-weight: 500;
 `;
 
-export const SkeletonProgress = styled.div`
-  margin: 12px 0;
+export const ReportBadge = styled.span`
+  background: #3f4a5e;
+  padding: 4px 10px;
+  border-radius: 30px;
+  font-size: 13px;
+  margin-left: 10px;
+  border: 1px solid #5f6b80;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 `;
+
+// Для делиметра
+export const Divider = styled.div`
+  height: 1px;
+  background: #394050;
+  margin: 18px 0;
+`;
+
+// Для дня/процента над баром
+export const DayPercentRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+  font-size: 16px;
+`;
+
+export const DayLabel = styled.span`
+  color: #b0b8c5;
+  font-weight: 500;
+`;
+
+export const DayValue = styled.span`
+  font-weight: 700;
+  color: #fff;
+`;
+
+export const PercentValue = styled.span`
+  font-weight: 700;
+  color: #c4b5fd;
+  font-size: 20px;
+`;
+
+
+
