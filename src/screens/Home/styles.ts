@@ -1,28 +1,13 @@
 import styled from 'styled-components';
 
 /* ======================
-   COLORS — ТОЧНО КАК В HTML
-====================== */
-const colors = {
-  bg: '#0b0f1c',
-  bgCard: 'linear-gradient(180deg, #1b2437, #1a2234)',
-  bgElement: '#3a4254',
-  bgDivider: '#394050',
-  accentGradient: 'linear-gradient(90deg, #7a6bff, #b48cff)',
-  success: '#1dbf73',
-  warning: '#f5b300',
-  text: '#ffffff',
-  textSecondary: 'rgba(255,255,255,0.9)',
-  reportBg: '#3a4254',
-};
-
-/* ======================
    PAGE
 ====================== */
 export const SafeArea = styled.div`
   height: 100vh;
-  background: ${colors.bg};
-  color: ${colors.text};
+  background: #000;
+  color: #fff;
+
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -36,7 +21,7 @@ export const FixedHeaderWrapper = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  background: ${colors.bg};
+  background: #000;
   z-index: 1000;
 `;
 
@@ -60,36 +45,6 @@ export const StatusTitle = styled.div`
 `;
 
 /* ======================
-   INFO BUTTON
-====================== */
-export const InfoButton = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 16px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
-    transform: scale(1.05);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-`;
-
-/* ======================
    TABS
 ====================== */
 export const Tabs = styled.div`
@@ -104,7 +59,9 @@ export const Tab = styled.div<{ $active?: boolean }>`
   cursor: pointer;
   opacity: ${({ $active }) => ($active ? 1 : 0.4)};
   padding-bottom: 6px;
+  position: relative;
   transition: all 0.2s ease;
+
   border-bottom: ${({ $active }) =>
     $active ? '2px solid #fff' : '2px solid transparent'};
 
@@ -141,144 +98,207 @@ export const EmptyText = styled.div`
 `;
 
 /* ======================
-   CARD — ТОЧНАЯ КОПИЯ ИЗ HTML
+   CARD
 ====================== */
 export const Card = styled.div`
-  width: 100%;
-  padding: 28px;
-  border-radius: 26px;
-  background: ${colors.bgCard};
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  color: ${colors.text};
+  background: rgba(255,255,255,0.06);
+  border-radius: 22px;
+  padding: 18px 20px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  }
 `;
 
 export const CardHeader = styled.div`
+  margin-bottom: 12px;
+`;
+
+export const CardTitleRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: -9px;
+`;
+
+export const CardTitle = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  flex: 1;
+`;
+
+/* ======================
+   STATS
+====================== */
+export const CardStats = styled.div`
+  display: flex;
+  gap: 16px;
+  margin: 14px 0;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+`;
+
+export const StatItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+`;
+
+export const StatValue = styled.div`
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.9;
+`;
+
+export const StatLabel = styled.div`
+  font-size: 11px;
+  opacity: 0.5;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+/* ======================
+   PROGRESS
+====================== */
+export const ProgressWrapper = styled.div`
+  margin: 16px 0;
+`;
+
+export const ProgressHeader = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const ProgressInfo = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-`;
-
-export const Title = styled.div`
-  font-size: 24px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-export const Participants = styled.div`
-  background: ${colors.bgElement};
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 `;
 
 export const ProgressBar = styled.div`
-  width: 100%;
-  height: 12px;
-  background: ${colors.bgElement};
+  height: 8px;
   border-radius: 10px;
+  background: rgba(255,255,255,0.12);
   overflow: hidden;
-  margin-bottom: 22px;
+  margin: 4px 0;
 `;
 
-export const Progress = styled.div`
+export const ProgressFill = styled.div`
   height: 100%;
-  background: ${colors.accentGradient};
+  background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.9) 100%);
+  box-shadow: 0 0 8px rgba(255,255,255,0.4);
   border-radius: 10px;
   transition: width 0.3s ease;
 `;
 
-export const DayRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 22px;
-  margin-bottom: 18px;
+export const ProgressText = styled.div<{ $highlight?: boolean }>`
+  font-size: 13px;
+  opacity: ${({ $highlight }) => ($highlight ? 0.9 : 0.65)};
+  font-weight: ${({ $highlight }) => ($highlight ? 600 : 400)};
 `;
 
-export const Day = styled.div`
-  font-weight: 500;
-`;
-
-export const Percent = styled.div`
-  opacity: 0.9;
-`;
-
-export const Divider = styled.div`
-  height: 1px;
-  background: ${colors.bgDivider};
-  margin: 18px 0;
-`;
-
-export const Stats = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-`;
-
-export const Stat = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 18px;
-  flex: 1;
-`;
-
-export const Icon = styled.span`
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: 16px;
-  flex-shrink: 0;
-
-  &.done {
-    background: ${colors.success};
-    color: white;
-  }
-
-  &.review {
-    background: ${colors.warning};
-    color: white;
-  }
-`;
-
-export const StatText = styled.span`
-  font-size: 18px;
-  font-weight: 500;
-`;
-
-export const Report = styled.div`
-  background: ${colors.reportBg};
-  padding: 16px 20px;
-  border-radius: 18px;
-  font-size: 18px;
-  opacity: 0.95;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+export const DaysInfo = styled.div`
+  font-size: 12px;
+  opacity: 0.5;
+  margin-top: 4px;
 `;
 
 /* ======================
-   BOTTOM NAV — ИЗ ПРЕДЫДУЩЕГО КОДА
+   BADGES
+====================== */
+export const StatusBadge = styled.div<{ $place: number }>`
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: ${({ $place }) => {
+    switch($place) {
+      case 1: return 'linear-gradient(135deg, #FFD700, #FFA500)';
+      case 2: return 'linear-gradient(135deg, #C0C0C0, #A0A0A0)';
+      case 3: return 'linear-gradient(135deg, #CD7F32, #A0522D)';
+      default: return 'rgba(255,255,255,0.1)';
+    }
+  }};
+  color: ${({ $place }) => $place <= 3 ? '#000' : '#fff'};
+  min-width: 28px;
+  text-align: center;
+`;
+
+export const ChallengeTypeBadge = styled.div`
+  font-size: 11px;
+  opacity: 0.7;
+  background: rgba(255,255,255,0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-top: 4px;
+`;
+
+/* ======================
+   BUTTON
+====================== */
+export const PrimaryButton = styled.button<{ $variant?: 'primary' | 'outline' }>`
+  margin-top: 14px;
+  padding: 12px 20px;
+  width: 100%;
+  
+  border-radius: 14px;
+  border: ${({ $variant }) => 
+    $variant === 'outline' 
+      ? '1.5px solid rgba(255,255,255,0.3)' 
+      : 'none'};
+
+  background: ${({ $variant }) => 
+    $variant === 'outline' 
+      ? 'transparent' 
+      : '#fff'};
+  color: ${({ $variant }) => 
+    $variant === 'outline' 
+      ? '#fff' 
+      : '#000'};
+  
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${({ $variant }) => 
+      $variant === 'outline' 
+        ? 'rgba(255,255,255,0.1)' 
+        : 'rgba(255,255,255,0.9)'};
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+/* ======================
+   BOTTOM NAV
 ====================== */
 export const BottomNav = styled.div`
   position: fixed;
   left: 16px;
   right: 16px;
   bottom: 18px;
+
   height: 68px;
   background: rgba(0,0,0,0.9);
   border-radius: 34px;
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255,255,255,0.1);
+
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -289,22 +309,139 @@ export const NavItem = styled.div<{ $active?: boolean }>`
   width: 48px;
   height: 48px;
   border-radius: 50%;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${({ $active }) => $active ? 'rgba(255,255,255,0.15)' : 'transparent'};
-  color: ${({ $active }) => $active ? '#fff' : 'rgba(255,255,255,0.65)'};
+
+  background: ${({ $active }) =>
+    $active ? 'rgba(255,255,255,0.15)' : 'transparent'};
+  color: ${({ $active }) =>
+    $active ? '#fff' : 'rgba(255,255,255,0.65)'};
+  
   transition: all 0.2s ease;
   cursor: pointer;
 
   &:hover {
-    background: ${({ $active }) => $active ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'};
+    background: ${({ $active }) =>
+      $active ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'};
   }
 `;
 
+// Добавьте скелетон-стили
+export const SkeletonCard = styled.div`
+  background: #0a0a0a;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid #222;
+`;
+
+// Обновите SkeletonLine - измените тип width на string | undefined
+export const SkeletonLine = styled.div<{ width?: string; height?: number }>`
+  width: ${({ width }) => width || '100%'};
+  height: ${({ height }) => height || 16}px;
+  background: #222;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    animation: shimmer 1.5s infinite;
+    transform: translateX(-100%);
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+`;
+
+// Обновите SkeletonBadge
+export const SkeletonBadge = styled.div<{ width?: number; height?: number }>`
+  width: ${({ width }) => width || 40}px;
+  height: ${({ height }) => height || 24}px;
+  background: #222;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    animation: shimmer 1.5s infinite;
+    transform: translateX(-100%);
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+`;
+
+export const SkeletonStats = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 16px 0;
+`;
+
+export const SkeletonProgress = styled.div`
+  margin: 16px 0;
+`;
+
 /* ======================
-   MODAL — ИЗ ПРЕДЫДУЩЕГО КОДА
+   INFO BUTTON & MODAL
 ====================== */
+
+/* ======================
+   INFO BUTTON & MODAL
+====================== */
+
+export const InfoButton = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  
+  /* Убираем margin-top и align-self */
+  /* Весь кружок теперь на одном уровне с "Состояние" */
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
 export const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   top: 0;
@@ -348,9 +485,11 @@ export const ModalContent = styled.div`
   &::-webkit-scrollbar {
     width: 4px;
   }
+
   &::-webkit-scrollbar-track {
     background: #111;
   }
+
   &::-webkit-scrollbar-thumb {
     background: #333;
     border-radius: 2px;
